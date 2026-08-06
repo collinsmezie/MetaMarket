@@ -393,6 +393,154 @@ model TaxonomyImport {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Vendors and Capability DNA
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A seller. Created by the onboarding workflow and searchable immediately afterwards
+/// (Vendor-Onboarding.md Step 5).
+model Vendor {
+  id String @id @default(uuid()) @db.Uuid
+
+  /// Conversation identity — the normalised E.164 phone number. One vendor per number.
+  userId         String @unique @map("user_id")
+  conversationId String @map("conversation_id") @db.Uuid
+
+  /// Registered name, informal shop name, trading name or personal brand — all accepted.
+  businessName String @map("business_name")
+
+  /// Normalised location. The state is usually inferred from the city and then confirmed, so
+  /// the confidence is retained rather than discarded.
+  city              String?
+  state             String?
+  country           String? @default("Nigeria")
+  locationConfidence Float?  @map("location_confidence")
+  latitude          Float?
+  longitude         Float?
+
+  /// onboarding | active | suspended
+  status String @default("onboarding")
+
+  conversationSummary String @default("") @map("conversation_summary")
+
+  /// Free-text products, services and brands the vendor named, kept verbatim alongside the
+  /// resolved canonical capabilities. What a vendor calls their goods is itself a signal.
+  declaredProducts String[] @map("declared_products")
+  declaredServices String[] @map("declared_services")
+  brands           String[]
+
+  /// Embedding of the DNA summary, for vendor-level semantic retrieval by the CME.
+  dnaEmbedding Unsupported("vector(1536)")? @map("dna_embedding")
+
+  onboardedAt DateTime? @map("onboarded_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  capabilities VendorCapability[]
+  evidence     CapabilityEvidence[]
+
+  @@index([status])
+  @@index([city, state])
+  @@map("vendors")
+}
+
+/// The engine's current belief about one capability of one vendor (CDE §9).
+///
+/// Derived from the evidence history rather than authoritative: it is a materialised view,
+/// kept so ranking does not have to replay every vendor's evidence on each query.
+model VendorCapability {
+  id       String @id @default(uuid()) @db.Uuid
+  vendorId String @map("vendor_id") @db.Uuid
+
+  /// `product` (GS1 GPC code) or `service` (registry slug).
+  capabilityDomain String @map("capability_domain")
+  capabilityId     String @map("capability_id")
+  capabilityName   String @map("capability_name")
+
+  /// Belief in log-odds. Stored alongside the probability because evidence accumulates by
+  /// addition in log-odds space, and re-deriving from probabilities loses precision.
+  logOdds    Float @map("log_odds")
+  confidence Float
+
+  evidenceCount Int  @default(0) @map("evidence_count")
+  /// True while the capability comes only from expansion, never direct observation.
+  inferred      Boolean @default(true)
+
+  lastObservedAt DateTime @map("last_observed_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorId, capabilityDomain, capabilityId])
+  @@index([capabilityDomain, capabilityId, confidence])
+  /// Drives candidate retrieval: "vendors with capability X above threshold".
+  @@index([capabilityId, confidence])
+  @@map("vendor_capabilities")
+}
+
+/// An immutable observation about a vendor (CDE §11).
+///
+/// Never edited or deleted — "Evidence never disappears. Only confidence changes." Keeping
+/// the full history is what lets beliefs be recomputed when the inference rules improve, and
+/// what makes any capability score explainable after the fact.
+model CapabilityEvidence {
+  id       String @id @default(uuid()) @db.Uuid
+  vendorId String @map("vendor_id") @db.Uuid
+
+  source String
+  /// Exactly what the vendor said or did.
+  originalText String @map("original_text")
+  /// The interpreted meaning, before resolution to canonical identifiers.
+  normalizedMeaning String @map("normalized_meaning")
+  /// very_low | low | medium | high | very_high
+  informationDensity String @map("information_density")
+
+  /// `CapabilitySignal[]` — the capabilities claimed, with strength and polarity.
+  supports Json
+
+  /// Why the engine drew this conclusion.
+  reasoning String @default("")
+
+  conversationId String? @map("conversation_id") @db.Uuid
+  workflowId     String? @map("workflow_id") @db.Uuid
+
+  observedAt DateTime @default(now()) @map("observed_at")
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId, observedAt])
+  @@index([source])
+  @@map("capability_evidence")
+}
+
+/// Registry of canonical service capabilities.
+///
+/// Services have no authoritative taxonomy — GPC covers products only — so the resolver
+/// reasons them out (CDE "Service Capabilities"). To stop that becoming a synonym free-for-all,
+/// every service capability is registered once and later mentions are matched against this
+/// registry by embedding similarity before a new entry is ever created.
+model ServiceCapability {
+  /// Deterministic slug derived from the canonical name, e.g. `svc_generator_repair`.
+  id String @id
+
+  canonicalName String @map("canonical_name")
+  description   String @default("")
+
+  /// Alternative phrasings that resolved to this capability, kept to improve future matching.
+  aliases String[]
+
+  embedding Unsupported("vector(1536)")?
+
+  /// How many vendors have been resolved to it — a proxy for whether it is a real market
+  /// concept or a one-off phrasing.
+  usageCount Int @default(0) @map("usage_count")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("service_capabilities")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Event outbox
 // ─────────────────────────────────────────────────────────────────────────────
 

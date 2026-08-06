@@ -21,6 +21,8 @@ import { PrismaMessageRepository } from '../adapters/outbound/persistence/prisma
 import { PrismaWorkflowRepository } from '../adapters/outbound/persistence/prisma-workflow.repository';
 import { PrismaService } from '../adapters/outbound/persistence/prisma.service';
 import { PrismaTaxonomyRepository } from '../adapters/outbound/persistence/prisma-taxonomy.repository';
+import { PrismaVendorRepository } from '../adapters/outbound/persistence/prisma-vendor.repository';
+import { PrismaServiceCapabilityRepository } from '../adapters/outbound/persistence/prisma-service-capability.repository';
 import { RedisDistributedLockAdapter } from '../adapters/outbound/persistence/redis-distributed-lock.adapter';
 import { RedisService } from '../adapters/outbound/persistence/redis.service';
 import { BullMediaQueue } from '../adapters/outbound/queue/media-queue.adapter';
@@ -46,7 +48,9 @@ import {
 } from '../domain/ports/outbound/media.port';
 import { MESSAGE_REPOSITORY } from '../domain/ports/outbound/message-repository.port';
 import { STAGE_LOGGER } from '../domain/ports/outbound/stage-logger.port';
+import { SERVICE_CAPABILITY_REPOSITORY } from '../domain/ports/outbound/service-capability-repository.port';
 import { TAXONOMY_REPOSITORY } from '../domain/ports/outbound/taxonomy-repository.port';
+import { VENDOR_REPOSITORY } from '../domain/ports/outbound/vendor-repository.port';
 import { WORKFLOW_REPOSITORY } from '../domain/ports/outbound/workflow-repository.port';
 import { CLOCK, ID_GENERATOR, SystemClock } from '../domain/ports/outbound/system.port';
 import { StageLogger } from '../shared/logging/stage-logger';
@@ -95,6 +99,8 @@ import { AppConfigService } from './app-config.service';
     { provide: MESSAGE_REPOSITORY, useClass: PrismaMessageRepository },
     { provide: WORKFLOW_REPOSITORY, useClass: PrismaWorkflowRepository },
     { provide: TAXONOMY_REPOSITORY, useClass: PrismaTaxonomyRepository },
+    { provide: VENDOR_REPOSITORY, useClass: PrismaVendorRepository },
+    { provide: SERVICE_CAPABILITY_REPOSITORY, useClass: PrismaServiceCapabilityRepository },
     { provide: DISTRIBUTED_LOCK, useClass: RedisDistributedLockAdapter },
 
     OpenAiLlmAdapter,
@@ -142,6 +148,8 @@ import { AppConfigService } from './app-config.service';
     MESSAGE_REPOSITORY,
     WORKFLOW_REPOSITORY,
     TAXONOMY_REPOSITORY,
+    VENDOR_REPOSITORY,
+    SERVICE_CAPABILITY_REPOSITORY,
     DISTRIBUTED_LOCK,
     LLM_PROVIDER_SERVICE,
     EMBEDDING_PROVIDER,

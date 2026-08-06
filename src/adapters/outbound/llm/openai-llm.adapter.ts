@@ -9,6 +9,16 @@ import type {
 import { LlmProviderError } from '../../../domain/ports/outbound/llm-provider.port';
 
 /**
+ * True for OpenAI reasoning models (the o-series and GPT-5 family).
+ *
+ * They differ from chat models in ways that matter at the request layer: `temperature` is
+ * rejected rather than ignored, and the output cap is `max_completion_tokens`.
+ */
+export function isReasoningModel(model: string): boolean {
+  return /^(o\d|gpt-5)/i.test(model);
+}
+
+/**
  * Primary provider (Execution.md §1).
  *
  * Uses OpenAI structured outputs (`json_schema` with `strict: true`) so the schema is
@@ -38,12 +48,22 @@ export class OpenAiLlmAdapter implements LlmProviderPort {
       throw new LlmProviderError('OPENAI_API_KEY is not configured', this.name, false);
     }
 
+    // Reasoning models reject `temperature` outright and rename the output cap. Sending the
+    // chat-model parameters to one produces a 400 on every single call — which the fallback
+    // chain silently absorbs, so the deployment looks healthy while the primary provider is
+    // completely unusable and every request is paying a fallback's latency.
+    const reasoning = isReasoningModel(this.model);
+
     try {
       const completion = await this.client.chat.completions.create(
         {
           model: this.model,
-          temperature: request.temperature ?? 0,
-          max_tokens: request.maxOutputTokens,
+          ...(reasoning ? {} : { temperature: request.temperature ?? 0 }),
+          ...(request.maxOutputTokens === undefined
+            ? {}
+            : reasoning
+              ? { max_completion_tokens: request.maxOutputTokens }
+              : { max_tokens: request.maxOutputTokens }),
           messages: request.messages.map((message) => ({
             role: message.role,
             content: message.content,

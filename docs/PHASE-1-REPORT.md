@@ -149,10 +149,14 @@ gap for Semantic Resolution's alias expansion to cover, not a retrieval defect.
 Your `.env` contains a block pasted from another project (`konnet`). It is functional — the
 duplicate `DATABASE_URL` is commented out — but two things are worth knowing:
 
-- **Duplicate keys**: `dotenv` keeps the *first* occurrence. `OPENAI_MODEL` appears twice, so
-  `gpt-4o-2024-11-20` wins and your later `OPENAI_MODEL=o3` is ignored. If `o3` was intended,
-  remove the earlier line — but note `o3` is a reasoning model that rejects the `temperature`
-  parameter this code sets and is not suited to the vision OCR path.
+- **Duplicate keys**: `dotenv` keeps the *last* occurrence within a file. `OPENAI_MODEL` appears
+  twice, so **`o3` is the model actually in use**, not `gpt-4o-2024-11-20`.
+
+  > **Corrected 2026-08-06.** An earlier version of this report said the first occurrence wins
+  > and that `gpt-4o` was active. That was wrong, and it mattered: `o3` rejects the
+  > `temperature` parameter, so *every* OpenAI call was returning HTTP 400 and silently failing
+  > over to Anthropic. Found by the Phase 2 live probe; the adapter now omits `temperature` for
+  > reasoning models. See `docs/PHASE-2-REPORT.md` §5.
 - **Unused keys**: `WEAVIATE_URL`, `WHATSAPP_PROVIDER`, `TWILIO_WHATSAPP_FROM` and
   `BACKEND_PORT` belong to the other project. `TWILIO_MESSAGING_FROM` (which this code reads)
   is empty, so SMS delivery is not configured.

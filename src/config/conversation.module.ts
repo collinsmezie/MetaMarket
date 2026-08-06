@@ -5,6 +5,11 @@ import { MediaProcessingProcessor } from '../adapters/outbound/queue/media-proce
 import { ConversationContextManager } from '../application/conversation/conversation-context.manager';
 import { MediaProcessingService } from '../application/media/media-processing.service';
 import { TaxonomySeeder } from '../application/taxonomy/taxonomy-seeder.service';
+import { BusinessUnderstandingService } from '../application/capability/business-understanding.service';
+import { CapabilityDiscoveryService } from '../application/capability/capability-discovery.service';
+import { CapabilityResolver } from '../application/capability/capability-resolver.service';
+import { OnboardingExtractionService } from '../application/capability/onboarding-extraction.service';
+import { VendorOnboardingService } from '../application/capability/vendor-onboarding.service';
 import { MessageIngestionService } from '../application/pipeline/message-ingestion.service';
 import { TurnProcessor } from '../application/pipeline/turn-processor.service';
 import { WORKFLOW_SERVICES } from '../application/pipeline/workflow-services';
@@ -32,6 +37,7 @@ import {
 } from '../domain/ports/outbound/workflow-repository.port';
 import { ConversationPolicyEngine } from '../domain/workflows/conversation-policy';
 import { triageWorkflow } from '../domain/workflows/definitions/triage.workflow';
+import { vendorOnboardingWorkflow } from '../domain/workflows/definitions/vendor-onboarding.workflow';
 import { WorkflowEngine } from '../domain/workflows/workflow-engine';
 import { WorkflowManager } from '../domain/workflows/workflow-manager';
 import { WorkflowDefinitionRegistry } from '../domain/workflows/workflow-registry';
@@ -49,6 +55,11 @@ import { AppConfigService } from './app-config.service';
     ConversationContextManager,
     MediaProcessingService,
     TaxonomySeeder,
+    BusinessUnderstandingService,
+    CapabilityResolver,
+    CapabilityDiscoveryService,
+    OnboardingExtractionService,
+    VendorOnboardingService,
     ResponseComposer,
     ConversationContinuityAnalyzer,
     SemanticResolutionService,
@@ -61,8 +72,9 @@ import { AppConfigService } from './app-config.service';
       provide: WorkflowDefinitionRegistry,
       useFactory: () => {
         const registry = new WorkflowDefinitionRegistry();
-        // Phase 1 registers Triage only. Later phases add Vendor Onboarding and Buyer
-        // Search here; higher policy priority makes them claim their intents automatically.
+        // Vendor Onboarding outranks Triage on the vendor_onboarding intent by policy
+        // priority, so registering it is all that is needed to take over that flow.
+        registry.register(vendorOnboardingWorkflow);
         registry.register(triageWorkflow);
         return registry;
       },
@@ -116,10 +128,15 @@ import { AppConfigService } from './app-config.service';
     },
 
     {
-      // No business services exist in Phase 1; the Triage workflow needs none. Phases 2-5
-      // register the CDE, CME and Evidence services here.
+      // The capabilities workflow state handlers may reach. Listing them in one place keeps
+      // what a workflow can do explicit and reviewable.
       provide: WORKFLOW_SERVICES,
-      useValue: {},
+      inject: [OnboardingExtractionService, CapabilityDiscoveryService, VendorOnboardingService],
+      useFactory: (
+        extraction: OnboardingExtractionService,
+        discovery: CapabilityDiscoveryService,
+        vendors: VendorOnboardingService,
+      ) => ({ extraction, discovery, vendors }),
     },
 
     { provide: HANDLE_INCOMING_MESSAGE, useExisting: MessageIngestionService },

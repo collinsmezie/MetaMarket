@@ -13,16 +13,16 @@ directives in [`Execution.md`](Execution.md).
 
 ## Status
 
-Phase 1 (Multi-Channel Conversation OS) is implemented. See
-[`docs/PHASE-1-REPORT.md`](docs/PHASE-1-REPORT.md) for exactly what is built, what is verified,
+Phases 1 and 2 are implemented. See [`docs/PHASE-1-REPORT.md`](docs/PHASE-1-REPORT.md) and
+[`docs/PHASE-2-REPORT.md`](docs/PHASE-2-REPORT.md) for exactly what is built, what is verified,
 and what is deliberately deferred.
 
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Conversation OS core: adapters, context, workflow engine, media, events | **Implemented**, pending live-WhatsApp gate |
-| 2 | Vendor onboarding + Capability Discovery Engine | Not started |
-| 3 | Evidence Service + event bus consumers | Event bus + outbox built in Phase 1; Evidence Service not started |
-| 4 | Capability Matching Engine (15-stage retrieval) | GS1 GPC taxonomy + hybrid retrieval built ahead of schedule; CME not started |
+| 2 | Vendor onboarding + Capability Discovery Engine | **Implemented**, verified against the docs' own test cases |
+| 3 | Evidence Service + event bus consumers | Event bus, outbox and immutable evidence store built; Evidence Service not started |
+| 4 | Capability Matching Engine (15-stage retrieval) | GS1 GPC taxonomy, hybrid retrieval and Capability Resolver built ahead of schedule; CME not started |
 | 5 | Fan-out + continuous learning | Not started |
 
 ---
@@ -56,6 +56,13 @@ node dist/cli/send-test-webhook.js --voice media_456
 
 The reply is delivered asynchronously; the server terminal shows the stage log for every
 pipeline stage (Execution.md §3 format).
+
+### Inspecting the Capability Discovery Engine
+
+```bash
+node dist/cli/capability-probe.js "I sell household items"   # real model, no writes
+node dist/cli/capability-probe.js "I repair generators"
+```
 
 ### GS1 GPC taxonomy
 
