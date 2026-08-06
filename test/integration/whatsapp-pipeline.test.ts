@@ -235,14 +235,27 @@ describe('WhatsApp pipeline integration', () => {
     throw new Error(`Expected ${expected} outbound message(s), saw ${notifier.sent.length}`);
   };
 
-  /** Polls the outbox until `eventType` appears, then returns every recorded event. */
+  /**
+   * Polls the outbox until `eventType` has been recorded *and* marked published, then returns
+   * every recorded event.
+   *
+   * Waiting only for the row to appear is not enough: the publisher writes the row first and
+   * marks it delivered immediately after, so a poll on existence alone can read the row
+   * mid-write and see a null `publishedAt`.
+   */
   const waitForEvent = async (eventType: string) => {
     for (let attempt = 0; attempt < 100; attempt += 1) {
       const events = await prisma.outboxEvent.findMany({ orderBy: { occurredAt: 'asc' } });
-      if (events.some((event) => event.eventType === eventType)) return events;
+
+      const settled =
+        events.some((event) => event.eventType === eventType) &&
+        events.every((event) => event.publishedAt !== null);
+
+      if (settled) return events;
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
-    throw new Error(`Outbox never recorded a "${eventType}" event`);
+
+    throw new Error(`Outbox never settled with a published "${eventType}" event`);
   };
 
   beforeAll(async () => {
