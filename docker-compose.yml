@@ -1,0 +1,61 @@
+services:
+  postgres:
+    # pgvector-enabled Postgres: the taxonomy store, vendor DNA embeddings and
+    # semantic fingerprints all live in the same database as relational state.
+    image: pgvector/pgvector:pg16
+    container_name: metamarket-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-metamarket}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-metamarket}
+      POSTGRES_DB: ${POSTGRES_DB:-metamarket}
+    ports:
+      - '${POSTGRES_PORT:-5434}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-metamarket} -d ${POSTGRES_DB:-metamarket}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    # Distributed conversation locking, BullMQ queues, rate limiting, session cache.
+    image: redis:7-alpine
+    container_name: metamarket-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - '${REDIS_PORT:-6381}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    # S3-compatible object storage for inbound media (images, audio, video, documents).
+    image: minio/minio:latest
+    container_name: metamarket-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-metamarket}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-metamarket-secret}
+    ports:
+      - '${S3_PORT:-9000}:9000'
+      - '${S3_CONSOLE_PORT:-9001}:9001'
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:

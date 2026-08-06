@@ -1,0 +1,22 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+
+# Local data
+data/*.json
+!data/README.md
+# The 122 MB GS1 GPC export is supplied per deployment, not committed.
+gs1_gpc.json
+storage/
+*.log
+
+# Editor
+.idea/
+.vscode/
+.DS_Store

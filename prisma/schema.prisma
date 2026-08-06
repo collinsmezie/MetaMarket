@@ -1,0 +1,429 @@
+// MetaMarket persistence schema.
+//
+// Phase 1 covers the Conversation OS: conversations, history, memory, inbound messages,
+// media artifacts, workflow instances and the transactional event outbox (MCOS §18).
+//
+// pgvector columns are declared as `Unsupported` because Prisma has no native vector type.
+// They are created by migration SQL and queried through `$queryRaw`, which is confined to
+// the repository adapters so no caller needs to know.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Conversation aggregate
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// The root aggregate (MCOS §3.2). One per user, spanning every channel they use,
+/// so switching from WhatsApp to SMS continues the same conversation.
+model Conversation {
+  id     String @id @default(uuid()) @db.Uuid
+  /// Stable platform identity for the human. For phone-based channels this is the
+  /// normalised E.164 number, which is what makes cross-channel continuity possible.
+  userId String @map("user_id")
+
+  /// Which workflow is currently in focus (MCOS §7). Nullable: a conversation can exist
+  /// with no active objective.
+  activeWorkflowId String? @map("active_workflow_id") @db.Uuid
+
+  lastChannel String @map("last_channel")
+
+  /// Rolling natural-language digest, preferred over replaying full history (MCOS §11).
+  memorySummary String @default("") @map("memory_summary")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  history           HistoryEntry[]
+  memoryFacts       ConversationMemoryFact[]
+  inboundMessages   InboundMessage[]
+  workflowInstances WorkflowInstance[]
+  mediaAssets       MediaAsset[]
+
+  @@unique([userId])
+  @@index([updatedAt])
+  @@map("conversations")
+}
+
+/// One turn of dialogue, already flattened to text: transcribed audio and OCR'd images
+/// arrive here as plain content so history is uniform (MCOS Stage 2).
+model HistoryEntry {
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  role           String
+  content        String
+  channel        String
+  workflowId     String?  @map("workflow_id") @db.Uuid
+  timestamp      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, timestamp])
+  @@map("history_entries")
+}
+
+/// Durable facts about the user that outlive any single workflow — a resolved city, a
+/// business name. What lets the platform stop re-asking (Information Before Questions).
+model ConversationMemoryFact {
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  /// Dotted key, e.g. `location.city`, `business.name`.
+  key            String
+  /// JSON-encoded so a fact can hold a scalar, list or object.
+  value          Json
+  /// Belief in [0,1]. Facts below a workflow's threshold get confirmed, not trusted.
+  confidence     Float
+  /// `user_stated`, `ai_inferred`, `channel_metadata`.
+  source         String
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, key])
+  @@map("conversation_memory_facts")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Inbound messages and media
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A received canonical message.
+///
+/// `providerMessageId` is uniquely constrained to make webhook processing idempotent:
+/// Meta retries aggressively, and reprocessing could duplicate work or double-bill a vendor.
+model InboundMessage {
+  id             String @id @default(uuid()) @db.Uuid
+  conversationId String @map("conversation_id") @db.Uuid
+  userId         String @map("user_id")
+  channel        String
+
+  /// The provider's own message id. Null only for internally synthesised messages.
+  providerMessageId String? @unique @map("provider_message_id")
+
+  /// Canonical `MessagePart[]`, retained verbatim for replay and debugging.
+  parts Json
+  /// Channel-specific detail kept for audit only; business logic must not read it.
+  metadata Json @default("{}")
+
+  /// Set once the pipeline has finished handling this message, so a crash mid-turn is
+  /// distinguishable from a duplicate delivery.
+  processedAt DateTime? @map("processed_at")
+
+  receivedAt DateTime @default(now()) @map("received_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  artifacts    Artifact[]
+
+  @@index([conversationId, receivedAt])
+  @@map("inbound_messages")
+}
+
+/// Structured output of media processing (MCOS §5.2). Downstream stages read artifacts,
+/// never raw media.
+model Artifact {
+  id        String @id @default(uuid()) @db.Uuid
+  messageId String @map("message_id") @db.Uuid
+
+  /// `text`, `location`, `contact`, `media_reference`.
+  type String
+  /// `speech_to_text`, `ocr`, `user_text`, …
+  source String
+  /// Extraction confidence in [0,1]; 1 for text the user literally typed.
+  confidence Float
+
+  /// Type-specific body, e.g. `{ content, language }` for text artifacts.
+  payload Json
+
+  /// Index of the originating message part, when applicable.
+  originPartIndex Int? @map("origin_part_index")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  message InboundMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("artifacts")
+}
+
+/// Stored media bytes in object storage, retained so evidence can point at the original.
+model MediaAsset {
+  id             String  @id @default(uuid()) @db.Uuid
+  conversationId String  @map("conversation_id") @db.Uuid
+  /// Provider media handle the file was fetched with.
+  providerMediaId String @map("provider_media_id")
+  storageKey     String  @unique @map("storage_key")
+  mimeType       String  @map("mime_type")
+  byteSize       Int     @map("byte_size")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("media_assets")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Workflows
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// An independent, resumable unit of business intent (MCOS §8).
+/// Several may coexist per conversation (MCOS §17).
+model WorkflowInstance {
+  id             String @id @default(uuid()) @db.Uuid
+  conversationId String @map("conversation_id") @db.Uuid
+
+  workflowType String @map("workflow_type")
+  /// Current node of the state machine. Written only by the Workflow Engine.
+  currentState String @map("current_state")
+  /// active | suspended | completed | cancelled | archived | failed
+  status       String
+
+  /// Continuously updated summary (MCOS §11).
+  summary String @default("")
+
+  /// `SemanticFingerprint` — intent, entities, category, keywords (MCOS §10).
+  semanticFingerprint Json @map("semantic_fingerprint")
+
+  /// Deterministic identifiers this workflow owns, checked before any semantic matching
+  /// (MCOS §15 Layer 2).
+  importantEntities Json @default("{}") @map("important_entities")
+
+  /// Accumulated business data for the instance.
+  data Json @default("{}")
+
+  priority  Int     @default(0)
+  resumable Boolean @default(true)
+
+  /// Fingerprint embedding for similarity discovery (MCOS §15 Layer 5).
+  /// text-embedding-3-small → 1536 dimensions; changing model means a migration.
+  fingerprintEmbedding Unsupported("vector(1536)")? @map("fingerprint_embedding")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  expiresAt DateTime? @map("expires_at")
+
+  conversation Conversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  transitions  WorkflowTransition[]
+
+  @@index([conversationId, status])
+  @@index([workflowType, status])
+  /// Drives the expiry sweeper that prevents hung sessions (Execution.md §2.5).
+  @@index([status, expiresAt])
+  @@map("workflow_instances")
+}
+
+/// Audit trail of state transitions, written in the same transaction as the state change
+/// so a crash can never leave a transition unrecorded.
+model WorkflowTransition {
+  id         String   @id @default(uuid()) @db.Uuid
+  workflowId String   @map("workflow_id") @db.Uuid
+  fromState  String   @map("from_state")
+  toState    String   @map("to_state")
+  /// What caused it: a continuity relationship, or `engine_failure` / `engine_suspension`.
+  trigger    String
+  /// Populated when the transition was caused by a failure.
+  error      String?
+  at         DateTime @default(now())
+
+  workflow WorkflowInstance @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId, at])
+  @@map("workflow_transitions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GS1 GPC taxonomy
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A node of the GS1 Global Product Classification, the authoritative source of canonical
+/// product capability identifiers (CDE "Capability Resolver").
+///
+/// The resolver may only ever *select* from these rows — never invent a capability name —
+/// which is what keeps "electrical things", "electric stuff" and "the things electricians
+/// buy" converging on identical identifiers across every vendor.
+///
+/// Holds the strict hierarchy only: Segment(1) → Family(2) → Class(3) → Brick(4).
+///
+/// Attribute types(5) and values(6) are deliberately NOT stored here. In the published GPC
+/// they are shared vocabulary reused across many bricks — 2,085 types and 13,733 values
+/// referenced ~194k times — so they form a many-to-many relationship, not a tree. Modelling
+/// them as tree nodes would duplicate each one thousands of times and make `code` non-unique.
+/// They live in {@link TaxonomyAttribute} with link tables.
+model TaxonomyNode {
+  /// GPC code, e.g. "70010100". Globally unique across levels, so it is the primary key.
+  code String @id
+
+  /// 1..6 per the hierarchy above.
+  level Int
+  title String
+  definition         String @default("")
+  definitionExcludes String? @map("definition_excludes")
+  /// GS1 retires codes rather than deleting them; inactive nodes stay for historical lookups.
+  active Boolean @default(true)
+
+  parentCode String? @map("parent_code")
+
+  /// Denormalised ancestry, so "every node under Segment 70000000" is one indexed query
+  /// rather than a recursive walk on the hot matching path.
+  segmentCode String? @map("segment_code")
+  familyCode  String? @map("family_code")
+  classCode   String? @map("class_code")
+  brickCode   String? @map("brick_code")
+
+  /// The exact text that was embedded. Stored so a re-seed can skip nodes whose text is
+  /// unchanged, avoiding re-paying for embeddings that would be identical.
+  embeddedText String? @map("embedded_text")
+
+  /// text-embedding-3-small, 1536 dimensions — must match the workflow fingerprint column.
+  embedding Unsupported("vector(1536)")?
+
+  /// Lexical index over the title, for the other half of hybrid retrieval.
+  ///
+  /// Dense vectors are strong on paraphrase ("the thing used to tighten bolts") and weak on
+  /// exact terms — "hammer" alone ranks Hammer Drills above Hammers. Full-text search is the
+  /// inverse. The resolver fuses both, so each covers the other's blind spot.
+  searchVector Unsupported("tsvector")? @map("search_vector")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  parent   TaxonomyNode?  @relation("TaxonomyHierarchy", fields: [parentCode], references: [code], onDelete: SetNull, onUpdate: NoAction)
+  children TaxonomyNode[] @relation("TaxonomyHierarchy")
+
+  attributeTypes  BrickAttributeType[]
+  attributeValues BrickAttributeValue[]
+
+  @@index([level])
+  @@index([parentCode])
+  @@index([segmentCode])
+  @@index([brickCode])
+  @@index([active, level])
+  @@index([searchVector], type: Gin)
+  @@map("taxonomy_nodes")
+}
+
+/// A GPC attribute type (level 5) or attribute value (level 6).
+///
+/// Stored once per code rather than once per occurrence: "YES" (30002654) is one concept
+/// shared by 500 bricks, not 500 concepts.
+model TaxonomyAttribute {
+  code String @id
+  /// 5 = attribute type, 6 = attribute value.
+  level      Int
+  title      String
+  definition String @default("")
+  active     Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  typeLinks         BrickAttributeType[]
+  valueLinksAsType  BrickAttributeValue[] @relation("AttributeTypeOfValue")
+  valueLinksAsValue BrickAttributeValue[] @relation("AttributeValueOfLink")
+
+  @@index([level])
+  @@map("taxonomy_attributes")
+}
+
+/// Which attribute types apply to a brick.
+model BrickAttributeType {
+  brickCode         String @map("brick_code")
+  attributeTypeCode String @map("attribute_type_code")
+
+  brick         TaxonomyNode      @relation(fields: [brickCode], references: [code], onDelete: Cascade)
+  attributeType TaxonomyAttribute @relation(fields: [attributeTypeCode], references: [code], onDelete: Cascade)
+
+  @@id([brickCode, attributeTypeCode])
+  @@index([attributeTypeCode])
+  @@map("brick_attribute_types")
+}
+
+/// Which values an attribute type may take for a given brick.
+///
+/// The triple is the identity: the same value code means different things depending on the
+/// attribute type it qualifies.
+model BrickAttributeValue {
+  brickCode          String @map("brick_code")
+  attributeTypeCode  String @map("attribute_type_code")
+  attributeValueCode String @map("attribute_value_code")
+
+  brick          TaxonomyNode      @relation(fields: [brickCode], references: [code], onDelete: Cascade)
+  attributeType  TaxonomyAttribute @relation("AttributeTypeOfValue", fields: [attributeTypeCode], references: [code], onDelete: Cascade)
+  attributeValue TaxonomyAttribute @relation("AttributeValueOfLink", fields: [attributeValueCode], references: [code], onDelete: Cascade)
+
+  @@id([brickCode, attributeTypeCode, attributeValueCode])
+  @@index([attributeValueCode])
+  @@map("brick_attribute_values")
+}
+
+/// Records each taxonomy import so the deployed GPC version is auditable.
+///
+/// The Capability Resolver's determinism guarantee is stated relative to a GPC version, so
+/// "which version is loaded" has to be answerable.
+model TaxonomyImport {
+  id String @id @default(uuid()) @db.Uuid
+
+  /// `LanguageCode` and `DateUtc` from the source file.
+  languageCode String @map("language_code")
+  publishedOn  String @map("published_on")
+
+  sourceFile   String @map("source_file")
+  /// SHA-256 of the source file, so an identical re-import is recognisable.
+  sourceSha256 String @map("source_sha256")
+
+  nodesImported Int @map("nodes_imported")
+  nodesEmbedded Int @map("nodes_embedded")
+  /// Deepest level that received embeddings, e.g. 4 when only Brick and above are embedded.
+  embeddedToLevel Int @map("embedded_to_level")
+  embeddingModel  String @map("embedding_model")
+
+  startedAt   DateTime  @default(now()) @map("started_at")
+  completedAt DateTime? @map("completed_at")
+
+  @@index([completedAt])
+  @@map("taxonomy_imports")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Event outbox
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Transactional outbox for domain events.
+///
+/// Events are written in the same transaction as the state change that caused them, then
+/// relayed to the bus. Without this, a crash between committing a workflow transition and
+/// publishing its event would lose marketplace evidence permanently.
+model OutboxEvent {
+  id        String @id @default(uuid()) @db.Uuid
+  eventId   String @unique @map("event_id") @db.Uuid
+  eventType String @map("event_type")
+  /// Emitting component, e.g. `ConversationOS`.
+  producer  String
+
+  conversationId String? @map("conversation_id") @db.Uuid
+  workflowId     String? @map("workflow_id") @db.Uuid
+  vendorId       String? @map("vendor_id")
+  customerId     String? @map("customer_id")
+  requestId      String? @map("request_id")
+
+  payload Json
+
+  /// Null until successfully relayed to the bus.
+  publishedAt DateTime? @map("published_at")
+  attempts    Int       @default(0)
+  lastError   String?   @map("last_error")
+
+  occurredAt DateTime @default(now()) @map("occurred_at")
+
+  @@index([publishedAt, occurredAt])
+  @@index([eventType])
+  @@map("outbox_events")
+}
