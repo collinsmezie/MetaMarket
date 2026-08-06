@@ -149,6 +149,41 @@ Confirmed by re-running the probe — **10 of 10 calls now complete via OpenAI, 
 
 ---
 
+## 5a. Measured stability — and why the model choice dominates it
+
+The CDE spec sets a **Determinism Requirement**: *"Given identical user input, GPC version,
+capability graph and commercial evidence, the resolver SHALL produce identical canonical
+capability identifiers."*
+
+Measured by running the same statement three times and comparing the resolved capability sets
+(mean pairwise Jaccard; "stable" = appeared in all three runs):
+
+| Statement | Model | Mean Jaccard | Stable | Latency |
+|---|---|---|---|---|
+| "I sell household items" | `o3` | **0.24** | 4 of 35 | 22–35s |
+| "I sell household items" | `gpt-4o` @ temp 0 | **0.91** | 13 of 15 | 13–18s |
+| "I sell cement, roofing sheets and nails" | `o3` | **0.30** | 2 of 16 | 29–33s |
+| "I sell cement, roofing sheets and nails" | `gpt-4o` @ temp 0 | **0.94** | 22 of 24 | 18–23s |
+
+Under `o3` the requirement is **violated outright** — two runs of the same sentence agreed on
+roughly a quarter of the capabilities, and even a maximally concrete statement produced only two
+capabilities that survived all three runs. A vendor's day-one profile was effectively a lottery.
+
+The cause is not the architecture. Reasoning models reject `temperature`, so every call ran at
+default sampling, and the generative steps — archetype expansion in particular — invented a
+different term list each time, which then retrieved different bricks. Switching to a chat model
+at temperature 0 raises agreement to 0.91–0.94 and roughly halves latency.
+
+**This is a one-line configuration change, not a code change.** The code already defaults to
+`gpt-4o-2024-11-20`; the duplicated `OPENAI_MODEL=o3` line in `.env` overrides it. Left in place
+pending your decision (§5).
+
+Residual variance at 0.91–0.94 comes from borderline candidates oscillating across the 0.6
+ranker threshold. Acceptable — those are low-confidence hypotheses by construction, and
+marketplace evidence overrides them.
+
+---
+
 ## 6. Deliberate gaps
 
 | Gap | Why |
