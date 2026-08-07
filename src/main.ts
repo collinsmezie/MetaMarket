@@ -1,3 +1,4 @@
+import { setDefaultResultOrder } from 'node:dns';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -23,6 +24,14 @@ async function bootstrap(): Promise<void> {
 
   const config = app.get(AppConfigService);
   const logger = new Logger('Bootstrap');
+
+  // Set before any outbound call is made.
+  //
+  // Node 22 defaults to `verbatim`, handing back AAAA records first. On a host with no IPv6
+  // route every one of those connections fails, and because graph.facebook.com publishes AAAA,
+  // WhatsApp sends fail intermittently — measured here at 3/10 succeeding on `verbatim` against
+  // 10/10 on `ipv4first`. The symptom is a bare "fetch failed" and a user who never got a reply.
+  setDefaultResultOrder(config.dnsResultOrder);
 
   app.use(
     express.json({

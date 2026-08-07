@@ -37,6 +37,12 @@ export interface WorkflowExecutionOutcome {
   readonly transitions: readonly TransitionRecord[];
   /** True when execution was dead-lettered instead of completing normally. */
   readonly failed: boolean;
+  /**
+   * Set when a state asked for the turn to be handed to whichever workflow owns this intent
+   * (`StateExecutionResult.handoff`). The engine only reports it; resolving the intent to a
+   * workflow is routing, which belongs to the caller.
+   */
+  readonly handoff?: { readonly intent: string };
 }
 
 /**
@@ -70,6 +76,7 @@ export class WorkflowEngine {
     const responses: Response[] = [];
     const events: DomainEvent[] = [];
     const transitions: TransitionRecord[] = [];
+    let handoff: { readonly intent: string } | undefined;
 
     let current = instance;
     let steps = 0;
@@ -171,6 +178,7 @@ export class WorkflowEngine {
       if (transition !== undefined) transitions.push(transition);
       if (result.response !== undefined) responses.push(result.response);
       if (result.events !== undefined) events.push(...result.events);
+      if (result.handoff !== undefined) handoff = result.handoff;
 
       this.logger.stage({
         component: COMPONENT,
@@ -229,7 +237,14 @@ export class WorkflowEngine {
       };
     }
 
-    return { instance: current, responses, events, transitions, failed: false };
+    return {
+      instance: current,
+      responses,
+      events,
+      transitions,
+      failed: false,
+      ...(handoff !== undefined ? { handoff } : {}),
+    };
   }
 
   /**

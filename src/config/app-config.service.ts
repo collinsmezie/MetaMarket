@@ -127,6 +127,11 @@ export class AppConfigService {
     };
   }
 
+  /** Node's A/AAAA ordering for outbound calls. See DNS_RESULT_ORDER in env.schema.ts. */
+  get dnsResultOrder(): 'ipv4first' | 'verbatim' | 'ipv6first' {
+    return this.get('DNS_RESULT_ORDER');
+  }
+
   get paystack() {
     return {
       secretKey: this.get('PAYSTACK_SECRET_KEY'),

@@ -78,6 +78,18 @@ export interface StateExecutionResult {
   readonly status?: WorkflowStatus;
   /** Absolute expiry, or null to clear it. */
   readonly expiresAt?: Date | null;
+  /**
+   * Hands the turn to whichever workflow owns `intent`.
+   *
+   * For workflows whose job is to work out what the user wants rather than to serve it —
+   * Triage above all, which MCOS designs to be superseded as real capabilities register. Once
+   * it knows the answer it must step aside, because a button tap resumes the parked instance
+   * directly (discovery Layer 1) and never passes through intent routing again.
+   *
+   * `response` is still honoured, but only as the fallback for when nothing claims the intent,
+   * so a workflow that hands off stays honest on a deployment where the target does not exist.
+   */
+  readonly handoff?: { readonly intent: string };
 }
 
 export interface WorkflowStateDefinition {

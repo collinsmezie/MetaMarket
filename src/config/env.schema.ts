@@ -24,6 +24,10 @@ export const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: intFromString(3000, 1),
+    // How Node orders A/AAAA records for every outbound call. Defaults to `ipv4first` because
+    // a host with no IPv6 route still gets AAAA records for graph.facebook.com and fails on
+    // them; set `verbatim` (Node's own default) on a dual-stack or IPv6-only host.
+    DNS_RESULT_ORDER: z.enum(['ipv4first', 'verbatim', 'ipv6first']).default('ipv4first'),
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
     LOG_PRETTY: booleanFromString(false),
 

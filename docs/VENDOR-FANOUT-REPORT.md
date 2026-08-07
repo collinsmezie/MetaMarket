@@ -176,3 +176,91 @@ And in `marketplace-loop`, against real Postgres and the real wallet:
   window considerations.
 - **At most three buttons per WhatsApp message.** The ask uses two, so there is exactly one slot
   left if you ever want a third option ("Ask me later").
+
+---
+
+## 8. Two production bugs from the 2026-08-07 local run
+
+Both came out of one terminal log: a user said "hi", was asked "buying or selling?", tapped
+**I want to sell** — and the reply never reached their phone.
+
+### 8.1 The reply was silently lost: `WhatsApp send failed: fetch failed`
+
+**Root cause.** `graph.facebook.com` publishes an AAAA record; this host has no default IPv6
+route. Node 22 defaults to `verbatim` DNS ordering, hands the AAAA address to undici, and the
+connection fails. Measured on the box:
+
+| | GET success rate |
+|---|---|
+| `verbatim` (Node default) | **3/10** |
+| `ipv4first` | **10/10** |
+
+**Second finding, and the more important one.** Re-measuring later, even `ipv4first` POSTs failed
+7/8 in one window and then recovered to 8/8. The upstream link to Meta from this host is
+*intermittently unreliable independent of address family*. IPv4-first is a real improvement and
+never measured worse — but it is not the whole fix, and I would have been wrong to report it as
+one.
+
+**Three changes:**
+
+1. **`DNS_RESULT_ORDER`** (default `ipv4first`), applied in `main.ts` before any outbound call.
+   Configurable rather than hard-coded, because `ipv4first` is wrong on an IPv6-only host; that
+   operator sets `verbatim`.
+2. **Retry with backoff and jitter** in `WhatsAppNotifier`, which is the load-bearing fix. This
+   was the real gap: the LLM path has had retries and a circuit breaker since Phase 1, while the
+   outbound channel — the last mile, with no queue behind it — had exactly one attempt.
+3. **Surface `error.cause`.** `fetch` throws a bare `TypeError: fetch failed` and hides the reason
+   underneath. Unwinding the chain is why the log now says `ETIMEDOUT` instead of four useless
+   words. This is what made the bug hard to triage rather than hard to fix.
+
+**Retry policy is deliberately narrow.** Only connection-phase failures and 429/5xx are retried —
+cases that prove nothing was sent, or that Meta answered and definitively refused. A reset socket
+or a client-side timeout mid-flight is ambiguous: Meta may have accepted and delivered. WhatsApp
+offers no idempotency key, and sending a vendor two credit-deduction notices is worse than sending
+none. Every other 4xx is a decision (bad token, invalid recipient, outside the 24-hour window) and
+retrying only burns quota and delays an honest failure.
+
+**Retries are bounded to 20s total**, below `CONVERSATION_LOCK_TTL_MS` (30s). Delivery runs inside
+the turn that holds the conversation lock; unbounded retrying would let the lock expire mid-send
+and a second worker pick up the same conversation. "Retry harder" must not become a concurrency
+bug.
+
+**Still not solved:** a sustained outage — the 7/8-failure window — still loses the reply. The
+complete fix is a durable outbound queue (BullMQ is already in the stack for media), so a message
+survives the process and retries over minutes rather than seconds. That is a real piece of work
+and I have not done it; say the word.
+
+### 8.2 The platform told a user a shipped feature did not exist
+
+Tapping **I want to sell** answered *"Seller onboarding opens shortly, and I will walk you through
+it right here when it does."* Onboarding shipped in Phase 2.
+
+**Root cause.** Triage is designed to be superseded by priority — but only for *new* messages. The
+tap resumed the parked Triage instance by id (discovery Layer 1), which never passes through
+intent routing again, so priority could not help. Triage then answered from its Phase-1
+placeholder table. Every one of those placeholders except `complaint` had become a lie.
+
+**Fix: a `handoff` primitive on the workflow contract.** A state can now name an intent to hand
+the turn to; the engine reports it, and `TurnProcessor` starts the workflow that owns it and runs
+it in the same turn. Triage hands off `buyer_product_search`, `vendor_onboarding` and
+`wallet_funding`, and keeps answering `complaint` itself because nothing else implements it.
+
+This is the mechanism MCOS always implied ("Triage is designed to be replaced") but only ever
+half-delivered. It is bounded to one hop, ignores a handoff that resolves back to the same
+workflow, and keeps the placeholder text as the fallback for a deployment where nothing claims the
+intent — so a workflow that hands off is still honest when there is nowhere to hand off to.
+
+An existing test asserted "exactly one workflow instance" after this exchange. That expectation
+was itself encoding the bug; it now asserts exactly one *Triage*, plus the workflow it handed to.
+
+### 8.3 Verification
+
+```
+Unit:        291 passed, 27 suites
+Integration: 108 passed,  7 suites
+Lint + typecheck + build: clean
+```
+
+Both fixes have regression tests that I confirmed **fail without the fix** — the handoff test
+reproduces the exact "opens shortly" string from your log, and the notifier tests reproduce the
+undici `TypeError: fetch failed` / `AggregateError: ETIMEDOUT` shape.

@@ -35,7 +35,7 @@ import {
 } from '../../domain/ports/outbound/workflow-repository.port';
 import { ConversationPolicyEngine } from '../../domain/workflows/conversation-policy';
 import type { WorkflowTrigger } from '../../domain/workflows/workflow-definition';
-import { WorkflowEngine } from '../../domain/workflows/workflow-engine';
+import { WorkflowEngine, type WorkflowExecutionOutcome } from '../../domain/workflows/workflow-engine';
 import { WorkflowManager, type RoutingDecision } from '../../domain/workflows/workflow-manager';
 import { WorkflowDefinitionRegistry } from '../../domain/workflows/workflow-registry';
 import { resolveSystemAction, type SystemAction } from '../../domain/workflows/system-actions';
@@ -197,7 +197,12 @@ export class TurnProcessor {
       return this.respondWithFallback(conversation, message, reason, null);
     }
 
-    const outcome = await this.engine.execute(instance, trigger, this.services);
+    const first = await this.engine.execute(instance, trigger, this.services);
+
+    // A workflow that has worked out what the user actually wants steps aside for the one that
+    // serves it, within the same turn. Without this, a Triage instance resumed by a button tap
+    // answers on behalf of capabilities it does not implement.
+    const outcome = await this.applyHandoff(first, conversation, trigger);
 
     const response = this.composer.compose(outcome.responses, { workflowId: outcome.instance.id });
 
@@ -206,11 +211,79 @@ export class TurnProcessor {
       message,
       instance: outcome.instance,
       response,
-      events: outcome.events,
+      events: [...first.events, ...(outcome === first ? [] : outcome.events)],
       failed: outcome.failed,
     });
 
     return { response, workflowId: outcome.instance.id };
+  }
+
+  /**
+   * Runs the workflow a handing-off state named, if one is registered.
+   *
+   * Bounded to a single hop by construction — the successor's own handoff is not followed — so
+   * two workflows that pointed at each other would cost one extra execution, not a loop. The
+   * hand-off is also abandoned if the intent resolves back to the workflow that asked for it.
+   *
+   * When nothing claims the intent the original outcome stands, which is why a handing-off state
+   * still supplies a response: on a deployment without the target workflow the user gets that
+   * honest answer instead of silence.
+   */
+  private async applyHandoff(
+    outcome: WorkflowExecutionOutcome,
+    conversation: Conversation,
+    trigger: WorkflowTrigger,
+  ): Promise<WorkflowExecutionOutcome> {
+    const handoff = outcome.handoff;
+    if (handoff === undefined || outcome.failed) return outcome;
+
+    const workflowType = this.definitions.resolveByIntent(handoff.intent);
+
+    if (workflowType === null || workflowType === outcome.instance.workflowType) {
+      this.logger.stage({
+        component: COMPONENT,
+        stage: `${STAGE}:Handoff`,
+        input: { from: outcome.instance.workflowType, intent: handoff.intent },
+        action:
+          workflowType === null
+            ? 'No workflow is registered for the handed-off intent; keeping the original reply'
+            : 'Handoff resolved back to the same workflow; keeping the original reply',
+        output: { handedOff: false },
+      });
+      return outcome;
+    }
+
+    // The successor reads the intent to build its opening state, summary and fingerprint, so it
+    // must see the resolved one rather than whatever the message was first classified as.
+    const handedTrigger: WorkflowTrigger = {
+      ...trigger,
+      intent: {
+        intent: handoff.intent,
+        confidence: 1,
+        entities: {},
+        language: trigger.intent?.language ?? 'en',
+      },
+    };
+
+    // `suspend: null` because the workflow handing off has already completed; there is no
+    // unfinished objective to park.
+    const next = await this.start(
+      { action: 'start', workflowType, suspend: null },
+      conversation,
+      handedTrigger,
+    );
+
+    if (next === null) return outcome;
+
+    this.logger.stage({
+      component: COMPONENT,
+      stage: `${STAGE}:Handoff`,
+      input: { from: outcome.instance.workflowType, intent: handoff.intent },
+      action: `Handed the turn to ${workflowType}, which owns this intent`,
+      output: { handedOff: true, workflowId: next.id },
+    });
+
+    return this.engine.execute(next, handedTrigger, this.services);
   }
 
   /**

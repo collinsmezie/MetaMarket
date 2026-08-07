@@ -16,6 +16,42 @@ const STAGE = 'WhatsAppNotifier';
 const SEND_TIMEOUT_MS = 15_000;
 
 /**
+ * Ceiling on one `send`, across every payload and every retry.
+ *
+ * Deliberately below `CONVERSATION_LOCK_TTL_MS` (30s). Delivery happens inside the turn, which
+ * holds the conversation lock; if retries outlived the lock, a second worker could pick up the
+ * same conversation while this one was still writing to it. Bounding the send is what keeps
+ * "retry harder" from turning a network problem into a concurrency problem.
+ */
+const SEND_DEADLINE_MS = 20_000;
+
+/**
+ * Attempts per message before giving up.
+ *
+ * The outbound channel is the last mile: a reply lost here is a user who asked something and
+ * got silence, with no queue behind it to try again. Mobile networks and the Graph API both
+ * fail transiently often enough that one shot is not a delivery guarantee.
+ */
+const MAX_SEND_ATTEMPTS = 3;
+
+/** Attempt N waits BASE · 2^(N-1) plus jitter, matching the LLM provider's discipline. */
+const RETRY_BASE_MS = 250;
+
+/**
+ * Connection-phase failures: the request never reached Meta, so retrying cannot duplicate a
+ * message. Anything ambiguous is deliberately absent from this list — see `classify`.
+ */
+const SAFE_TO_RETRY_CODES = new Set([
+  'ETIMEDOUT',
+  'ECONNREFUSED',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'ENETUNREACH',
+  'EHOSTUNREACH',
+  'EADDRNOTAVAIL',
+]);
+
+/**
  * Renders canonical responses as WhatsApp messages and sends them via the Graph API.
  *
  * All Meta-specific rendering rules live here: at most three reply buttons, a 4096-character
@@ -55,9 +91,10 @@ export class WhatsAppNotifier implements ChannelNotifierPort {
     }
 
     let lastProviderMessageId: string | undefined;
+    const deadline = Date.now() + SEND_DEADLINE_MS;
 
     for (const [index, payload] of payloads.entries()) {
-      const result = await this.post(payload);
+      const result = await this.post(payload, deadline);
 
       if (!result.ok) {
         // Report partial delivery honestly: earlier messages did reach the user.
@@ -208,9 +245,64 @@ export class WhatsAppNotifier implements ChannelNotifierPort {
     };
   }
 
+  /**
+   * Sends one payload, retrying only where a retry cannot duplicate the message.
+   */
   private async post(
     payload: Record<string, unknown>,
+    deadline: number,
   ): Promise<{ ok: true; providerMessageId?: string } | { ok: false; error: string }> {
+    let last: { ok: false; error: string; retryable: boolean } = {
+      ok: false,
+      error: 'no attempt was made',
+      retryable: false,
+    };
+
+    for (let attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt += 1) {
+      const budget = deadline - Date.now();
+
+      if (budget <= 0) {
+        return { ok: false, error: `${last.error} (send deadline reached after ${attempt - 1} attempt(s))` };
+      }
+
+      const outcome = await this.attempt(payload, Math.min(SEND_TIMEOUT_MS, budget));
+
+      if (outcome.ok) {
+        if (attempt > 1) {
+          this.logger.stage({
+            component: COMPONENT,
+            stage: `${STAGE}:Retry`,
+            input: { attempt },
+            action: `Delivered on attempt ${attempt} after a transient failure`,
+            output: { recovered: true },
+          });
+        }
+        return outcome;
+      }
+
+      last = outcome;
+
+      // No point sleeping through a backoff we cannot afford to act on.
+      if (!outcome.retryable || attempt === MAX_SEND_ATTEMPTS || Date.now() >= deadline) break;
+
+      this.logger.stageFailed({
+        component: COMPONENT,
+        stage: `${STAGE}:Retry`,
+        input: { attempt, of: MAX_SEND_ATTEMPTS },
+        action: 'Transient send failure; retrying after backoff',
+        error: new Error(outcome.error),
+      });
+
+      await this.backoff(attempt);
+    }
+
+    return { ok: false, error: last.error };
+  }
+
+  private async attempt(
+    payload: Record<string, unknown>,
+    timeoutMs: number,
+  ): Promise<{ ok: true; providerMessageId?: string } | { ok: false; error: string; retryable: boolean }> {
     try {
       const response = await fetch(
         `https://graph.facebook.com/${this.graphVersion}/${this.phoneNumberId}/messages`,
@@ -221,7 +313,7 @@ export class WhatsAppNotifier implements ChannelNotifierPort {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+          signal: AbortSignal.timeout(timeoutMs),
         },
       );
 
@@ -232,17 +324,70 @@ export class WhatsAppNotifier implements ChannelNotifierPort {
 
       if (!response.ok) {
         const detail = body.error?.error_data?.details ?? body.error?.message ?? 'unknown error';
-        return { ok: false, error: `Graph API ${response.status}: ${detail}` };
+
+        // 429 and 5xx mean Meta answered and definitively did not accept the message, so a
+        // retry cannot duplicate it. Every other 4xx is a decision — bad token, invalid
+        // recipient, outside the 24-hour service window — and retrying only burns quota and
+        // delays an honest failure.
+        const retryable = response.status === 429 || response.status >= 500;
+
+        return { ok: false, error: `Graph API ${response.status}: ${detail}`, retryable };
       }
 
       const providerMessageId = body.messages?.[0]?.id;
 
       return providerMessageId === undefined ? { ok: true } : { ok: true, providerMessageId };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return { ok: false, error: `WhatsApp send failed: ${message}` };
+      return { ok: false, ...classify(error) };
     }
   }
+
+  /** Exponential backoff with jitter, so concurrent turns do not retry in lockstep. */
+  private async backoff(attempt: number): Promise<void> {
+    const delay = RETRY_BASE_MS * 2 ** (attempt - 1) * (0.5 + Math.random());
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+}
+
+/**
+ * Turns a thrown fetch error into a message worth reading and a retry decision.
+ *
+ * `fetch` throws a bare `TypeError: fetch failed` and hides the real reason in `cause`, which
+ * is how an IPv6 route problem reached production logs as four uninformative words. The chain
+ * is unwound here so the log names the actual failure.
+ *
+ * The retry decision is deliberately conservative. Only connection-phase failures are retried,
+ * because those prove nothing was sent. A socket reset or a client-side timeout mid-flight is
+ * ambiguous — Meta may well have accepted and delivered the message — and WhatsApp offers no
+ * idempotency key, so retrying those would risk sending a user the same notice twice. A missing
+ * message is bad; a duplicate deduction notice is worse.
+ */
+function classify(error: unknown): { error: string; retryable: boolean } {
+  const parts: string[] = [];
+  let code: string | undefined;
+  let current: unknown = error;
+
+  for (let depth = 0; depth < 5 && current instanceof Error; depth += 1) {
+    const withCode = current as Error & { code?: string; errors?: unknown[] };
+
+    if (withCode.code !== undefined) code ??= withCode.code;
+    if (current.message.length > 0) parts.push(current.message);
+
+    // AggregateError from Happy Eyeballs: every address family failed, and the reason lives
+    // on the individual attempts rather than the aggregate.
+    const nested = Array.isArray(withCode.errors) ? withCode.errors[0] : undefined;
+    current = (current as Error & { cause?: unknown }).cause ?? nested;
+  }
+
+  if (parts.length === 0) parts.push(String(error));
+
+  const detail = [...new Set(parts)].join(': ');
+  const named = code === undefined ? detail : `${detail} (${code})`;
+
+  const isTimeout = error instanceof Error && error.name === 'TimeoutError';
+  const retryable = code !== undefined && SAFE_TO_RETRY_CODES.has(code) && !isTimeout;
+
+  return { error: `WhatsApp send failed: ${named}`, retryable };
 }
 
 /**

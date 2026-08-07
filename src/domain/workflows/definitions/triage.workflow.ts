@@ -17,9 +17,16 @@ import { DEFAULT_WORKFLOW_POLICY } from '../workflow-definition';
  * suspension and resumption — while telling users honestly what the platform can do today
  * rather than pretending to search a marketplace that has no vendors in it yet.
  *
- * It is designed to be replaced: when the Buyer Search and Vendor Onboarding workflows
- * register in later phases, they claim these intents by priority and Triage stops matching
- * them, with no change to the platform.
+ * It is designed to be replaced, by two mechanisms rather than one. A *new* message reaches the
+ * right workflow by priority: Buyer Search, Vendor Onboarding and Credit Recharge outrank Triage
+ * on the intents they own, so Triage simply stops matching. But a user who already asked
+ * "buying or selling?" and tapped an answer resumes *this instance* by id, which never passes
+ * through intent routing again — so once Triage knows what they meant it hands the turn off
+ * (`StateExecutionResult.handoff`) to the workflow that owns the intent.
+ *
+ * The placeholder copy below survives only as the fallback for a deployment where nothing is
+ * registered for an intent. A placeholder that outlives the feature it was standing in for is
+ * no longer a placeholder; it is the platform lying to a user about what it can do.
  */
 
 export const TRIAGE_WORKFLOW_TYPE = 'Triage';
@@ -28,15 +35,31 @@ const STATE_CLASSIFY = 'Classify';
 const STATE_AWAIT_DETAIL = 'AwaitDetail';
 const STATE_COMPLETE = 'Complete';
 
-/** Intents the marketplace will serve, mapped to the phase that delivers them. */
-const PLANNED_CAPABILITIES: Readonly<Record<string, { label: string; response: string }>> = {
+/**
+ * What Triage can conclude a user wants, and what it does about it.
+ *
+ * `handsOff: true` means a purpose-built workflow owns this intent, so Triage steps aside and
+ * the platform runs that workflow in the same turn. The `response` is then only a fallback for
+ * a deployment where nothing is registered for the intent.
+ *
+ * This matters most on the resumed path. A user who tapped "I want to sell" resumes *this*
+ * instance by its id (discovery Layer 1) and never passes through intent routing again, so
+ * priority alone cannot supersede Triage here. Without the handoff, Triage answers on behalf of
+ * capabilities it does not implement — and a placeholder written before a feature shipped
+ * becomes a lie the day it does.
+ */
+const PLANNED_CAPABILITIES: Readonly<
+  Record<string, { label: string; response: string; handsOff?: boolean }>
+> = {
   buyer_product_search: {
     label: 'find a supplier',
+    handsOff: true,
     response:
       'Got it — you are looking for a supplier. Vendor matching goes live once sellers are onboarded, and I will come back to you here as soon as it does.',
   },
   vendor_onboarding: {
     label: 'list your business',
+    handsOff: true,
     response:
       'Got it — you want to list your business. Seller onboarding opens shortly, and I will walk you through it right here when it does.',
   },
@@ -46,9 +69,24 @@ const PLANNED_CAPABILITIES: Readonly<Record<string, { label: string; response: s
   },
   wallet_funding: {
     label: 'fund your wallet',
+    handsOff: true,
     response: 'Understood — wallet funding is not available yet, but I have noted your request.',
   },
 };
+
+/** The closing result for a resolved intent: hand off where something better exists. */
+function concludeWith(
+  intent: string,
+  known: { label: string; response: string; handsOff?: boolean },
+  extra: Omit<StateExecutionResult, 'transitionTo' | 'response' | 'handoff'>,
+): StateExecutionResult {
+  return {
+    transitionTo: STATE_COMPLETE,
+    response: { text: known.response },
+    ...(known.handsOff === true ? { handoff: { intent } } : {}),
+    ...extra,
+  };
+}
 
 function fingerprintFor(trigger: WorkflowTrigger): SemanticFingerprint {
   const intent = trigger.intent?.intent ?? 'unknown';
@@ -113,13 +151,11 @@ const classify = {
       };
     }
 
-    return {
-      transitionTo: STATE_COMPLETE,
-      response: { text: known.response },
-      summary: `Triage: user wants to ${known.label}. Acknowledged; capability pending.`,
+    return concludeWith(intent, known, {
+      summary: `Triage: user wants to ${known.label}.`,
       semanticFingerprint: fingerprint,
       dataPatch: { resolvedIntent: intent, originalMessage: trigger.text },
-    };
+    });
   },
 };
 
@@ -145,12 +181,10 @@ const awaitDetail = {
 
     const known = PLANNED_CAPABILITIES[choice];
 
-    return {
-      transitionTo: STATE_COMPLETE,
-      response: { text: known.response },
-      summary: `Triage: user wants to ${known.label}. Acknowledged; capability pending.`,
+    return concludeWith(choice, known, {
+      summary: `Triage: user wants to ${known.label}.`,
       dataPatch: { resolvedIntent: choice },
-    };
+    });
   },
 
   /** Reads the user's choice from a button tap, or failing that from their words. */

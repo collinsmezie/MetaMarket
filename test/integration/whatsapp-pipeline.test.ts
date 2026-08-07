@@ -479,10 +479,15 @@ describe('WhatsApp pipeline integration', () => {
     await post(textWebhook('2348012345678', 'I want to buy', 'wamid.turn.2')).expect(200);
     await waitForReply(2);
 
-    const workflows = await prisma.workflowInstance.findMany();
-    expect(workflows).toHaveLength(1);
+    const workflows = await prisma.workflowInstance.findMany({ orderBy: { createdAt: 'asc' } });
+
+    // The property under test: the second message resumed the parked Triage rather than
+    // starting a second one. The BuyerSearch alongside it is the handoff — Triage worked out
+    // what the user wanted and stepped aside, which is exactly what it exists to do.
+    expect(workflows.filter((instance) => instance.workflowType === 'Triage')).toHaveLength(1);
+    expect(workflows[0].workflowType).toBe('Triage');
     expect(workflows[0].status).toBe('completed');
-    // Triage still handles the unknown-intent path and hands the buyer onward.
+    expect(workflows.map((instance) => instance.workflowType)).toContain('BuyerSearch');
     expect(notifier.lastText().length).toBeGreaterThan(0);
   });
 
@@ -782,6 +787,61 @@ describe('WhatsApp pipeline integration', () => {
 
       const delivery = await prisma.requestDelivery.findFirstOrThrow({ where: { requestId: REQUEST_ID } });
       expect(delivery.status).toBe('pending');
+    });
+  });
+
+  /**
+   * Triage handing off to a real capability (observed in production, 2026-08-07).
+   *
+   * A user said "hi", was asked "buying or selling?", tapped **I want to sell**, and was told
+   * "Seller onboarding opens shortly" — long after onboarding shipped. The tap resumes the Triage
+   * instance by id, so it never passes back through intent routing and priority alone cannot
+   * supersede it.
+   */
+  describe('Triage handoff', () => {
+    it('runs the real onboarding workflow when the user taps "I want to sell"', async () => {
+      llm.intent = 'unknown';
+      llm.relationship = 'new';
+
+      await post(textWebhook('2348012345678', 'hi', 'wamid.triage.1')).expect(200);
+      await waitForReply(1);
+
+      const triage = await prisma.workflowInstance.findFirstOrThrow();
+      expect(triage.workflowType).toBe('Triage');
+      expect(notifier.sent[0].response.text).toContain('buy something');
+
+      await post(
+        buttonWebhook('2348012345678', `mm|${triage.id}|sell`, 'I want to sell', 'wamid.triage.2'),
+      ).expect(200);
+      await waitForReply(2);
+
+      // The placeholder must never reach the user now that onboarding exists.
+      expect(notifier.sent[1].response.text).not.toContain('opens shortly');
+
+      const instances = await prisma.workflowInstance.findMany({ orderBy: { createdAt: 'asc' } });
+      expect(instances.map((instance) => instance.workflowType)).toEqual(['Triage', 'VendorOnboarding']);
+      // Triage stepped aside rather than lingering as the active objective.
+      expect(instances[0].status).toBe('completed');
+    });
+
+    it('runs the real buyer search when the user taps "I want to buy"', async () => {
+      llm.intent = 'unknown';
+      llm.relationship = 'new';
+
+      await post(textWebhook('2348033330000', 'hello there', 'wamid.triage.3')).expect(200);
+      await waitForReply(1);
+
+      const triage = await prisma.workflowInstance.findFirstOrThrow();
+
+      await post(
+        buttonWebhook('2348033330000', `mm|${triage.id}|buy`, 'I want to buy', 'wamid.triage.4'),
+      ).expect(200);
+      await waitForReply(2);
+
+      expect(notifier.sent[1].response.text).not.toContain('goes live once sellers');
+
+      const instances = await prisma.workflowInstance.findMany({ orderBy: { createdAt: 'asc' } });
+      expect(instances.map((instance) => instance.workflowType)).toContain('BuyerSearch');
     });
   });
 });
