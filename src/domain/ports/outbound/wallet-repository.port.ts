@@ -1,4 +1,10 @@
-import type { CreditFailureReason, PaymentNotification, VirtualAccount, Wallet } from '../../models/credit';
+import type {
+  CreditFailureReason,
+  PaymentNotification,
+  VirtualAccount,
+  Wallet,
+  WalletDebitResult,
+} from '../../models/credit';
 
 /**
  * Persistence for the credits aggregate (Konnet Credits Recharge TDR §8.3).
@@ -44,6 +50,45 @@ export interface WalletRepositoryPort {
     reason: string;
     metadata: Readonly<Record<string, unknown>>;
     notificationId: string;
+    at: Date;
+  }): Promise<{ outcome: 'credited'; balanceAfter: number } | { outcome: 'duplicate' }>;
+
+  /**
+   * The exactly-once debit (TDR §25.5) — the mirror of `creditAtomically`.
+   *
+   * Same discipline: one adapter-owned transaction, the ledger's unique `providerReference` is
+   * what makes a retry a no-op, and no transaction handle crosses the boundary.
+   *
+   * The never-negative invariant is a property of the database rather than of the caller: the
+   * balance check and the decrement share a transaction with the wallet row locked, so no
+   * interleaving can spend the same credits twice. A caller cannot get this wrong by forgetting
+   * to check first, because checking first is not what makes it safe.
+   */
+  debitAtomically(params: {
+    transactionId: string;
+    walletId: string;
+    amountCredits: number;
+    /** Deterministic per billable event; this is the exactly-once key. */
+    providerReference: string;
+    reason: string;
+    metadata: Readonly<Record<string, unknown>>;
+    at: Date;
+  }): Promise<WalletDebitResult>;
+
+  /**
+   * The exactly-once grant (TDR §25.12) — a credit with no payment behind it.
+   *
+   * Distinct from `creditAtomically` because there is no PaymentNotification to settle: a grant
+   * is minted by the platform, not received from a bank. Same unique-reference guarantee, so a
+   * redelivered `seller.onboarded` cannot hand out a second 2,000 credits.
+   */
+  grantAtomically(params: {
+    transactionId: string;
+    walletId: string;
+    amountCredits: number;
+    providerReference: string;
+    reason: string;
+    metadata: Readonly<Record<string, unknown>>;
     at: Date;
   }): Promise<{ outcome: 'credited'; balanceAfter: number } | { outcome: 'duplicate' }>;
 }

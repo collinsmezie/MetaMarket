@@ -106,8 +106,8 @@ rather than bypassing it.
 | Gap | Why |
 |---|---|
 | **Live Paystack verified** | No `PAYSTACK_SECRET_KEY` configured. The adapter is written and unit-tested against fakes; the real two-step customer→DVA exchange is unproven. Add a test key and run the CLI to close this. |
-| **Spending credits** | Out of scope per TDR §24. Note the gap it leaves: `vendor.credit.deducted` (Phase 5) is published but nothing debits a balance, so fan-out billing and this wallet are not yet connected. |
-| **Reconciliation UI** | `failed` notifications are queryable but have no operator surface. |
+| ~~**Spending credits**~~ | **Closed by §7 below.** |
+| **Reconciliation UI** | `failed` notifications and orphaned debits are queryable — `npm run wallet:reconcile` covers the second — but neither has an operator surface. |
 | **Refunds, DVA deactivation, Paystack verify-polling** | TDR §24 future work. |
 
 ---
@@ -134,3 +134,147 @@ A spec conflict was resolved in your favour and is worth recording: Vendor-Onboa
 "I sell electrical things" as its worked clarification example, but the CDE rates that same
 phrase as medium density and calls broad statements "seeds from which the system grows
 understanding". Density now decides, so that example no longer triggers a question.
+
+---
+
+## 7. Balance spend — TDR §25
+
+**Date:** 2026-08-07 · **Spec:** TDR §25 (§25.1–§25.12)
+
+This closes the gap §5 flagged: credits could be added but never spent. A vendor's profile now
+reaches a customer only after the vendor pays `VISIBILITY_FEE_CREDITS` (100), on either of the
+two paths that make a vendor visible — immediate delivery, or accepting a fanned-out request.
+
+### 7.1 Architecture fit — three adjustments before implementing
+
+You asked me to check the approach before building. Most of §25 slots in unchanged: the debit is
+the exact mirror of `creditAtomically`, the delivery row is already the idempotency root, and
+`ConversationModule` already imports `WalletModule`. Three things in the TDR would not have
+worked as written.
+
+**① The "Recharge Now" button would not have reached the recharge workflow.** §25.7 says to
+extend Triage's action branch (`|buy` → `buyer_product_search`) so `recharge` → `wallet_funding`.
+That branch is inside Triage's `AwaitDetail` state, which is only reached when a Triage instance
+is already parked waiting for an answer — not the situation a vendor is in when a missed-lead
+push arrives. Worse, the tap never gets that far: `ConversationContinuityAnalyzer` treats *any*
+decodable payload as a `continuation` (continuity-analyzer.service.ts:133), which makes
+`TurnProcessor` skip intent resolution entirely (turn-processor.service.ts:136), after which the
+Workflow Manager looks for an instance called `system`, finds none, and either resumes an
+unrelated open workflow or returns the generic fallback envelope.
+
+Fixed by making `system` a first-class reserved id instead of a convention:
+`src/domain/workflows/system-actions.ts` maps `mm|system|<action>` to a starting intent; the
+continuity analyzer reads it as `new` rather than a continuation, and the turn processor
+synthesises the `IntentResult` directly. Triage is untouched. The tap costs zero LLM calls,
+which is the right property for a money flow — there is an integration test asserting the model
+is never consulted, and another asserting a user *typing* "system recharge" gets no such
+shortcut.
+
+**② The balance pre-check before the debit (§25.6.1b) is a liability, not an optimisation.**
+The TDR proposes `getBalance` first, "cheap, and it avoids a debit attempt". It is not cheaper —
+`debitAtomically` is one transaction either way — and its answer is formed outside the row lock,
+so a concurrent recharge or debit can invalidate it before it is acted on. The TDR then has to
+add a second `insufficient` branch to catch exactly that race. Dropped: `debit` is called
+directly and `insufficient` carries the balance the refusal was actually based on, which is also
+the number the vendor is shown. One query fewer, one race fewer, one source of truth.
+
+**③ The `duplicate` branch on the immediate path needed a delivery-row story.** §25.6 says to
+"present it — the delivery row exists (or is created now)", but `requestDelivery.create` would
+throw on the unique `(requestId, vendorId)` pair when the row does exist. `recordDelivery` takes
+a `tolerateExisting` flag and upserts on that branch only, so the normal path still fails loudly
+on an unexpected duplicate.
+
+Two smaller deviations: `RequestDistributionService` resolves vendors through
+`VENDOR_REPOSITORY.findById` rather than `prisma.vendor.findUnique` (§25.6.1a) — the port exists
+and returns exactly `userId`/`conversationId`; and the immediate walk is bounded to the top
+`IMMEDIATE_DELIVERY_COUNT + FANOUT_LIMIT` candidates, so an insolvent marketplace cannot turn one
+search into a wallet lookup per ranked vendor.
+
+### 7.2 What ships
+
+| Piece | Where |
+|---|---|
+| `debitAtomically`, `grantAtomically` | `wallet-repository.port.ts`, `prisma-wallet.repository.ts` |
+| `WalletService.debit`, `.grantOnboardingCredits` | `wallet.service.ts` |
+| Billing-aware selection + responder billing | `request-distribution.service.ts` |
+| Missed-lead, connected, free-trial, welcome pushes | `wallet-notifier.service.ts` |
+| Onboarding grant on `seller.onboarded` | `wallet-onboarding-grant.listener.ts` |
+| Reserved `system` action routing | `system-actions.ts` + continuity analyzer + turn processor |
+| Orphaned-debit reconciliation | `src/cli/wallet-reconcile.ts` (`npm run wallet:reconcile`) |
+| `amountKobo` nullable, `(walletId, type, createdAt)` index | `20260807140000_wallet_debits` |
+| `VISIBILITY_FEE_CREDITS=100`, `ONBOARDING_GRANT_CREDITS=2000` | `env.schema.ts`, `.env.example` |
+
+### 7.3 Why a vendor can never be shown without paying, or charged without being shown
+
+The first half is structural: `revealedToCustomer` is set only after the debit returns `debited`
+or `duplicate`, on both paths. There is no ordering of the code that produces the inverse.
+
+The second half is not fully closable without putting a Prisma transaction across the hexagonal
+boundary, which ADR-001 exists to prevent. A debit can commit and the process can die before the
+delivery row is written. §25.6 is explicit that the debit path must not ship without a query for
+that state, so `npm run wallet:reconcile` ships with it: it reads the request and vendor back out
+of the ledger reference (`delivery:<req>:<vendor>`), left-joins `request_deliveries`, and reports
+every debit with no delivery, an unrevealed delivery, or an unbilled one — exiting non-zero so a
+scheduled run can alert. Verified against a hand-planted orphan. Refunding is still manual
+(§25.1).
+
+Never-negative is a database property rather than a caller's discipline: the balance check and
+the decrement share one transaction with the wallet row locked `FOR UPDATE`. A caller cannot get
+it wrong by forgetting to check, because checking is not what makes it safe.
+
+### 7.4 Verification
+
+```
+Unit:        251 passed, 22 suites   (was 224/19)
+Integration:  92 passed,  7 suites   (was 79/7)
+Lint + typecheck + build: clean
+Boot: clean — /webhooks/whatsapp, /health, /webhooks/paystack
+npm run wallet:reconcile: clean on a real database, and detects a planted orphan
+```
+
+The billing tests run against real Postgres and the real `PrismaWalletRepository`, not a mocked
+one — the guarantees are database guarantees, so a fake database would test nothing. The ones
+that matter:
+
+- **Exactly one debit per lead**, `amountKobo` null, connected push attempted, fanned-out vendors
+  untouched.
+- **Insolvent top-ranked vendor** — skipped, `vendor.credit.insufficient` published, lead-variant
+  push, and the next solvent vendor delivered instead. They are still fanned out, so they can
+  earn the lead by answering.
+- **Nobody can pay** — top-ranked vendor delivered `creditDeducted: false`, no
+  `vendor.credit.deducted`, free-trial push instead of the missed-lead one.
+- **Never negative** — three leads against a one-lead balance leaves exactly 0.
+- **Insolvent responder** — `status: accepted` (they do have the product; that is real evidence)
+  but `revealedToCustomer: false`, responder-variant push, and `revealedVendors` never returns
+  them.
+- **A decline is never billed.**
+- **Grant once** — a replayed `seller.onboarded` returns `duplicate`, balance stays 2,000, and the
+  first lead takes it to 1,900.
+
+Two existing suites needed updating for reasons worth recording rather than hiding. The
+marketplace-loop helper now funds vendors by default, because after §25.12 that *is* production —
+an unfunded vendor is the exception. And vendor-onboarding's `send()` helper now returns the
+turn's own reply instead of "the last message sent", since onboarding legitimately produces a
+second, system-initiated message now.
+
+One environmental fix, unrelated to §25 but it was breaking the suite: your `.env` now holds a
+real `PAYSTACK_SECRET_KEY`, and integration tests fell through to it, so every self-signed test
+webhook looked forged (403). `.env.test` now pins `sk_test_secret`, which is what that file is
+for.
+
+### 7.5 Flags for you
+
+- **The economics are the TDR's, not mine.** At `NAIRA_PER_CREDIT=100`, a lead costs the vendor
+  ₦10,000 and the onboarding grant is ₦200,000 of free value per vendor — enough for 20 leads.
+  Both are single env vars; no code changes if you want different numbers.
+- **A skipped vendor is both told "you missed a lead" and fanned out the same request.** §25.6
+  steps 3 and 4 both say so and I implemented it as written. Today it reads fine because nothing
+  actually pushes a fan-out message to vendors — that is still unimplemented from Phase 5. When
+  it lands, the same vendor would receive "you missed a lead" and "here is a lead" for one
+  request, and the copy will need reconciling.
+- **No `request-distribution.service.spec.ts`.** §25.10 asks for unit tests there. The service
+  talks to Prisma directly and has never had a unit spec; mocking Prisma to assert billing order
+  would test the mock. The behaviour is covered by ten integration tests against real Postgres
+  instead, which is stronger evidence for the same claims.
+- **`MIN_RECHARGE_NAIRA` still does not exist** (pre-existing, §23). The effective minimum is one
+  credit's worth, and anything below it is recorded as `below_minimum` rather than credited.

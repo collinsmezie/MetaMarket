@@ -217,6 +217,9 @@ describe('Vendor onboarding integration', () => {
     const raw = Buffer.from(JSON.stringify(payload));
     const signature = `sha256=${createHmac('sha256', APP_SECRET).update(raw).digest('hex')}`;
 
+    // The index of the turn's own reply. Onboarding now also triggers a system-initiated
+    // welcome push once the grant lands (TDR §25.12), so "the last message sent" is no longer
+    // the same thing as "the answer to this message".
     const before = notifier.sent.length;
 
     await request(app.getHttpServer())
@@ -227,7 +230,7 @@ describe('Vendor onboarding integration', () => {
       .expect(200);
 
     for (let attempt = 0; attempt < 200; attempt += 1) {
-      if (notifier.sent.length > before) return notifier.lastText();
+      if (notifier.sent.length > before) return notifier.sent[before].text ?? '';
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
 
@@ -292,6 +295,8 @@ describe('Vendor onboarding integration', () => {
     await prisma.vendor.deleteMany();
     await prisma.conversation.deleteMany();
     await prisma.outboxEvent.deleteMany();
+    await prisma.creditTransaction.deleteMany();
+    await prisma.creditWallet.deleteMany();
     notifier.sent.length = 0;
     llm.operations.length = 0;
     llm.turns = [];

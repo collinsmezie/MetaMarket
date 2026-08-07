@@ -38,6 +38,7 @@ import type { WorkflowTrigger } from '../../domain/workflows/workflow-definition
 import { WorkflowEngine } from '../../domain/workflows/workflow-engine';
 import { WorkflowManager, type RoutingDecision } from '../../domain/workflows/workflow-manager';
 import { WorkflowDefinitionRegistry } from '../../domain/workflows/workflow-registry';
+import { resolveSystemAction, type SystemAction } from '../../domain/workflows/system-actions';
 import { ConversationContextManager } from '../conversation/conversation-context.manager';
 import { ResponseComposer } from '../response/response-composer.service';
 import { ConversationContinuityAnalyzer } from '../understanding/continuity-analyzer.service';
@@ -58,6 +59,16 @@ export interface TurnInput {
 export interface TurnOutcome {
   readonly response: Response;
   readonly workflowId: string | null;
+}
+
+/** The intent a tapped platform action stands for, as certain as an intent gets. */
+function intentForSystemAction(action: SystemAction): IntentResult {
+  return {
+    intent: action.intent,
+    confidence: 1,
+    entities: { system_action: action.action },
+    language: 'en',
+  };
 }
 
 /**
@@ -124,7 +135,16 @@ export class TurnProcessor {
     // would produce nonsense (MCOS §14).
     const needsUnderstanding = !isContinuing(relationship.relationship);
 
-    const intent = needsUnderstanding ? await this.intents.resolve({ conversation, text }) : null;
+    // A tapped platform-level action already says what the user wants. Classifying "⚡ Recharge
+    // Now" with an LLM could only agree or be wrong, and this one routes to a money flow.
+    const systemAction = resolveSystemAction(input.interactivePayload);
+
+    const intent =
+      systemAction !== null
+        ? intentForSystemAction(systemAction)
+        : needsUnderstanding
+          ? await this.intents.resolve({ conversation, text })
+          : null;
 
     const semanticRequest =
       intent !== null && this.shouldResolveSemantics(intent)

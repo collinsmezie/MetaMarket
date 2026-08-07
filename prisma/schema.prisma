@@ -801,7 +801,11 @@ model CreditTransaction {
   type          String @default("credit")
   amountCredits Int    @map("amount_credits")
   /// Exact amount received, in minor units (kobo). Stored so nothing is ever guessed.
-  amountKobo Int @map("amount_kobo")
+  ///
+  /// Null for rows where no money moved: a visibility-fee debit (TDR §25.4) or an onboarding
+  /// grant (§25.12) consume or mint credits, not Naira. Zero would read as "received nothing",
+  /// which is a different and false claim.
+  amountKobo Int? @map("amount_kobo")
   /// Paystack transaction reference. UNIQUE = the exactly-once guarantee.
   providerReference String? @unique @map("provider_reference")
   /// Paystack event id, a second idempotency net.
@@ -816,6 +820,8 @@ model CreditTransaction {
   wallet CreditWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
 
   @@index([walletId, createdAt])
+  /// Balance statements read one side of the ledger at a time (TDR §25.4).
+  @@index([walletId, type, createdAt])
   @@map("credit_transactions")
 }
 

@@ -1,7 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import type { RankedVendor } from '../../domain/models/demand';
+import type { Vendor } from '../../domain/models/vendor';
 import { PrismaService } from '../../adapters/outbound/persistence/prisma.service';
+import { AppConfigService } from '../../config/app-config.service';
+import {
+  WALLET_DEBIT_REASONS,
+  deliveryDebitReference,
+  responseDebitReference,
+} from '../../domain/models/credit';
 import {
   EVENT_PUBLISHER,
   type DomainEvent,
@@ -14,6 +21,12 @@ import {
   ID_GENERATOR,
   type IdGeneratorPort,
 } from '../../domain/ports/outbound/system.port';
+import {
+  VENDOR_REPOSITORY,
+  type VendorRepositoryPort,
+} from '../../domain/ports/outbound/vendor-repository.port';
+import { WalletNotifier } from '../wallet/wallet-notifier.service';
+import { WalletService } from '../wallet/wallet.service';
 
 const COMPONENT = 'RequestDistribution';
 const STAGE = 'RequestDistributionService';
@@ -44,6 +57,14 @@ export interface DistributionResult {
   readonly fannedOut: readonly RankedVendor[];
 }
 
+/** A vendor considered for an immediate slot, with the wallet identity billing needs. */
+interface Candidate {
+  readonly ranked: RankedVendor;
+  /** Position in the CME's ranking, kept as the delivery rank so ordering survives skips. */
+  readonly rank: number;
+  readonly vendor: Vendor;
+}
+
 /**
  * Demand-driven fulfilment (MCOS Refinement #11 §1-§6).
  *
@@ -62,14 +83,29 @@ export class RequestDistributionService {
     @Inject(STAGE_LOGGER) private readonly logger: StageLoggerPort,
     @Inject(CLOCK) private readonly clock: ClockPort,
     @Inject(ID_GENERATOR) private readonly ids: IdGeneratorPort,
+    @Inject(VENDOR_REPOSITORY) private readonly vendors: VendorRepositoryPort,
+    private readonly wallet: WalletService,
+    private readonly walletNotifier: WalletNotifier,
+    private readonly config: AppConfigService,
   ) {}
+
+  /** Credits a vendor pays to become visible to one customer (TDR §25.2). */
+  private get visibilityFee(): number {
+    return this.config.credits.visibilityFee;
+  }
 
   /**
    * Creates the customer request and distributes it.
    *
-   * The ordering matters and follows the TDR exactly: deliver the top vendor to the customer,
-   * notify and bill them, and only then fan out. Billing before successful delivery would charge
-   * a vendor for an introduction the customer never received.
+   * Immediate slots are filled by walking the ranking in order and stopping at the first vendor
+   * who can pay the visibility fee (Konnet Credits Recharge TDR §25.6). The debit comes before
+   * the reveal, never after: a vendor shown to a customer without being charged is revenue lost
+   * silently, and the inverse — charged without being shown — is the one the reconciliation
+   * query exists to catch.
+   *
+   * If nobody can pay, the top-ranked vendor is delivered anyway, unpaid. The billing model
+   * degrades before the customer experience does: a buyer who asks for a hammer gets an answer
+   * whether or not the marketplace has solvent vendors that day.
    */
   async distribute(params: {
     conversationId: string;
@@ -84,9 +120,12 @@ export class RequestDistributionService {
   }): Promise<DistributionResult> {
     const startedAt = Date.now();
     const now = this.clock.now();
+    const fee = this.visibilityFee;
+    const capabilityName = params.capabilityName ?? params.product ?? params.query;
 
-    const immediate = params.ranked.slice(0, IMMEDIATE_DELIVERY_COUNT);
-    const fannedOut = params.ranked.slice(IMMEDIATE_DELIVERY_COUNT, IMMEDIATE_DELIVERY_COUNT + FANOUT_LIMIT);
+    // Bounded so an insolvent marketplace cannot turn one search into a wallet lookup per ranked
+    // vendor. Beyond this depth a vendor would not have been contacted at all.
+    const considered = params.ranked.slice(0, IMMEDIATE_DELIVERY_COUNT + FANOUT_LIMIT);
 
     const request = await this.prisma.customerRequest.create({
       data: {
@@ -112,49 +151,173 @@ export class RequestDistributionService {
       }),
     ];
 
-    // ── Immediate delivery: visible to the customer at once, and billed ──────────────
-    for (const [index, vendor] of immediate.entries()) {
-      await this.prisma.requestDelivery.create({
-        data: {
+    // Best-effort vendor pushes, awaited together at the end. The notifier never throws, and
+    // collecting them keeps the outcome observable instead of racing the caller's next turn.
+    const pushes: Promise<void>[] = [];
+
+    // ── Immediate delivery: billed first, revealed second ────────────────────────────
+    const selected: Candidate[] = [];
+    const skipped: { candidate: Candidate; balance: number }[] = [];
+
+    for (const [rank, rankedVendor] of considered.entries()) {
+      if (selected.length >= IMMEDIATE_DELIVERY_COUNT) break;
+
+      const vendor = await this.vendors.findById(rankedVendor.vendorId);
+
+      if (vendor === null) {
+        // Ranked but no longer on the platform. Not a billing problem, so not a skip: there is
+        // nobody to charge and nobody to notify.
+        this.logger.stageFailed({
+          component: COMPONENT,
+          stage: `${STAGE}:Billing`,
+          input: { requestId: request.id, vendorId: rankedVendor.vendorId },
+          action: 'Ranked vendor no longer exists; passing over them for the immediate slot',
+          error: new Error('vendor not found'),
+        });
+        continue;
+      }
+
+      const candidate: Candidate = { ranked: rankedVendor, rank, vendor };
+
+      const debit = await this.wallet.debit({
+        userId: vendor.userId,
+        amountCredits: fee,
+        reason: WALLET_DEBIT_REASONS.profileDelivery,
+        providerReference: deliveryDebitReference(request.id, vendor.id),
+        metadata: {
           requestId: request.id,
-          vendorId: vendor.vendorId,
-          rank: index,
-          score: vendor.score,
-          immediate: true,
-          revealedToCustomer: true,
-          creditDeducted: true,
-          deliveredAt: now,
+          vendorId: vendor.id,
+          capabilityId: params.capabilityId,
+          nairaPerCredit: this.config.credits.nairaPerCredit,
         },
       });
+
+      if (debit.outcome === 'insufficient') {
+        skipped.push({ candidate, balance: debit.balance });
+        continue;
+      }
+
+      // `debited` or `duplicate`. Duplicate means a retry already paid for this exact
+      // (request, vendor) pair, so the work is funded and must complete — charging again is the
+      // only wrong answer here.
+      const balanceAfter =
+        debit.outcome === 'debited' ? debit.balanceAfter : await this.wallet.getBalance(vendor.userId);
+
+      await this.recordDelivery({
+        requestId: request.id,
+        candidate,
+        now,
+        immediate: true,
+        revealed: true,
+        creditDeducted: true,
+        tolerateExisting: debit.outcome === 'duplicate',
+      });
+
+      selected.push(candidate);
 
       events.push(
         this.event('request.delivered', {
           requestId: request.id,
-          vendorId: vendor.vendorId,
+          vendorId: vendor.id,
           payload: { capability: params.capabilityId, product: params.product, immediate: true },
         }),
-        // The vendor is told their details went to a customer, and billed for it (§3).
         this.event('vendor.profile.delivered', {
           requestId: request.id,
-          vendorId: vendor.vendorId,
+          vendorId: vendor.id,
           payload: { customerId: params.customerId, query: params.query },
         }),
+        // The unchanged marketplace signal. `wallet.debited` is the money event and is published
+        // by WalletService; this one says a lead was billed, which the Evidence Service reads.
         this.event('vendor.credit.deducted', {
           requestId: request.id,
-          vendorId: vendor.vendorId,
-          payload: { reason: 'profile_delivered_to_customer', capability: params.capabilityId },
+          vendorId: vendor.id,
+          payload: {
+            reason: WALLET_DEBIT_REASONS.profileDelivery,
+            capability: params.capabilityId,
+            credits: fee,
+          },
+        }),
+      );
+
+      pushes.push(
+        this.walletNotifier.notifyConnected({
+          userId: vendor.userId,
+          conversationId: vendor.conversationId,
+          capabilityName,
+          credits: fee,
+          balanceAfter,
         }),
       );
     }
 
-    // ── Fan-out: asked, but not yet visible to the customer ──────────────────────────
-    for (const [index, vendor] of fannedOut.entries()) {
+    // ── Unpaid fallback: the customer always gets an answer ──────────────────────────
+    while (selected.length < IMMEDIATE_DELIVERY_COUNT && skipped.length > 0) {
+      const { candidate } = skipped.shift()!;
+
+      await this.recordDelivery({
+        requestId: request.id,
+        candidate,
+        now,
+        immediate: true,
+        revealed: true,
+        creditDeducted: false,
+        tolerateExisting: false,
+      });
+
+      selected.push(candidate);
+
+      events.push(
+        this.event('request.delivered', {
+          requestId: request.id,
+          vendorId: candidate.vendor.id,
+          payload: {
+            capability: params.capabilityId,
+            product: params.product,
+            immediate: true,
+            unpaid: true,
+          },
+        }),
+        this.event('vendor.profile.delivered', {
+          requestId: request.id,
+          vendorId: candidate.vendor.id,
+          payload: { customerId: params.customerId, query: params.query, unpaid: true },
+        }),
+      );
+
+      // No `vendor.credit.deducted`: nothing was deducted, and claiming otherwise would corrupt
+      // both the ledger's story and the Evidence Service's.
+      this.logger.stage({
+        component: COMPONENT,
+        stage: `${STAGE}:Billing`,
+        input: { requestId: request.id, vendorId: candidate.vendor.id, fee },
+        action:
+          'No ranked vendor could pay the visibility fee; delivered the top-ranked vendor unpaid so the customer still gets an answer',
+        output: { degraded: true, creditDeducted: false },
+      });
+
+      pushes.push(
+        this.walletNotifier.notifyFreeTrial({
+          userId: candidate.vendor.userId,
+          conversationId: candidate.vendor.conversationId,
+          capabilityName,
+        }),
+      );
+    }
+
+    // ── Fan-out: asked, but not yet visible, and not billed until they accept ────────
+    const selectedIds = new Set(selected.map((candidate) => candidate.ranked.vendorId));
+    const fannedOut = considered
+      .map((rankedVendor, rank) => ({ rankedVendor, rank }))
+      .filter((entry) => !selectedIds.has(entry.rankedVendor.vendorId))
+      .slice(0, FANOUT_LIMIT);
+
+    for (const { rankedVendor, rank } of fannedOut) {
       await this.prisma.requestDelivery.create({
         data: {
           requestId: request.id,
-          vendorId: vendor.vendorId,
-          rank: IMMEDIATE_DELIVERY_COUNT + index,
-          score: vendor.score,
+          vendorId: rankedVendor.vendorId,
+          rank,
+          score: rankedVendor.score,
           immediate: false,
           deliveredAt: now,
         },
@@ -163,8 +326,34 @@ export class RequestDistributionService {
       events.push(
         this.event('request.delivered', {
           requestId: request.id,
-          vendorId: vendor.vendorId,
+          vendorId: rankedVendor.vendorId,
           payload: { capability: params.capabilityId, product: params.product, immediate: false },
+        }),
+      );
+    }
+
+    // ── Missed leads: every vendor passed over for want of credits ───────────────────
+    for (const { candidate, balance } of skipped) {
+      events.push(
+        this.event('vendor.credit.insufficient', {
+          requestId: request.id,
+          vendorId: candidate.vendor.id,
+          payload: {
+            requiredCredits: fee,
+            balance,
+            capability: params.capabilityId,
+          },
+        }),
+      );
+
+      pushes.push(
+        this.walletNotifier.notifyInsufficient({
+          userId: candidate.vendor.userId,
+          conversationId: candidate.vendor.conversationId,
+          capabilityName,
+          requiredCredits: fee,
+          balance,
+          variant: 'lead',
         }),
       );
     }
@@ -180,27 +369,85 @@ export class RequestDistributionService {
 
     await this.events.publishAll(events);
 
+    // The notifier swallows its own failures, so this settles rather than rejects.
+    await Promise.allSettled(pushes);
+
+    const immediate = selected.map((candidate) => candidate.ranked);
+
     this.logger.stage({
       component: COMPONENT,
       stage: STAGE,
-      input: { query: params.query, rankedVendors: params.ranked.length },
+      input: { query: params.query, rankedVendors: params.ranked.length, visibilityFee: fee },
       action: `Delivered ${immediate.length} vendor(s) immediately and fanned the request out to ${fannedOut.length} more`,
       output: {
         requestId: request.id,
         immediate: immediate.map((vendor) => vendor.businessName),
-        fannedOut: fannedOut.map((vendor) => vendor.businessName),
+        fannedOut: fannedOut.map((entry) => entry.rankedVendor.businessName),
+        skippedForCredits: skipped.map((entry) => entry.candidate.ranked.businessName),
       },
       durationMs: Date.now() - startedAt,
     });
 
-    return { requestId: request.id, immediate, fannedOut };
+    return {
+      requestId: request.id,
+      immediate,
+      fannedOut: fannedOut.map((entry) => entry.rankedVendor),
+    };
+  }
+
+  /**
+   * Writes the delivery row for a vendor filling an immediate slot.
+   *
+   * `tolerateExisting` is the crash-recovery path: a debit that committed before the row was
+   * written leaves the fee paid and the delivery missing, and the retry has to be able to finish
+   * the job rather than trip over its own unique constraint.
+   */
+  private async recordDelivery(params: {
+    requestId: string;
+    candidate: Candidate;
+    now: Date;
+    immediate: boolean;
+    revealed: boolean;
+    creditDeducted: boolean;
+    tolerateExisting: boolean;
+  }): Promise<void> {
+    const data = {
+      rank: params.candidate.rank,
+      score: params.candidate.ranked.score,
+      immediate: params.immediate,
+      revealedToCustomer: params.revealed,
+      creditDeducted: params.creditDeducted,
+      deliveredAt: params.now,
+    };
+
+    if (!params.tolerateExisting) {
+      await this.prisma.requestDelivery.create({
+        data: { requestId: params.requestId, vendorId: params.candidate.vendor.id, ...data },
+      });
+      return;
+    }
+
+    await this.prisma.requestDelivery.upsert({
+      where: {
+        requestId_vendorId: { requestId: params.requestId, vendorId: params.candidate.vendor.id },
+      },
+      create: { requestId: params.requestId, vendorId: params.candidate.vendor.id, ...data },
+      update: { revealedToCustomer: params.revealed, creditDeducted: params.creditDeducted },
+    });
   }
 
   /**
    * Records a vendor's answer to a fanned-out request.
    *
    * Accepting is what makes a vendor visible to the customer — "Matched vendors that do not
-   * respond SHALL NOT be presented to the customer" (§6).
+   * respond SHALL NOT be presented to the customer" (§6) — and, since the visibility fee is the
+   * product, that rule becomes "visible only once they respond **and** the debit succeeds"
+   * (Konnet Credits Recharge TDR §25.6). A decline is free: the vendor stays hidden either way,
+   * so there is nothing to charge for.
+   *
+   * The acceptance is recorded honestly even when the vendor cannot pay. They did say they have
+   * the product, which is a positive capability signal the Evidence Service should learn from;
+   * what they do not get is the reveal.
    */
   async recordVendorResponse(params: {
     requestId: string;
@@ -216,6 +463,16 @@ export class RequestDistributionService {
 
     const now = this.clock.now();
     const responseTimeMs = now.getTime() - delivery.deliveredAt.getTime();
+    const events: DomainEvent[] = [];
+    const pushes: Promise<void>[] = [];
+
+    // A decline needs no vendor record and no wallet: nothing becomes visible, so nothing is due.
+    const billing = params.accepted
+      ? await this.billResponder({ delivery, request: delivery.request })
+      : { revealed: false, creditDeducted: false, events: [], pushes: [] };
+
+    events.push(...billing.events);
+    pushes.push(...billing.pushes);
 
     await this.prisma.requestDelivery.update({
       where: { id: delivery.id },
@@ -223,11 +480,12 @@ export class RequestDistributionService {
         status: params.accepted ? 'accepted' : 'rejected',
         respondedAt: now,
         responseTimeMs,
-        revealedToCustomer: params.accepted,
+        revealedToCustomer: billing.revealed,
+        ...(billing.creditDeducted ? { creditDeducted: true } : {}),
       },
     });
 
-    await this.events.publishAll([
+    events.unshift(
       this.event(params.accepted ? 'request.accepted' : 'request.rejected', {
         requestId: params.requestId,
         vendorId: params.vendorId,
@@ -238,19 +496,129 @@ export class RequestDistributionService {
           responseTime: Math.round(responseTimeMs / 1000),
         },
       }),
-    ]);
+    );
+
+    await this.events.publishAll(events);
+    await Promise.allSettled(pushes);
 
     this.logger.stage({
       component: COMPONENT,
       stage: `${STAGE}:Response`,
-      input: { requestId: params.requestId, vendorId: params.vendorId },
-      action: params.accepted
-        ? 'Vendor accepted; they are now visible to the customer'
-        : 'Vendor declined; they remain hidden from the customer',
-      output: { responseTimeMs, revealed: params.accepted },
+      input: { requestId: params.requestId, vendorId: params.vendorId, accepted: params.accepted },
+      action: !params.accepted
+        ? 'Vendor declined; they remain hidden from the customer'
+        : billing.revealed
+          ? 'Vendor accepted and paid the visibility fee; they are now visible to the customer'
+          : 'Vendor accepted but could not pay the visibility fee; the acceptance is recorded and they stay hidden',
+      output: { responseTimeMs, revealed: billing.revealed, creditDeducted: billing.creditDeducted },
     });
 
-    return { revealed: params.accepted };
+    return { revealed: billing.revealed };
+  }
+
+  /**
+   * Charges an accepting responder before they become visible (TDR §25.6).
+   *
+   * Returns what the caller should write and publish rather than writing it, so the delivery row
+   * is still updated exactly once whichever way the debit goes.
+   */
+  private async billResponder(params: {
+    delivery: { id: string; vendorId: string; requestId: string };
+    request: {
+      capabilityId: string | null;
+      capabilityName: string | null;
+      product: string | null;
+      query: string;
+    };
+  }): Promise<{
+    revealed: boolean;
+    creditDeducted: boolean;
+    events: DomainEvent[];
+    pushes: Promise<void>[];
+  }> {
+    const fee = this.visibilityFee;
+    const { delivery, request } = params;
+    const capabilityName = request.capabilityName ?? request.product ?? request.query;
+
+    const vendor = await this.vendors.findById(delivery.vendorId);
+
+    if (vendor === null) {
+      this.logger.stageFailed({
+        component: COMPONENT,
+        stage: `${STAGE}:Billing`,
+        input: { requestId: delivery.requestId, vendorId: delivery.vendorId },
+        action: 'Responding vendor no longer exists; recorded the acceptance without revealing them',
+        error: new Error('vendor not found'),
+      });
+      return { revealed: false, creditDeducted: false, events: [], pushes: [] };
+    }
+
+    const debit = await this.wallet.debit({
+      userId: vendor.userId,
+      amountCredits: fee,
+      reason: WALLET_DEBIT_REASONS.responseAccepted,
+      providerReference: responseDebitReference(delivery.requestId, vendor.id),
+      metadata: {
+        requestId: delivery.requestId,
+        deliveryId: delivery.id,
+        capabilityId: request.capabilityId,
+        product: request.product,
+      },
+    });
+
+    if (debit.outcome === 'insufficient') {
+      return {
+        revealed: false,
+        creditDeducted: false,
+        events: [
+          this.event('vendor.credit.insufficient', {
+            requestId: delivery.requestId,
+            vendorId: vendor.id,
+            payload: { requiredCredits: fee, balance: debit.balance, capability: request.capabilityId },
+          }),
+        ],
+        pushes: [
+          this.walletNotifier.notifyInsufficient({
+            userId: vendor.userId,
+            conversationId: vendor.conversationId,
+            capabilityName,
+            requiredCredits: fee,
+            balance: debit.balance,
+            variant: 'responder',
+          }),
+        ],
+      };
+    }
+
+    // `duplicate` here is the crash-recovery path: the fee was taken and the reveal never
+    // landed. Charging again would punish the vendor for our outage.
+    const balanceAfter =
+      debit.outcome === 'debited' ? debit.balanceAfter : await this.wallet.getBalance(vendor.userId);
+
+    return {
+      revealed: true,
+      creditDeducted: true,
+      events: [
+        this.event('vendor.credit.deducted', {
+          requestId: delivery.requestId,
+          vendorId: vendor.id,
+          payload: {
+            reason: WALLET_DEBIT_REASONS.responseAccepted,
+            capability: request.capabilityId,
+            credits: fee,
+          },
+        }),
+      ],
+      pushes: [
+        this.walletNotifier.notifyConnected({
+          userId: vendor.userId,
+          conversationId: vendor.conversationId,
+          capabilityName,
+          credits: fee,
+          balanceAfter,
+        }),
+      ],
+    };
   }
 
   /** Vendors who have accepted and may therefore be shown to the customer. */

@@ -75,6 +75,11 @@ export const envSchema = z
     PAYSTACK_WEBHOOK_SIGNATURE_VERIFY: booleanFromString(true),
     /** Naira per credit. Conversion floors, so this is also the minimum fundable amount. */
     NAIRA_PER_CREDIT: intFromString(100, 1),
+    // What a vendor pays to be shown to one customer, immediately or by accepting a fanned-out
+    // request. One fee, one price, two ways to earn a lead (TDR §25.2).
+    VISIBILITY_FEE_CREDITS: intFromString(100, 1),
+    // Given once to every successfully onboarded vendor, so a new profile is solvent on day one.
+    ONBOARDING_GRANT_CREDITS: intFromString(2000, 1),
 
     CONVERSATION_LOCK_TTL_MS: intFromString(30_000, 1_000),
     CONVERSATION_LOCK_WAIT_MS: intFromString(5_000, 0),

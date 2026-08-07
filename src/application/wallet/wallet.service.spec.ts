@@ -1,4 +1,9 @@
-import { RecordingEventPublisher, RecordingStageLogger, SequentialIdGenerator } from '@test/fakes';
+import {
+  InMemoryWalletRepository,
+  RecordingEventPublisher,
+  RecordingStageLogger,
+  SequentialIdGenerator,
+} from '@test/fakes';
 import type { VirtualAccount, Wallet } from '../../domain/models/credit';
 import type {
   PaymentProviderPort,
@@ -54,30 +59,28 @@ function build(
     provisionThrows?: Error;
   } = {},
 ) {
-  let stored: Wallet | null = options.wallet === undefined ? baseWallet : options.wallet;
+  const seed = options.wallet === undefined ? baseWallet : options.wallet;
+  // Ledger-backed, so the exactly-once and never-negative guarantees are actually exercised
+  // rather than stubbed away.
+  const ledger = new InMemoryWalletRepository(seed === null ? [] : [seed]);
   const created: VirtualAccount[] = [];
   const provisionCalls: { customerReference: string; existingCustomerCode?: string | null }[] = [];
   let customerCodeUpdates = 0;
 
   const wallets: WalletRepositoryPort = {
-    async findById() {
-      return stored;
-    },
-    async findByUserId() {
-      return stored;
-    },
-    async create(params) {
-      stored = { ...baseWallet, id: params.id, userId: params.userId, balanceCredits: 0 };
-      return stored;
-    },
-    async updateProviderCustomerCode(_walletId, code) {
+    ...ledger,
+    findById: ledger.findById.bind(ledger),
+    findByUserId: ledger.findByUserId.bind(ledger),
+    create: ledger.create.bind(ledger),
+    async updateProviderCustomerCode(walletId, code) {
       customerCodeUpdates += 1;
-      stored = { ...(stored as Wallet), providerCustomerCode: code };
-      return stored;
+      return ledger.updateProviderCustomerCode(walletId, code);
     },
     async creditAtomically() {
       return { outcome: 'credited', balanceAfter: 0 };
     },
+    debitAtomically: ledger.debitAtomically.bind(ledger),
+    grantAtomically: ledger.grantAtomically.bind(ledger),
   };
 
   const accounts: VirtualAccountRepositoryPort = {
@@ -119,6 +122,7 @@ function build(
     service,
     events,
     logger,
+    ledger,
     created,
     provisionCalls,
     getCustomerCodeUpdates: () => customerCodeUpdates,
@@ -209,5 +213,114 @@ describe('WalletService.getRechargeView', () => {
     await expect(
       service.getRechargeView({ userId: baseWallet.userId, conversationId: 'conv_1' }),
     ).resolves.toBeDefined();
+  });
+});
+
+/**
+ * Spending (TDR §25.6). The rules that matter are the ones a vendor would notice: they are
+ * never charged twice for one lead, never charged for something they cannot afford, and their
+ * balance never goes below zero.
+ */
+describe('WalletService.debit', () => {
+  const FEE = 100;
+  const REFERENCE = 'delivery:req_1:vendor_1';
+
+  const debit = (reference = REFERENCE, credits = FEE) => ({
+    userId: baseWallet.userId,
+    amountCredits: credits,
+    reason: 'profile_delivered_to_customer',
+    providerReference: reference,
+    metadata: { requestId: 'req_1' },
+  });
+
+  it('debits a solvent wallet and announces it', async () => {
+    const { service, events, ledger } = build({ wallet: { ...baseWallet, balanceCredits: 250 } });
+
+    const result = await service.debit(debit());
+
+    expect(result).toEqual({ outcome: 'debited', balanceAfter: 150 });
+    expect(events.types()).toContain('wallet.debited');
+    expect(ledger.wallets.get(baseWallet.id)?.balanceCredits).toBe(150);
+  });
+
+  it('refuses when the balance is below the fee, and reports the balance it refused on', async () => {
+    // The vendor is told what they actually have, so the missed-lead message is not a guess.
+    const { service, events } = build({ wallet: { ...baseWallet, balanceCredits: 40 } });
+
+    const result = await service.debit(debit());
+
+    expect(result).toEqual({ outcome: 'insufficient', balance: 40 });
+    expect(events.types()).not.toContain('wallet.debited');
+  });
+
+  it('treats a vendor with no wallet as insolvent rather than creating one', async () => {
+    // A read path must not mint state; the answer is the same either way.
+    const { service, ledger } = build({ wallet: null });
+
+    const result = await service.debit(debit());
+
+    expect(result).toEqual({ outcome: 'insufficient', balance: 0 });
+    expect(ledger.wallets.size).toBe(0);
+  });
+
+  it('charges once for one lead however many times the debit is retried', async () => {
+    const { service, ledger } = build({ wallet: { ...baseWallet, balanceCredits: 250 } });
+
+    await service.debit(debit());
+    const retry = await service.debit(debit());
+
+    expect(retry).toEqual({ outcome: 'duplicate' });
+    expect(ledger.wallets.get(baseWallet.id)?.balanceCredits).toBe(150);
+  });
+
+  it('never lets a balance go negative, even when the fee is spent repeatedly', async () => {
+    const { service, ledger } = build({ wallet: { ...baseWallet, balanceCredits: 150 } });
+
+    await service.debit(debit('delivery:a'));
+    await service.debit(debit('delivery:b'));
+    await service.debit(debit('delivery:c'));
+
+    expect(ledger.wallets.get(baseWallet.id)?.balanceCredits).toBe(50);
+  });
+});
+
+describe('WalletService.grantOnboardingCredits', () => {
+  const grant = (vendorId = 'vendor_1') => ({
+    userId: '+2348099999999',
+    conversationId: 'conv_9',
+    vendorId,
+    amountCredits: 2_000,
+  });
+
+  it('creates the wallet a brand-new vendor does not have yet, and funds it', async () => {
+    // The grant is the wallet's second creation point: a vendor who has never recharged still
+    // has to be solvent for their first lead.
+    const { service, events } = build({ wallet: null });
+
+    const result = await service.grantOnboardingCredits(grant());
+
+    expect(result).toEqual({ outcome: 'credited', balanceAfter: 2_000 });
+    expect(events.types()).toContain('wallet.created');
+    expect(events.types()).toContain('wallet.onboarding_credited');
+  });
+
+  it('grants once no matter how many times seller.onboarded is redelivered', async () => {
+    const { service, ledger } = build({ wallet: null });
+
+    await service.grantOnboardingCredits(grant());
+    const replay = await service.grantOnboardingCredits(grant());
+
+    expect(replay).toEqual({ outcome: 'duplicate' });
+    expect([...ledger.wallets.values()][0].balanceCredits).toBe(2_000);
+  });
+
+  it('keys the grant on the vendor, so two vendors are each funded', async () => {
+    const { service, ledger } = build({ wallet: null });
+
+    await service.grantOnboardingCredits(grant('vendor_1'));
+    await service.grantOnboardingCredits({ ...grant('vendor_2'), userId: '+2348099999999' });
+
+    // Same user in this contrived case, so the balance is the proof both grants landed.
+    expect([...ledger.wallets.values()][0].balanceCredits).toBe(4_000);
   });
 });

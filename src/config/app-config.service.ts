@@ -138,7 +138,12 @@ export class AppConfigService {
 
   get credits() {
     const nairaPerCredit = this.get('NAIRA_PER_CREDIT');
-    return { nairaPerCredit, koboPerCredit: nairaPerCredit * 100 };
+    return {
+      nairaPerCredit,
+      koboPerCredit: nairaPerCredit * 100,
+      visibilityFee: this.get('VISIBILITY_FEE_CREDITS'),
+      onboardingGrant: this.get('ONBOARDING_GRANT_CREDITS'),
+    };
   }
 
   get conversationPolicy() {

@@ -95,8 +95,11 @@ class FakePaystack implements PaymentProviderPort {
 
 class ScriptedLlm implements LlmService {
   intent = 'wallet_funding';
+  calls = 0;
 
   async complete<T>(req: StructuredRequest, validate: (value: unknown) => T): Promise<StructuredResult<T>> {
+    this.calls += 1;
+
     const payload =
       req.operation === 'continuity_analysis'
         ? { relationship: 'new', confidence: 0.9, candidateWorkflowIds: [], reasoning: 'scripted' }
@@ -130,11 +133,20 @@ describe('Credits recharge integration', () => {
   let wallets: WalletService;
   let notifier: CapturingNotifier;
   let paystack: FakePaystack;
+  let llm: ScriptedLlm;
 
   let messageCounter = 0;
 
-  const sendWhatsApp = async (body: string) => {
+  const sendWhatsApp = async (body: string, buttonId?: string) => {
     messageCounter += 1;
+
+    const message =
+      buttonId === undefined
+        ? { type: 'text', text: { body } }
+        : {
+            type: 'interactive',
+            interactive: { type: 'button_reply', button_reply: { id: buttonId, title: body } },
+          };
 
     const payload = {
       object: 'whatsapp_business_account',
@@ -150,8 +162,7 @@ describe('Credits recharge integration', () => {
                     from: USER_PHONE,
                     id: `wamid.rc.${messageCounter}`,
                     timestamp: '1785412800',
-                    type: 'text',
-                    text: { body },
+                    ...message,
                   },
                 ],
               },
@@ -231,10 +242,11 @@ describe('Credits recharge integration', () => {
 
     notifier = new CapturingNotifier();
     paystack = new FakePaystack();
+    llm = new ScriptedLlm();
 
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(LLM_PROVIDER_SERVICE)
-      .useValue(new ScriptedLlm())
+      .useValue(llm)
       .overrideProvider(CHANNEL_NOTIFIER_REGISTRY)
       .useValue(new CapturingRegistry(notifier))
       .overrideProvider(EMBEDDING_PROVIDER)
@@ -455,5 +467,46 @@ describe('Credits recharge integration', () => {
     const reply = await sendWhatsApp('Recharge');
 
     expect(reply).toContain('50 Credits');
+  });
+
+  /**
+   * The "⚡ Recharge Now" button from a missed-lead push (TDR §25.7).
+   *
+   * `system` is a reserved, non-instance workflow id, so the tap has to start a fresh
+   * CreditRecharge rather than resume something. The TDR's suggested route — extending Triage's
+   * button branch — could not work: a decodable payload makes the continuity analyzer call the
+   * turn a continuation, which skips intent resolution entirely and sends the turn hunting for a
+   * workflow named "system". These tests pin the behaviour the vendor actually needs.
+   */
+  describe('recharge action routing', () => {
+    it('routes a tap on Recharge Now into the recharge view', async () => {
+      const reply = await sendWhatsApp('⚡ Recharge Now', 'mm|system|recharge');
+
+      expect(reply).toContain('Current Balance');
+      expect(reply).toContain(ACCOUNT_NUMBER);
+    });
+
+    it('does not ask the model what the tap meant', async () => {
+      // A button carries no ambiguity, and this one leads to a money flow: it must not fail
+      // because the model had an off day.
+      llm.intent = 'buyer_product_search';
+      const before = llm.calls;
+
+      const reply = await sendWhatsApp('⚡ Recharge Now', 'mm|system|recharge');
+
+      expect(llm.calls).toBe(before);
+      expect(reply).toContain('Current Balance');
+      llm.intent = 'wallet_funding';
+    });
+
+    it('ignores a payload the platform did not mint rather than trusting it', async () => {
+      // Users can type anything; only a decodable, reserved payload gets deterministic routing.
+      llm.intent = 'wallet_funding';
+      const before = llm.calls;
+
+      await sendWhatsApp('system recharge');
+
+      expect(llm.calls).toBeGreaterThan(before);
+    });
   });
 });

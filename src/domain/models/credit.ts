@@ -135,13 +135,62 @@ export type RechargeView =
       readonly reason: 'provisioning_failed';
     };
 
-/** Event names published by the wallet feature (TDR §14). */
+/** Event names published by the wallet feature (TDR §14, §25.3). */
 export const WalletEvents = {
   Created: 'wallet.created',
   FundingAccountProvisioned: 'wallet.funding_account.provisioned',
   Credited: 'wallet.credited',
   CreditFailed: 'wallet.credit.failed',
+  Debited: 'wallet.debited',
+  DebitInsufficient: 'wallet.debit.insufficient',
+  DebitFailed: 'wallet.debit.failed',
+  OnboardingCredited: 'wallet.onboarding_credited',
 } as const;
+
+/**
+ * Reasons a credit is spent (TDR §25.3).
+ *
+ * Both are the same product — paid visibility — reached two ways: the platform pushed the
+ * vendor's profile to a customer, or the vendor earned it by answering a fanned-out request.
+ */
+export const WALLET_DEBIT_REASONS = {
+  /** Immediate delivery — the top-ranked vendor's profile went straight to the customer. */
+  profileDelivery: 'profile_delivered_to_customer',
+  /** A fanned-out vendor accepted the request and is about to become visible. */
+  responseAccepted: 'responded_to_customer_request',
+} as const;
+
+export type WalletDebitReason = (typeof WALLET_DEBIT_REASONS)[keyof typeof WALLET_DEBIT_REASONS];
+
+/** Reason recorded on the one-time grant every onboarded vendor receives (TDR §25.12). */
+export const ONBOARDING_GRANT_REASON = 'onboarding_grant';
+
+/**
+ * The outcome of spending credits.
+ *
+ * `insufficient` carries the balance because the caller has to tell the vendor what they
+ * actually have; re-reading it afterwards would race with a concurrent recharge and report a
+ * number that was never the reason for the refusal.
+ */
+export type WalletDebitResult =
+  | { readonly outcome: 'debited'; readonly balanceAfter: number }
+  | { readonly outcome: 'insufficient'; readonly balance: number }
+  | { readonly outcome: 'duplicate' };
+
+/** The ledger key that makes an immediate delivery billable exactly once (TDR §25.6). */
+export function deliveryDebitReference(requestId: string, vendorId: string): string {
+  return `delivery:${requestId}:${vendorId}`;
+}
+
+/** The ledger key that makes an accepted response billable exactly once (TDR §25.6). */
+export function responseDebitReference(requestId: string, vendorId: string): string {
+  return `response:${requestId}:${vendorId}`;
+}
+
+/** The ledger key that makes the onboarding grant given exactly once (TDR §25.12). */
+export function onboardingGrantReference(vendorId: string): string {
+  return `onboarding:${vendorId}`;
+}
 
 /**
  * Deterministic synthetic email for a Paystack customer (TDR §19).

@@ -6,6 +6,7 @@ import { canResume } from '../../domain/models/workflow-instance';
 import { LLM_PROVIDER_SERVICE, type LlmService } from '../../domain/ports/outbound/llm-provider.port';
 import { STAGE_LOGGER, type StageLoggerPort } from '../../domain/ports/outbound/stage-logger.port';
 import { decodeActionPayload } from '../../domain/workflows/action-payload';
+import { resolveSystemAction } from '../../domain/workflows/system-actions';
 import { continuityJsonSchema, continuitySchema } from './schemas';
 
 const COMPONENT = 'MCOS';
@@ -130,6 +131,19 @@ export class ConversationContinuityAnalyzer {
     interactivePayload: string | null,
     openCount: number,
   ): ConversationRelationship | null {
+    // A system action names no instance, so it cannot be a continuation of one. Reading it as
+    // one would send the turn looking for a workflow called "system", find none, and either
+    // hijack an unrelated open workflow or fall through to the generic fallback envelope
+    // (Konnet Credits Recharge TDR §25.7).
+    if (resolveSystemAction(interactivePayload) !== null) {
+      return {
+        relationship: 'new',
+        confidence: 1,
+        candidateWorkflowIds: [],
+        reasoning: 'The user tapped a platform-level action, which starts a new objective.',
+      };
+    }
+
     if (interactivePayload !== null) {
       const decoded = decodeActionPayload(interactivePayload);
       if (decoded !== null) {

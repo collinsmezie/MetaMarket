@@ -10,6 +10,7 @@ import type {
   WorkflowStatus,
 } from '../src/domain/models/workflow-instance';
 import { EMPTY_FINGERPRINT, EMPTY_REGISTRY } from '../src/domain/models/workflow-instance';
+import type { Wallet, WalletDebitResult } from '../src/domain/models/credit';
 import type { DomainEvent, EventPublisherPort } from '../src/domain/ports/outbound/event-publisher.port';
 import type { StageLog, StageLoggerPort } from '../src/domain/ports/outbound/stage-logger.port';
 import type {
@@ -19,6 +20,7 @@ import type {
   WorkflowRepositoryPort,
   WorkflowSimilarityMatch,
 } from '../src/domain/ports/outbound/workflow-repository.port';
+import type { WalletRepositoryPort } from '../src/domain/ports/outbound/wallet-repository.port';
 import type { WorkflowTrigger } from '../src/domain/workflows/workflow-definition';
 
 /**
@@ -307,5 +309,162 @@ export class FrozenClock {
 
   advanceMs(ms: number): void {
     this.current = new Date(this.current.getTime() + ms);
+  }
+}
+
+/**
+ * An in-memory credit wallet that enforces the real invariants (Konnet Credits Recharge TDR §18,
+ * §25.5).
+ *
+ * Worth writing by hand rather than stubbing: the guarantees under test are "never negative",
+ * "exactly once per reference" and "a create that loses a race adopts the winner". A fake that
+ * returned canned outcomes would let a caller that violates all three still pass.
+ */
+export class InMemoryWalletRepository implements WalletRepositoryPort {
+  readonly wallets = new Map<string, Wallet>();
+  /** Ledger keyed by providerReference — the unique index, which is the whole guarantee. */
+  readonly ledger = new Map<string, { walletId: string; type: 'credit' | 'debit'; credits: number }>();
+
+  constructor(seed: readonly Wallet[] = []) {
+    for (const wallet of seed) this.wallets.set(wallet.id, wallet);
+  }
+
+  /** Convenience for tests: a funded wallet for a user. */
+  fund(userId: string, balanceCredits: number, conversationId = 'conv_1'): Wallet {
+    const wallet: Wallet = {
+      id: `wallet_${this.wallets.size + 1}`,
+      userId,
+      conversationId,
+      currency: 'NGN',
+      balanceCredits,
+      providerCustomerCode: null,
+      createdAt: FIXED_NOW,
+      updatedAt: FIXED_NOW,
+    };
+    this.wallets.set(wallet.id, wallet);
+    return wallet;
+  }
+
+  async findById(id: string): Promise<Wallet | null> {
+    return this.wallets.get(id) ?? null;
+  }
+
+  async findByUserId(userId: string): Promise<Wallet | null> {
+    return [...this.wallets.values()].find((wallet) => wallet.userId === userId) ?? null;
+  }
+
+  async create(params: { id: string; userId: string; conversationId: string }): Promise<Wallet> {
+    const existing = await this.findByUserId(params.userId);
+    if (existing !== null) return existing;
+
+    const wallet: Wallet = {
+      id: params.id,
+      userId: params.userId,
+      conversationId: params.conversationId,
+      currency: 'NGN',
+      balanceCredits: 0,
+      providerCustomerCode: null,
+      createdAt: FIXED_NOW,
+      updatedAt: FIXED_NOW,
+    };
+    this.wallets.set(wallet.id, wallet);
+    return wallet;
+  }
+
+  async updateProviderCustomerCode(walletId: string, customerCode: string): Promise<Wallet> {
+    const wallet = { ...(this.wallets.get(walletId) as Wallet), providerCustomerCode: customerCode };
+    this.wallets.set(walletId, wallet);
+    return wallet;
+  }
+
+  async creditAtomically(params: {
+    transactionId: string;
+    walletId: string;
+    amountCredits: number;
+    providerReference: string | null;
+    eventId: string | null;
+  }): Promise<{ outcome: 'credited'; balanceAfter: number } | { outcome: 'duplicate' }> {
+    const key = params.providerReference ?? params.eventId ?? params.transactionId;
+    if (this.ledger.has(key)) return { outcome: 'duplicate' };
+
+    this.ledger.set(key, { walletId: params.walletId, type: 'credit', credits: params.amountCredits });
+    return { outcome: 'credited', balanceAfter: this.move(params.walletId, params.amountCredits) };
+  }
+
+  async debitAtomically(params: {
+    transactionId: string;
+    walletId: string;
+    amountCredits: number;
+    providerReference: string;
+  }): Promise<WalletDebitResult> {
+    if (this.ledger.has(params.providerReference)) return { outcome: 'duplicate' };
+
+    const balance = this.wallets.get(params.walletId)?.balanceCredits ?? 0;
+    if (balance < params.amountCredits) return { outcome: 'insufficient', balance };
+
+    this.ledger.set(params.providerReference, {
+      walletId: params.walletId,
+      type: 'debit',
+      credits: params.amountCredits,
+    });
+
+    return { outcome: 'debited', balanceAfter: this.move(params.walletId, -params.amountCredits) };
+  }
+
+  async grantAtomically(params: {
+    transactionId: string;
+    walletId: string;
+    amountCredits: number;
+    providerReference: string;
+  }): Promise<{ outcome: 'credited'; balanceAfter: number } | { outcome: 'duplicate' }> {
+    if (this.ledger.has(params.providerReference)) return { outcome: 'duplicate' };
+
+    this.ledger.set(params.providerReference, {
+      walletId: params.walletId,
+      type: 'credit',
+      credits: params.amountCredits,
+    });
+
+    return { outcome: 'credited', balanceAfter: this.move(params.walletId, params.amountCredits) };
+  }
+
+  private move(walletId: string, delta: number): number {
+    const wallet = this.wallets.get(walletId) as Wallet;
+    const updated = { ...wallet, balanceCredits: wallet.balanceCredits + delta };
+    this.wallets.set(walletId, updated);
+    return updated.balanceCredits;
+  }
+}
+
+/** Records the wallet pushes a flow attempted, so best-effort delivery stays assertable. */
+export class RecordingWalletNotifier {
+  readonly credited: unknown[] = [];
+  readonly insufficient: { variant: string; balance: number; userId: string }[] = [];
+  readonly connected: { userId: string; credits: number; balanceAfter: number }[] = [];
+  readonly freeTrial: { userId: string }[] = [];
+  readonly onboarding: { userId: string; credits: number; balanceAfter: number }[] = [];
+
+  async notifyCredited(params: unknown): Promise<void> {
+    this.credited.push(params);
+  }
+
+  async notifyInsufficient(params: { variant: string; balance: number; userId: string }): Promise<void> {
+    this.insufficient.push(params);
+  }
+
+  async notifyConnected(params: { userId: string; credits: number; balanceAfter: number }): Promise<void> {
+    this.connected.push(params);
+  }
+
+  async notifyFreeTrial(params: { userId: string }): Promise<void> {
+    this.freeTrial.push(params);
+  }
+
+  async notifyOnboardingCredit(params: {
+    userId: string;
+    credits: number;
+    balanceAfter: number;
+  }): Promise<void> {
+    this.onboarding.push(params);
   }
 }

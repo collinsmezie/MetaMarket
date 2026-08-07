@@ -41,25 +41,38 @@ The CDE SHALL generate:
 - initial Capability DNA
 - capability confidence scores
 - expanded capability hypotheses
+- information density
 - ambiguity score
 
 ---
 
 ## Step 2 — Clarification (Optional)
 
-If the Capability Discovery Engine determines that ambiguity exceeds the configured threshold, the AI SHALL ask exactly ONE clarification question.
+The clarification gate SHALL key on **information density**, not ambiguity alone.
+
+- A statement at `medium` density or above names a real commercial domain that the CDE can
+  expand into concrete capability hypotheses. The engine already understood the vendor, so
+  the AI SHALL NOT ask a clarification question.
+- A contentless statement (`very_low` or `low` density — "I sell things", "anything",
+  "market items") leaves nothing to expand. If the ambiguity score also exceeds the
+  configured threshold, the AI SHALL spend the ONE clarification question.
 
 The clarification question SHALL maximize expected information gain.
 
-Examples:
+**Not clarified** — "I sell electrical things." is `medium` density. The CDE treats broad
+statements as "seeds from which the system grows understanding" and expands this one into a
+shop archetype with implied capabilities (wiring, breakers, sockets, bulbs, conduits), so
+no question is asked and the clarification budget is untouched.
+
+**Clarified** — a statement with nothing to expand:
 
 Vendor
 
-> "I sell electrical things."
+> "I sell things."
 
 AI
 
-> "Is it mainly house wiring materials, home electronics, electrical repair, or something else?"
+> "Can you name the kinds of things you sell?"
 
 The vendor's response SHALL be processed by the CDE.
 
@@ -72,7 +85,9 @@ The CDE SHALL update:
 
 ### Clarification Budget
 
-The onboarding workflow SHALL ask at most ONE clarification question.
+The onboarding workflow SHALL ask at most ONE clarification question, and only when a
+statement has nothing to expand (`very_low`/`low` density). Information-dense statements
+consume none of the budget.
 
 If ambiguity remains after the clarification response, onboarding SHALL continue.
 
@@ -90,6 +105,7 @@ Sources of future evidence include:
 - rejected matches
 - customer conversations
 - subsequent onboarding conversations
+- post onboarding conversations
 - corrections made by the vendor
 
 This ensures onboarding remains short while allowing continuous capability discovery.

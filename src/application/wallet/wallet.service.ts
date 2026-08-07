@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { RechargeView, Wallet } from '../../domain/models/credit';
-import { WalletEvents } from '../../domain/models/credit';
+import type { RechargeView, Wallet, WalletDebitResult } from '../../domain/models/credit';
+import { ONBOARDING_GRANT_REASON, WalletEvents, onboardingGrantReference } from '../../domain/models/credit';
 import {
   EVENT_PUBLISHER,
   type DomainEvent,
@@ -179,6 +179,135 @@ export class WalletService {
   async getBalance(userId: string): Promise<number> {
     const wallet = await this.wallets.findByUserId(userId);
     return wallet?.balanceCredits ?? 0;
+  }
+
+  /**
+   * Spends credits (TDR §25.6).
+   *
+   * Deliberately does no balance pre-check. `debitAtomically` answers "can they pay?" and "take
+   * the payment" in the same locked transaction, so a check here could only be a second opinion
+   * formed before the lock — one that a concurrent debit or recharge can invalidate before it is
+   * acted on. The caller branches on the result instead, and `insufficient` carries the balance
+   * the refusal was actually based on.
+   *
+   * Returns the raw outcome rather than a boolean: `duplicate` means the caller's work was
+   * already paid for and must proceed, which is the opposite of `insufficient`.
+   */
+  async debit(params: {
+    userId: string;
+    amountCredits: number;
+    reason: string;
+    providerReference: string;
+    metadata: Readonly<Record<string, unknown>>;
+  }): Promise<WalletDebitResult> {
+    const wallet = await this.wallets.findByUserId(params.userId);
+
+    // No wallet means the vendor has never recharged and never been granted anything. Creating
+    // one here would be a write on a read path that cannot change the answer.
+    if (wallet === null) return { outcome: 'insufficient', balance: 0 };
+
+    const result = await this.wallets.debitAtomically({
+      transactionId: this.ids.uuid(),
+      walletId: wallet.id,
+      amountCredits: params.amountCredits,
+      providerReference: params.providerReference,
+      reason: params.reason,
+      metadata: params.metadata,
+      at: this.clock.now(),
+    });
+
+    if (result.outcome === 'debited') {
+      await this.publish({
+        eventType: WalletEvents.Debited,
+        conversationId: wallet.conversationId,
+        payload: {
+          walletId: wallet.id,
+          userId: wallet.userId,
+          credits: params.amountCredits,
+          balanceAfter: result.balanceAfter,
+          reason: params.reason,
+          providerReference: params.providerReference,
+          ...params.metadata,
+        },
+      });
+    }
+
+    this.logger.stage({
+      component: COMPONENT,
+      stage: STAGE,
+      input: {
+        userId: params.userId,
+        credits: params.amountCredits,
+        reason: params.reason,
+        reference: params.providerReference,
+      },
+      action:
+        result.outcome === 'debited'
+          ? 'Debited the visibility fee'
+          : result.outcome === 'insufficient'
+            ? 'Refused the debit: the balance is below the fee'
+            : 'Debit already recorded for this reference; no second charge',
+      output: result,
+    });
+
+    return result;
+  }
+
+  /**
+   * Grants a newly onboarded vendor their starting credits (TDR §25.12).
+   *
+   * This is the wallet's second creation point. A brand-new vendor has never recharged, so there
+   * is nothing to find — the wallet is materialised here so the grant has somewhere to land, and
+   * the vendor is solvent for their first leads without ever seeing a payment screen.
+   *
+   * Idempotent by the ledger, not by a flag: `onboarding:<vendorId>` is unique, so however many
+   * times `seller.onboarded` is redelivered, exactly one grant exists.
+   */
+  async grantOnboardingCredits(params: {
+    userId: string;
+    conversationId: string;
+    vendorId: string;
+    amountCredits: number;
+  }): Promise<{ outcome: 'credited'; balanceAfter: number } | { outcome: 'duplicate' }> {
+    const wallet = await this.ensureWallet(params.userId, params.conversationId);
+    const providerReference = onboardingGrantReference(params.vendorId);
+
+    const result = await this.wallets.grantAtomically({
+      transactionId: this.ids.uuid(),
+      walletId: wallet.id,
+      amountCredits: params.amountCredits,
+      providerReference,
+      reason: ONBOARDING_GRANT_REASON,
+      metadata: { grant: 'onboarding', triggeredBy: 'seller.onboarded', vendorId: params.vendorId },
+      at: this.clock.now(),
+    });
+
+    if (result.outcome === 'credited') {
+      await this.publish({
+        eventType: WalletEvents.OnboardingCredited,
+        conversationId: params.conversationId,
+        payload: {
+          walletId: wallet.id,
+          userId: wallet.userId,
+          credits: params.amountCredits,
+          balanceAfter: result.balanceAfter,
+          providerReference,
+        },
+      });
+    }
+
+    this.logger.stage({
+      component: COMPONENT,
+      stage: `${STAGE}:OnboardingGrant`,
+      input: { userId: params.userId, vendorId: params.vendorId, credits: params.amountCredits },
+      action:
+        result.outcome === 'credited'
+          ? 'Granted the onboarding credits'
+          : 'Onboarding grant already given for this vendor; ignored the redelivery',
+      output: result,
+    });
+
+    return result;
   }
 
   private async publish(params: {

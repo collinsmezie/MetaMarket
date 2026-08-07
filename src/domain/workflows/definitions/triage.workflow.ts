@@ -102,7 +102,7 @@ const classify = {
             },
             {
               type: 'triage_choice',
-              title: 'I sell / I have a shop',
+              title: 'I want to sell',
               payload: encodeActionPayload({ workflowId: context.instance.id, action: 'sell' }),
             },
           ],

@@ -123,6 +123,12 @@ function build(
     async updateProviderCustomerCode() {
       return wallet;
     },
+    async debitAtomically() {
+      throw new Error('crediting does not spend');
+    },
+    async grantAtomically() {
+      throw new Error('crediting does not grant');
+    },
     async creditAtomically() {
       if (options.creditThrows !== undefined) throw options.creditThrows;
       return options.creditOutcome ?? { outcome: 'credited', balanceAfter: 68 };
