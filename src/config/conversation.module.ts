@@ -10,6 +10,11 @@ import { CapabilityDiscoveryService } from '../application/capability/capability
 import { CapabilityResolver } from '../application/capability/capability-resolver.service';
 import { OnboardingExtractionService } from '../application/capability/onboarding-extraction.service';
 import { VendorOnboardingService } from '../application/capability/vendor-onboarding.service';
+import { EvidenceProcessor } from '../application/evidence/evidence-processor.service';
+import { EvidenceQueryService } from '../application/evidence/evidence-query.service';
+import { DemandUnderstandingService } from '../application/matching/demand-understanding.service';
+import { CapabilityMatchingService } from '../application/matching/capability-matching.service';
+import { RequestDistributionService } from '../application/fulfilment/request-distribution.service';
 import { MessageIngestionService } from '../application/pipeline/message-ingestion.service';
 import { TurnProcessor } from '../application/pipeline/turn-processor.service';
 import { WORKFLOW_SERVICES } from '../application/pipeline/workflow-services';
@@ -38,6 +43,7 @@ import {
 import { ConversationPolicyEngine } from '../domain/workflows/conversation-policy';
 import { triageWorkflow } from '../domain/workflows/definitions/triage.workflow';
 import { vendorOnboardingWorkflow } from '../domain/workflows/definitions/vendor-onboarding.workflow';
+import { buyerSearchWorkflow } from '../domain/workflows/definitions/buyer-search.workflow';
 import { WorkflowEngine } from '../domain/workflows/workflow-engine';
 import { WorkflowManager } from '../domain/workflows/workflow-manager';
 import { WorkflowDefinitionRegistry } from '../domain/workflows/workflow-registry';
@@ -60,6 +66,11 @@ import { AppConfigService } from './app-config.service';
     CapabilityDiscoveryService,
     OnboardingExtractionService,
     VendorOnboardingService,
+    EvidenceProcessor,
+    EvidenceQueryService,
+    DemandUnderstandingService,
+    CapabilityMatchingService,
+    RequestDistributionService,
     ResponseComposer,
     ConversationContinuityAnalyzer,
     SemanticResolutionService,
@@ -75,6 +86,7 @@ import { AppConfigService } from './app-config.service';
         // Vendor Onboarding outranks Triage on the vendor_onboarding intent by policy
         // priority, so registering it is all that is needed to take over that flow.
         registry.register(vendorOnboardingWorkflow);
+        registry.register(buyerSearchWorkflow);
         registry.register(triageWorkflow);
         return registry;
       },
@@ -131,16 +143,24 @@ import { AppConfigService } from './app-config.service';
       // The capabilities workflow state handlers may reach. Listing them in one place keeps
       // what a workflow can do explicit and reviewable.
       provide: WORKFLOW_SERVICES,
-      inject: [OnboardingExtractionService, CapabilityDiscoveryService, VendorOnboardingService],
+      inject: [
+        OnboardingExtractionService,
+        CapabilityDiscoveryService,
+        VendorOnboardingService,
+        CapabilityMatchingService,
+        RequestDistributionService,
+      ],
       useFactory: (
         extraction: OnboardingExtractionService,
         discovery: CapabilityDiscoveryService,
         vendors: VendorOnboardingService,
-      ) => ({ extraction, discovery, vendors }),
+        matching: CapabilityMatchingService,
+        distribution: RequestDistributionService,
+      ) => ({ extraction, discovery, vendors, matching, distribution }),
     },
 
     { provide: HANDLE_INCOMING_MESSAGE, useExisting: MessageIngestionService },
   ],
-  exports: [MessageIngestionService, HANDLE_INCOMING_MESSAGE],
+  exports: [MessageIngestionService, HANDLE_INCOMING_MESSAGE, EvidenceQueryService],
 })
 export class ConversationModule {}

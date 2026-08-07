@@ -22,6 +22,7 @@ import { PrismaWorkflowRepository } from '../adapters/outbound/persistence/prism
 import { PrismaService } from '../adapters/outbound/persistence/prisma.service';
 import { PrismaTaxonomyRepository } from '../adapters/outbound/persistence/prisma-taxonomy.repository';
 import { PrismaVendorRepository } from '../adapters/outbound/persistence/prisma-vendor.repository';
+import { PrismaEvidenceRepository } from '../adapters/outbound/persistence/prisma-evidence.repository';
 import { PrismaServiceCapabilityRepository } from '../adapters/outbound/persistence/prisma-service-capability.repository';
 import { RedisDistributedLockAdapter } from '../adapters/outbound/persistence/redis-distributed-lock.adapter';
 import { RedisService } from '../adapters/outbound/persistence/redis.service';
@@ -38,6 +39,7 @@ import { CONVERSATION_REPOSITORY } from '../domain/ports/outbound/conversation-r
 import { DISTRIBUTED_LOCK } from '../domain/ports/outbound/distributed-lock.port';
 import { EMBEDDING_PROVIDER } from '../domain/ports/outbound/embedding-provider.port';
 import { EVENT_PUBLISHER } from '../domain/ports/outbound/event-publisher.port';
+import { EVIDENCE_REPOSITORY } from '../domain/ports/outbound/evidence-repository.port';
 import { LLM_PROVIDER_SERVICE } from '../domain/ports/outbound/llm-provider.port';
 import {
   MEDIA_BATCH_TRACKER,
@@ -100,6 +102,7 @@ import { AppConfigService } from './app-config.service';
     { provide: WORKFLOW_REPOSITORY, useClass: PrismaWorkflowRepository },
     { provide: TAXONOMY_REPOSITORY, useClass: PrismaTaxonomyRepository },
     { provide: VENDOR_REPOSITORY, useClass: PrismaVendorRepository },
+    { provide: EVIDENCE_REPOSITORY, useClass: PrismaEvidenceRepository },
     { provide: SERVICE_CAPABILITY_REPOSITORY, useClass: PrismaServiceCapabilityRepository },
     { provide: DISTRIBUTED_LOCK, useClass: RedisDistributedLockAdapter },
 
@@ -149,6 +152,7 @@ import { AppConfigService } from './app-config.service';
     WORKFLOW_REPOSITORY,
     TAXONOMY_REPOSITORY,
     VENDOR_REPOSITORY,
+    EVIDENCE_REPOSITORY,
     SERVICE_CAPABILITY_REPOSITORY,
     DISTRIBUTED_LOCK,
     LLM_PROVIDER_SERVICE,

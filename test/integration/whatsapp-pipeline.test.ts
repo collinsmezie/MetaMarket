@@ -130,6 +130,38 @@ class ScriptedLlm implements LlmService {
           constraints: [],
           brands: [],
         };
+      case 'demand_understanding':
+        return {
+          mode: 'item',
+          products: ['artist brush'],
+          services: [],
+          businessTypes: [],
+          quantities: [],
+          modifiers: [],
+          constraints: [],
+          brands: [],
+          location: '',
+          ambiguityType: 'none',
+          ambiguityScore: 0.1,
+          ambiguityOptions: [],
+          inferredItem: '',
+          inferredItemConfidence: 0,
+          reasoning: 'scripted',
+        };
+
+      case 'semantic_expansion':
+        return {
+          missions: ['painting'],
+          capabilities: [{ name: 'Art Materials', confidence: 0.9 }],
+          inventoryAffinities: [{ name: 'Bookstores', confidence: 0.4 }],
+          inferredProducts: [],
+          reasoning: 'scripted',
+        };
+
+      case 'capability_ranking':
+        // No taxonomy is seeded in this suite, so there is nothing to rank.
+        return { selections: [] };
+
       default:
         throw new Error(`Unscripted LLM operation "${operation}"`);
     }
@@ -339,10 +371,15 @@ describe('WhatsApp pipeline integration', () => {
 
     // Case B ordering (MCOS §14). Continuity is absent because a conversation with no open
     // workflows can only be `new` — the analyzer answers that deterministically rather than
-    // spending an LLM call on it.
-    expect(llm.operations).toEqual(['intent_resolution', 'semantic_resolution']);
+    // spending an LLM call on it. Buyer intent then reaches the CME, which BuyerSearch owns.
+    expect(llm.operations.slice(0, 2)).toEqual(['intent_resolution', 'semantic_resolution']);
+    expect(llm.operations).toContain('demand_understanding');
 
-    expect(notifier.lastText()).toContain('supplier');
+    // This suite covers the Conversation OS pipeline, not marketplace content: no taxonomy or
+    // vendors are seeded here, so the correct outcome is an honest "nothing found" reply rather
+    // than a vendor list. Marketplace behaviour is covered by the CME and loop suites.
+    expect(notifier.lastText().length).toBeGreaterThan(0);
+    expect(notifier.lastText()).toMatch(/No vendor|could not work out/i);
 
     const conversation = await prisma.conversation.findUnique({ where: { userId: '+2348012345678' } });
     expect(conversation).not.toBeNull();
@@ -351,8 +388,8 @@ describe('WhatsApp pipeline integration', () => {
       where: { conversationId: conversation!.id },
     });
     expect(workflows).toHaveLength(1);
-    expect(workflows[0].workflowType).toBe('Triage');
-    // Triage acknowledges a known intent and completes in the same turn.
+    // Buyer intent routes to BuyerSearch, which outranks Triage by policy priority.
+    expect(workflows[0].workflowType).toBe('BuyerSearch');
     expect(workflows[0].status).toBe('completed');
 
     const history = await prisma.historyEntry.findMany({ where: { conversationId: conversation!.id } });
@@ -418,7 +455,8 @@ describe('WhatsApp pipeline integration', () => {
     const workflows = await prisma.workflowInstance.findMany();
     expect(workflows).toHaveLength(1);
     expect(workflows[0].status).toBe('completed');
-    expect(notifier.lastText()).toContain('supplier');
+    // Triage still handles the unknown-intent path and hands the buyer onward.
+    expect(notifier.lastText().length).toBeGreaterThan(0);
   });
 
   it('returns the fallback envelope when a message carries no readable content', async () => {

@@ -541,6 +541,207 @@ model ServiceCapability {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Evidence Service (Phase 3)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Immutable log of every marketplace event (Evidence Service, "Raw Event Store").
+///
+/// Distinct from {@link OutboxEvent}, which exists to guarantee *delivery* and is pruned once
+/// relayed. This is the permanent record: audit trail, replay source, and the training data
+/// for future ranking models. "Raw events are immutable. They should never be modified after
+/// persistence."
+model MarketplaceEvent {
+  id      String @id @default(uuid()) @db.Uuid
+  eventId String @unique @map("event_id") @db.Uuid
+
+  eventType String @map("event_type")
+  producer  String
+
+  vendorId       String? @map("vendor_id") @db.Uuid
+  customerId     String? @map("customer_id")
+  requestId      String? @map("request_id") @db.Uuid
+  conversationId String? @map("conversation_id") @db.Uuid
+
+  /// Free-text product term the event concerned, e.g. "Hammer".
+  product String?
+  /// Canonical capability the event concerned, e.g. a GPC brick code.
+  capability String?
+
+  metadata Json @default("{}")
+
+  occurredAt DateTime @default(now()) @map("occurred_at")
+  /// Null until the Evidence Processor has turned it into evidence records.
+  processedAt DateTime? @map("processed_at")
+
+  @@index([vendorId, occurredAt])
+  @@index([eventType, occurredAt])
+  /// Drives the processor sweep.
+  @@index([processedAt])
+  @@map("marketplace_events")
+}
+
+/// A single interpreted signal derived from one marketplace event
+/// (Evidence Service, "Evidence Processor").
+///
+/// One event can yield several records — a `request.accepted` says something about the vendor's
+/// responsiveness *and* about their inventory for that product.
+model EvidenceRecord {
+  id       String @id @default(uuid()) @db.Uuid
+  /// The event this was derived from, so any score traces back to a raw fact.
+  eventId  String @map("event_id") @db.Uuid
+  vendorId String @map("vendor_id") @db.Uuid
+
+  /// What the evidence is about: `capability`, `product`, or `vendor` for overall behaviour.
+  subjectType String @map("subject_type")
+  /// Capability id or product term. Empty for vendor-level behavioural evidence.
+  subject     String
+
+  /// The behavioural dimension: delivered | responded | accepted | rejected | no_response |
+  /// selected | completed | cancelled | rated.
+  signal String
+
+  /// +1 supports the vendor, -1 counts against them.
+  polarity Int
+  /// How much this record should count, before aggregation.
+  weight   Float @default(1)
+
+  /// Response latency in milliseconds, when the signal carries one.
+  responseTimeMs Int? @map("response_time_ms")
+  /// Customer rating 1-5, when the signal carries one.
+  rating Int?
+
+  observedAt DateTime @map("observed_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([vendorId, subjectType, subject])
+  @@index([eventId])
+  @@map("evidence_records")
+}
+
+/// Rolled-up evidence for one vendor and one subject
+/// (Evidence Service, "Evidence Aggregator").
+///
+/// This is what the Capability Matching Engine consumes during ranking — it never reads raw
+/// events. Counters are kept alongside the derived rates so a score can be explained and
+/// recomputed without replaying the whole history.
+model EvidenceAggregate {
+  id       String @id @default(uuid()) @db.Uuid
+  vendorId String @map("vendor_id") @db.Uuid
+
+  subjectType String @map("subject_type")
+  subject     String
+
+  delivered  Int @default(0)
+  responded  Int @default(0)
+  accepted   Int @default(0)
+  rejected   Int @default(0)
+  noResponse Int @default(0) @map("no_response")
+  selected   Int @default(0)
+  completed  Int @default(0)
+  cancelled  Int @default(0)
+
+  /// Running totals, so the mean is derivable without storing every sample.
+  responseTimeSumMs   BigInt @default(0) @map("response_time_sum_ms")
+  responseTimeCount   Int    @default(0) @map("response_time_count")
+  ratingSum           Int    @default(0) @map("rating_sum")
+  ratingCount         Int    @default(0) @map("rating_count")
+
+  /// Composite score in [0,1] consumed by ranking. Small-sample corrected.
+  evidenceScore Float @default(0) @map("evidence_score")
+  /// Confidence in the score itself, driven by how much evidence exists.
+  scoreConfidence Float @default(0) @map("score_confidence")
+
+  firstObservedAt DateTime @map("first_observed_at")
+  lastObservedAt  DateTime @map("last_observed_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([vendorId, subjectType, subject])
+  /// The demand-side lookup: "who has evidence for this subject, best first".
+  @@index([subjectType, subject, evidenceScore])
+  @@index([vendorId, evidenceScore])
+  @@map("evidence_aggregates")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Demand-driven fulfilment (Phase 5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A customer's request, distributed to matched vendors (MCOS Refinement #11 §4).
+///
+/// Long-running: created after the highest-ranked vendors are delivered immediately, then fanned
+/// out to the remainder, and it stays open while responses arrive.
+model CustomerRequest {
+  id String @id @default(uuid()) @db.Uuid
+
+  conversationId String @map("conversation_id") @db.Uuid
+  workflowId     String @map("workflow_id") @db.Uuid
+  customerId     String @map("customer_id")
+
+  /// What the customer asked for, in their words.
+  query String
+  /// Canonical capability the request resolved to; the subject evidence accrues against.
+  capabilityId   String? @map("capability_id")
+  capabilityName String? @map("capability_name")
+  /// Normalised product term, for product-level evidence.
+  product String?
+
+  customerCity String? @map("customer_city")
+
+  /// open | fulfilled | expired | cancelled
+  status String @default("open")
+
+  expiresAt   DateTime  @map("expires_at")
+  fulfilledAt DateTime? @map("fulfilled_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  deliveries RequestDelivery[]
+
+  @@index([conversationId])
+  @@index([status, expiresAt])
+  @@map("customer_requests")
+}
+
+/// One vendor's leg of a fan-out.
+///
+/// Tracks both directions of the visibility rule (MCOS Refinement #11 §6): the top-ranked
+/// vendors are revealed to the customer immediately, while everyone else becomes visible only
+/// once they explicitly respond.
+model RequestDelivery {
+  id        String @id @default(uuid()) @db.Uuid
+  requestId String @map("request_id") @db.Uuid
+  vendorId  String @map("vendor_id") @db.Uuid
+
+  /// Rank the CME assigned, kept so ordering survives late responses.
+  rank  Int
+  score Float
+
+  /// True for the top-ranked vendor(s) delivered to the customer before any response.
+  immediate Boolean @default(false)
+
+  /// pending | accepted | rejected | timeout
+  status String @default("pending")
+
+  /// True once this vendor has been shown to the customer.
+  revealedToCustomer Boolean @default(false) @map("revealed_to_customer")
+
+  /// Whether the vendor's credit was deducted for this delivery, so a retry cannot double-charge.
+  creditDeducted Boolean @default(false) @map("credit_deducted")
+
+  deliveredAt DateTime  @default(now()) @map("delivered_at")
+  respondedAt DateTime? @map("responded_at")
+  /// Latency in milliseconds, denormalised for the Evidence Service.
+  responseTimeMs Int? @map("response_time_ms")
+
+  request CustomerRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, vendorId])
+  @@index([vendorId, status])
+  @@index([status, deliveredAt])
+  @@map("request_deliveries")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Event outbox
 // ─────────────────────────────────────────────────────────────────────────────
 

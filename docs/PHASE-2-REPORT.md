@@ -137,7 +137,7 @@ invisibly is its own hazard.
 Fixed in `openai-llm.adapter.ts`: reasoning models are detected and sent the right parameters.
 Confirmed by re-running the probe — **10 of 10 calls now complete via OpenAI, zero failovers**.
 
-### Two things for you to decide
+### Two things for you to decideclaud
 
 1. **Is `o3` intended for the interactive path?** It works now, but it is a reasoning model:
    understanding takes ~11s per call and a full statement resolution ~33s. On WhatsApp that is a

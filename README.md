@@ -13,17 +13,18 @@ directives in [`Execution.md`](Execution.md).
 
 ## Status
 
-Phases 1 and 2 are implemented. See [`docs/PHASE-1-REPORT.md`](docs/PHASE-1-REPORT.md) and
-[`docs/PHASE-2-REPORT.md`](docs/PHASE-2-REPORT.md) for exactly what is built, what is verified,
-and what is deliberately deferred.
+All five phases are implemented. See [`docs/PHASE-1-REPORT.md`](docs/PHASE-1-REPORT.md),
+[`docs/PHASE-2-REPORT.md`](docs/PHASE-2-REPORT.md) and
+[`docs/PHASE-3-4-5-REPORT.md`](docs/PHASE-3-4-5-REPORT.md) for exactly what is built, what is
+verified, and what is deliberately deferred.
 
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Conversation OS core: adapters, context, workflow engine, media, events | **Implemented**, pending live-WhatsApp gate |
 | 2 | Vendor onboarding + Capability Discovery Engine | **Implemented**, verified against the docs' own test cases |
-| 3 | Evidence Service + event bus consumers | Event bus, outbox and immutable evidence store built; Evidence Service not started |
-| 4 | Capability Matching Engine (15-stage retrieval) | GS1 GPC taxonomy, hybrid retrieval and Capability Resolver built ahead of schedule; CME not started |
-| 5 | Fan-out + continuous learning | Not started |
+| 3 | Evidence Service + event bus consumers | **Implemented** — raw event store, processor, aggregator, internal API |
+| 4 | Capability Matching Engine | **Implemented** — search modes, ambiguity, expansion, retrieval, explainable ranking |
+| 5 | Fan-out + continuous learning | **Implemented** — immediate delivery, billing, fan-out, visibility rules, timeout sweep |
 
 ---
 
@@ -45,6 +46,14 @@ npx prisma generate
 npm run start:dev
 curl localhost:3000/health
 ```
+
+### Database & GUI access
+
+- **Postgres (pgvector):** `localhost:5434`
+  - **Database / User / Password:** `metamarket` / `metamarket` / `metamarket`
+  - *(Port `5434` avoids colliding with host system Postgres on `5432`)*
+- **Prisma Studio GUI:** `npx prisma studio` *(opens at http://localhost:5555)*
+
 
 ### Exercising the pipeline without WhatsApp
 
@@ -91,6 +100,9 @@ src/
 │   ├── understanding/       Continuity → Intent → Semantic resolution
 │   ├── media/               Media processing
 │   ├── taxonomy/            GS1 GPC import + embedding
+│   ├── evidence/            Evidence processor, aggregator, internal query API
+│   ├── matching/            Capability Matching Engine
+│   ├── fulfilment/          Request distribution and fan-out
 │   ├── pipeline/            Message ingestion, turn processing
 │   └── response/            Response composition
 ├── adapters/
