@@ -77,6 +77,10 @@ export const envSchema = z
     PAYSTACK_PUBLIC_KEY: z.string().optional(),
     PAYSTACK_API_BASE: z.string().url().default('https://api.paystack.co'),
     PAYSTACK_WEBHOOK_SIGNATURE_VERIFY: booleanFromString(true),
+    // Bank partner for dedicated accounts. Left unset it is derived from the key mode, which is
+    // what you want: Paystack only accepts `test-bank` on a test key and rejects it on a live
+    // one. Set explicitly if your business is provisioned with a different partner.
+    PAYSTACK_DVA_BANK: z.string().optional(),
     /** Naira per credit. Conversion floors, so this is also the minimum fundable amount. */
     NAIRA_PER_CREDIT: intFromString(100, 1),
     // What a vendor pays to be shown to one customer, immediately or by accepting a fanned-out

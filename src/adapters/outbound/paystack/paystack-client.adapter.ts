@@ -19,9 +19,19 @@ const BACKOFF_BASE_MS = 400;
 /**
  * The bank Paystack should issue the dedicated account with.
  *
- * Wema is Paystack's standard DVA partner for Nigerian test and live accounts.
+ * Paystack accepts a different partner depending on the key mode and rejects the wrong one
+ * outright: a test key must ask for `test-bank`, a live key for a real partner. Hardcoding one
+ * value meant provisioning could only ever work in one mode, and the failure looks like a
+ * business-configuration problem rather than a wrong parameter.
  */
-const PREFERRED_BANK = 'wema-bank';
+const TEST_BANK = 'test-bank';
+const LIVE_BANK = 'wema-bank';
+
+/** Paystack test secret keys are prefixed `sk_test_`; everything else is treated as live. */
+function preferredBankFor(secretKey: string, override: string | undefined): string {
+  if (override !== undefined && override.length > 0) return override;
+  return secretKey.startsWith('sk_test_') ? TEST_BANK : LIVE_BANK;
+}
 
 /**
  * Paystack implementation of {@link PaymentProviderPort} (Konnet Credits Recharge TDR §11).
@@ -33,6 +43,7 @@ const PREFERRED_BANK = 'wema-bank';
 export class PaystackClientAdapter implements PaymentProviderPort {
   private readonly secretKey: string | undefined;
   private readonly apiBase: string;
+  private readonly dvaBankOverride: string | undefined;
 
   constructor(
     config: AppConfigService,
@@ -40,6 +51,7 @@ export class PaystackClientAdapter implements PaymentProviderPort {
   ) {
     this.secretKey = config.paystack.secretKey;
     this.apiBase = config.paystack.apiBase;
+    this.dvaBankOverride = config.paystack.dvaBank;
   }
 
   isConfigured(): boolean {
@@ -68,7 +80,7 @@ export class PaystackClientAdapter implements PaymentProviderPort {
 
     const response = await this.request('/dedicated_account', {
       customer: customerCode,
-      preferred_bank: PREFERRED_BANK,
+      preferred_bank: preferredBankFor(this.secretKey, this.dvaBankOverride),
       metadata: { userId: params.customerReference, reference: providerReference },
     });
 

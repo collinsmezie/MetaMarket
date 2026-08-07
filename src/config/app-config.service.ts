@@ -138,6 +138,7 @@ export class AppConfigService {
       publicKey: this.get('PAYSTACK_PUBLIC_KEY'),
       apiBase: this.get('PAYSTACK_API_BASE'),
       verifySignature: this.get('PAYSTACK_WEBHOOK_SIGNATURE_VERIFY'),
+      dvaBank: this.get('PAYSTACK_DVA_BANK'),
     };
   }
 
