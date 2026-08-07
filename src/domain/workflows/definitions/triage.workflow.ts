@@ -111,6 +111,38 @@ function fingerprintFor(trigger: WorkflowTrigger): SemanticFingerprint {
   };
 }
 
+/**
+ * The buy/sell buttons.
+ *
+ * Offered on every ask, including the re-ask. Dropping them the second time was what turned an
+ * unclear reply into a dead end: a user answering "Hi" got a text-only question back, so the one
+ * unambiguous way to answer was taken away at exactly the moment it was needed most, and the
+ * exchange repeated sixteen times.
+ */
+function choiceActions(workflowId: string) {
+  return [
+    {
+      type: 'triage_choice',
+      title: 'I want to buy',
+      payload: encodeActionPayload({ workflowId, action: 'buy' }),
+    },
+    {
+      type: 'triage_choice',
+      title: 'I want to sell',
+      payload: encodeActionPayload({ workflowId, action: 'sell' }),
+    },
+  ];
+}
+
+/**
+ * Re-asks before giving up.
+ *
+ * Bounded because a question the user has ignored three times is not going to work the fourth;
+ * past that Triage says what it can do and closes, which is a better answer than an endless
+ * loop the user cannot escape.
+ */
+const MAX_CLARIFICATION_ATTEMPTS = 3;
+
 const classify = {
   name: STATE_CLASSIFY,
   allowedTransitions: [STATE_AWAIT_DETAIL, STATE_COMPLETE],
@@ -132,22 +164,11 @@ const classify = {
             '',
             'Are you looking to buy something, or do you want to list your business so buyers can find you?',
           ].join('\n'),
-          actions: [
-            {
-              type: 'triage_choice',
-              title: 'I want to buy',
-              payload: encodeActionPayload({ workflowId: context.instance.id, action: 'buy' }),
-            },
-            {
-              type: 'triage_choice',
-              title: 'I want to sell',
-              payload: encodeActionPayload({ workflowId: context.instance.id, action: 'sell' }),
-            },
-          ],
+          actions: choiceActions(context.instance.id),
         },
         summary: `Triage: intent unclear from "${trigger.text}". Asked whether the user is buying or selling.`,
         semanticFingerprint: fingerprint,
-        dataPatch: { originalMessage: trigger.text },
+        dataPatch: { originalMessage: trigger.text, clarificationAttempts: 0 },
       };
     }
 
@@ -171,11 +192,35 @@ const awaitDetail = {
     const choice = this.readChoice(trigger);
 
     if (choice === null) {
+      const attempts = Number(context.data.clarificationAttempts ?? 0) + 1;
+
+      // Give up rather than loop. The summary counts attempts instead of appending a sentence
+      // per turn: it is replayed into every continuity prompt, so an ever-growing string costs
+      // tokens and latency on each subsequent message and eventually crowds out the history it
+      // was meant to summarise.
+      if (attempts >= MAX_CLARIFICATION_ATTEMPTS) {
+        return {
+          transitionTo: STATE_COMPLETE,
+          status: 'completed',
+          response: {
+            text: [
+              'No problem — let me leave it there for now.',
+              '',
+              'Whenever you are ready, just tell me what you need. For example: "I need cement in Aba", or "I sell electrical materials".',
+            ].join('\n'),
+          },
+          summary: `Triage: the user never clarified after ${attempts} attempts; closed the conversation.`,
+          dataPatch: { clarificationAttempts: attempts },
+        };
+      }
+
       return {
         response: {
-          text: 'Sorry, I still did not catch that. Are you buying, or do you want to list your business?',
+          text: 'Sorry, I still did not catch that. Are you buying something, or do you want to list your business?',
+          actions: choiceActions(context.instance.id),
         },
-        summary: `${context.instance.summary} User's reply was still unclear.`,
+        summary: `Triage: intent unclear from "${context.data.originalMessage ?? ''}". Re-asked (${attempts}/${MAX_CLARIFICATION_ATTEMPTS}).`,
+        dataPatch: { clarificationAttempts: attempts },
       };
     }
 

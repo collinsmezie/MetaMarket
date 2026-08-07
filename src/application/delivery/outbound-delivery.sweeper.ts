@@ -3,7 +3,7 @@ import { Interval } from '@nestjs/schedule';
 import type { OutboundMessage } from '../../domain/models/outbound-message';
 import { isExhausted, nextOutboundAttemptAt } from '../../domain/models/outbound-message';
 import {
-  CHANNEL_NOTIFIER_REGISTRY,
+  RAW_CHANNEL_NOTIFIER_REGISTRY,
   type ChannelNotifierRegistryPort,
 } from '../../domain/ports/outbound/channel-notifier.port';
 import {
@@ -50,7 +50,10 @@ export class OutboundDeliverySweeper {
 
   constructor(
     @Inject(OUTBOUND_MESSAGE_REPOSITORY) private readonly queue: OutboundMessageRepositoryPort,
-    @Inject(CHANNEL_NOTIFIER_REGISTRY) private readonly notifiers: ChannelNotifierRegistryPort,
+    // Undecorated, and it must stay that way: sending a queued message through the durable
+    // wrapper would enqueue a copy of it, so every sweep would leave behind one more row than
+    // it delivered and the queue would grow for ever off its own output.
+    @Inject(RAW_CHANNEL_NOTIFIER_REGISTRY) private readonly notifiers: ChannelNotifierRegistryPort,
     @Inject(STAGE_LOGGER) private readonly logger: StageLoggerPort,
     @Inject(CLOCK) private readonly clock: ClockPort,
   ) {}

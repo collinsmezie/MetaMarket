@@ -67,6 +67,17 @@ export interface ChannelNotifierPort {
 
 export const CHANNEL_NOTIFIER_REGISTRY = Symbol('ChannelNotifierRegistry');
 
+/**
+ * The same registry without the durable-queue decorator.
+ *
+ * Exactly one consumer: the sweep that drains the queue. It must reach the channel directly,
+ * because sending through the decorator would write a fresh queue row for every message it
+ * retries — the queue feeding itself, one new row per sweep, for ever.
+ *
+ * Nothing else should inject this. Losing the write-ahead guarantee is the entire cost.
+ */
+export const RAW_CHANNEL_NOTIFIER_REGISTRY = Symbol('RawChannelNotifierRegistry');
+
 /** Resolves the notifier for a channel, so callers stay channel-agnostic. */
 export interface ChannelNotifierRegistryPort {
   forChannel(channel: Channel): ChannelNotifierPort;

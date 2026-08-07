@@ -158,13 +158,19 @@ export class WalletService {
         accountName: account.accountName,
       };
     } catch (error) {
+      // The provider already judged this: a 4xx is a decision, not an outage. Discarding that
+      // and telling every user "try again in a few minutes" turns a configuration problem the
+      // operator must fix into a promise the platform repeats forever.
+      const permanent = error instanceof ProvisioningError && !error.retryable;
+
       this.logger.stageFailed({
         component: COMPONENT,
         stage: STAGE,
         input: { userId: params.userId },
-        action:
-          error instanceof ProvisioningError
-            ? 'Funding account provisioning failed; showing the balance and asking the user to retry'
+        action: permanent
+          ? 'Paystack refused to provision a funding account for this business; bank-transfer funding is unavailable until an operator resolves it'
+          : error instanceof ProvisioningError
+            ? 'Funding account provisioning failed transiently; showing the balance and asking the user to retry'
             : 'Unexpected failure while provisioning; degrading to the unavailable view',
         error,
         durationMs: Date.now() - startedAt,
@@ -172,7 +178,11 @@ export class WalletService {
 
       // Deliberately not retried inline: the next "Recharge" turn tries again, and holding the
       // conversation open while Paystack is down helps nobody.
-      return { status: 'unavailable', balanceCredits: wallet.balanceCredits, reason: 'provisioning_failed' };
+      return {
+        status: 'unavailable',
+        balanceCredits: wallet.balanceCredits,
+        reason: permanent ? 'provisioning_unsupported' : 'provisioning_failed',
+      };
     }
   }
 

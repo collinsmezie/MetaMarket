@@ -86,7 +86,10 @@ export interface OnboardingServices extends WorkflowServices {
     }>;
   };
   readonly vendors: {
-    ensureVendor(params: { userId: string; conversationId: string }): Promise<{ vendorId: string }>;
+    ensureVendor(params: {
+      userId: string;
+      conversationId: string;
+    }): Promise<{ vendorId: string; alreadyOnboarded: boolean; businessName: string }>;
     finalizeProfile(params: {
       vendorId: string;
       businessName: string;
@@ -107,6 +110,8 @@ interface OnboardingData extends Record<string, unknown> {
   /** State proposed to the vendor and awaiting a yes/no. */
   readonly proposedState: string | null;
   readonly statements: readonly string[];
+  /** True once a returning, already-listed vendor has been recognised and asked what to add. */
+  readonly returningGreeted: boolean;
 }
 
 function dataOf(context: WorkflowExecutionContext): OnboardingData {
@@ -119,6 +124,7 @@ function dataOf(context: WorkflowExecutionContext): OnboardingData {
     pendingQuestion: data.pendingQuestion ?? null,
     proposedState: data.proposedState ?? null,
     statements: data.statements ?? [],
+    returningGreeted: data.returningGreeted ?? false,
   };
 }
 
@@ -198,14 +204,37 @@ async function handleTurn(context: WorkflowExecutionContext): Promise<StateExecu
   const data = dataOf(context);
   const { trigger } = context;
 
-  const vendorId =
-    data.vendorId ??
-    (
-      await services.vendors.ensureVendor({
-        userId: trigger.conversation.userId,
-        conversationId: trigger.conversation.id,
-      })
-    ).vendorId;
+  const vendor = await services.vendors.ensureVendor({
+    userId: trigger.conversation.userId,
+    conversationId: trigger.conversation.id,
+  });
+
+  const vendorId = data.vendorId ?? vendor.vendorId;
+
+  // A vendor who already finished onboarding is not onboarding again. Without this the platform
+  // asks a listed seller what they sell, where they are and what their shop is called — all of
+  // which it knows — and feeds whatever they say into their Capability DNA. That is how the word
+  // "Sell", a reply to Triage's buy-or-sell question, ended up recorded as a capability
+  // statement against a live vendor's profile, an evidence row that is append-only by design.
+  //
+  // The first turn recognises them and asks what they want to add; only the answer to *that*
+  // becomes evidence.
+  if (vendor.alreadyOnboarded && !data.returningGreeted) {
+    const name = vendor.businessName.length > 0 ? vendor.businessName : 'your business';
+
+    return {
+      transitionTo: STATE_AWAIT_CAPABILITY,
+      response: {
+        text: [
+          `You are already listed as *${name}* — buyers can find you.`,
+          '',
+          'What would you like to add to what you sell? Tell me the products or services, and I will add them to your profile.',
+        ].join('\n'),
+      },
+      dataPatch: { vendorId, returningGreeted: true, pendingQuestion: 'What would you like to add?' },
+      summary: `Vendor onboarding: ${name} is already listed; asked what to add.`,
+    };
+  }
 
   const extraction = await services.extraction.extract({
     message: trigger.text,
@@ -295,6 +324,29 @@ async function handleTurn(context: WorkflowExecutionContext): Promise<StateExecu
     };
   }
 
+  // A returning vendor's only business here is adding to their DNA. Their location and trading
+  // name are already on file, so `nextStateFor` would march them back through questions they
+  // have answered — and `finalizeProfile` would republish `seller.onboarded`, which the wallet
+  // listener reads as a reason to grant onboarding credits.
+  if (vendor.alreadyOnboarded) {
+    const added = newStatement !== undefined && newStatement !== null;
+
+    return {
+      transitionTo: STATE_COMPLETE,
+      status: 'completed',
+      response: {
+        text: added
+          ? `Added — I have updated what ${vendor.businessName.length > 0 ? vendor.businessName : 'your business'} is known for. Buyers looking for that will now find you.`
+          : 'No problem. Message me any time with what you would like to add.',
+      },
+      dataPatch: { ...patch, pendingQuestion: null },
+      summary: added
+        ? `Vendor onboarding: added "${newStatement}" to an existing listing.`
+        : 'Vendor onboarding: returning vendor added nothing.',
+      semanticFingerprint: fingerprintFor(trigger, fields),
+    };
+  }
+
   const nextState = nextStateFor({ ...dataOf(context), ...patch } as OnboardingData);
 
   if (nextState === STATE_CREATE_PROFILE) {
@@ -336,6 +388,9 @@ const askCapability = {
     STATE_CONFIRM_STATE,
     STATE_AWAIT_BUSINESS_NAME,
     STATE_CREATE_PROFILE,
+    // A vendor who is already listed finishes here: they are adding capabilities, not building
+    // a profile, so there is nothing for CreateProfile to do.
+    STATE_COMPLETE,
   ],
   waitsForInput: false,
 
@@ -355,6 +410,9 @@ const waitingState = (name: string) => ({
     STATE_CONFIRM_STATE,
     STATE_AWAIT_BUSINESS_NAME,
     STATE_CREATE_PROFILE,
+    // A vendor who is already listed finishes here: they are adding capabilities, not building
+    // a profile, so there is nothing for CreateProfile to do.
+    STATE_COMPLETE,
   ],
   waitsForInput: true,
   execute: handleTurn,

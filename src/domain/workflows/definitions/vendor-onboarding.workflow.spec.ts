@@ -62,7 +62,7 @@ function buildServices(options: {
     },
     vendors: {
       async ensureVendor() {
-        return { vendorId: 'vendor_1' };
+        return { vendorId: 'vendor_1', alreadyOnboarded: false, businessName: '' };
       },
       async finalizeProfile(params) {
         finalized.push({

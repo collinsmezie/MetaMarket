@@ -41,7 +41,10 @@ import {
   MediaDownloaderRegistry,
   MEDIA_DOWNLOADER_REGISTRY,
 } from '../application/media/media-downloader.registry';
-import { CHANNEL_NOTIFIER_REGISTRY } from '../domain/ports/outbound/channel-notifier.port';
+import {
+  CHANNEL_NOTIFIER_REGISTRY,
+  RAW_CHANNEL_NOTIFIER_REGISTRY,
+} from '../domain/ports/outbound/channel-notifier.port';
 import {
   OUTBOUND_MESSAGE_REPOSITORY,
   type OutboundMessageRepositoryPort,
@@ -157,6 +160,13 @@ import { AppConfigService } from './app-config.service';
     TwilioSmsNotifier,
     PrismaOutboundMessageRepository,
     { provide: OUTBOUND_MESSAGE_REPOSITORY, useExisting: PrismaOutboundMessageRepository },
+    {
+      // Undecorated. The sweep is the durability mechanism and cannot be wrapped in itself.
+      provide: RAW_CHANNEL_NOTIFIER_REGISTRY,
+      inject: [WhatsAppNotifier, TwilioSmsNotifier],
+      useFactory: (whatsapp: WhatsAppNotifier, sms: TwilioSmsNotifier) =>
+        new ChannelNotifierRegistry([whatsapp, sms]),
+    },
     {
       provide: CHANNEL_NOTIFIER_REGISTRY,
       inject: [

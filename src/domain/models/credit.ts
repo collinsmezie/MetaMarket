@@ -132,7 +132,13 @@ export type RechargeView =
   | {
       readonly status: 'unavailable';
       readonly balanceCredits: number;
-      readonly reason: 'provisioning_failed';
+      /**
+       * `provisioning_failed` — a transient provider problem; asking again may work.
+       * `provisioning_unsupported` — the provider refused outright, e.g. dedicated accounts are
+       * not enabled on this Paystack business. No amount of retrying fixes that, so promising
+       * the user it will be "ready soon" is a lie the platform would repeat indefinitely.
+       */
+      readonly reason: 'provisioning_failed' | 'provisioning_unsupported';
     };
 
 /** Event names published by the wallet feature (TDR §14, §25.3). */

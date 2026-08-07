@@ -260,7 +260,6 @@ export class WhatsAppNotifier implements ChannelNotifierPort {
       error: 'no attempt was made',
       retryable: false,
     };
-    const retryable = false;
 
     for (let attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt += 1) {
       const budget = deadline - Date.now();
@@ -305,7 +304,7 @@ export class WhatsAppNotifier implements ChannelNotifierPort {
       await this.backoff(attempt);
     }
 
-    return { ok: false, error: last.error, retryable };
+    return { ok: false, error: last.error, retryable: last.retryable };
   }
 
   private async attempt(

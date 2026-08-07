@@ -60,13 +60,17 @@ export function renderRechargeView(view: RechargeView): string {
   if (view.status === 'unavailable') {
     // Never a generic loop and never silence: the user still sees their real balance and is
     // told plainly what is happening (Execution.md §2.5).
-    return [
-      ...balance,
-      '',
-      DIVIDER,
-      '',
-      'Your funding account is being set up and should be ready soon. Please ask again in a few minutes.',
-    ].join('\n');
+    //
+    // The two reasons get different copy because they are different situations. "Try again in a
+    // few minutes" is honest during a Paystack blip and a lie when the account simply cannot
+    // issue dedicated accounts — there the user would keep asking, keep being told to wait, and
+    // never be able to pay.
+    const explanation =
+      view.reason === 'provisioning_unsupported'
+        ? 'Funding by bank transfer is not switched on for this account yet. Our team has been notified — I will let you know here the moment it is ready.'
+        : 'Your funding account is being set up and should be ready soon. Please ask again in a few minutes.';
+
+    return [...balance, '', DIVIDER, '', explanation].join('\n');
   }
 
   return [
@@ -94,7 +98,7 @@ export function renderRechargeView(view: RechargeView): string {
 function summaryFor(view: RechargeView): string {
   return view.status === 'ready'
     ? `Credits recharge: showed funding account, balance ${view.balanceCredits} credits.`
-    : `Credits recharge: funding account unavailable, balance ${view.balanceCredits} credits.`;
+    : `Credits recharge: funding account ${view.reason}, balance ${view.balanceCredits} credits.`;
 }
 
 const showAccount = {

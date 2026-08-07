@@ -44,9 +44,22 @@ export class VendorOnboardingService {
    * vendor's very first sentence, and evidence needs somewhere to live before the profile
    * is finished. The vendor stays `onboarding` — and therefore unsearchable — until it is.
    */
-  async ensureVendor(params: { userId: string; conversationId: string }): Promise<{ vendorId: string }> {
+  async ensureVendor(params: {
+    userId: string;
+    conversationId: string;
+  }): Promise<{ vendorId: string; alreadyOnboarded: boolean; businessName: string }> {
     const existing = await this.vendors.findByUserId(params.userId);
-    if (existing !== null) return { vendorId: existing.id };
+
+    // `active` means they finished onboarding and are searchable. Callers need to know, because
+    // running a returning vendor back through the profile-building questions asks them for a
+    // city and a business name the platform already has.
+    if (existing !== null) {
+      return {
+        vendorId: existing.id,
+        alreadyOnboarded: existing.status === 'active',
+        businessName: existing.businessName,
+      };
+    }
 
     const vendor = await this.vendors.create({
       id: this.ids.uuid(),
@@ -65,7 +78,7 @@ export class VendorOnboardingService {
       output: { vendorId: vendor.id, status: vendor.status },
     });
 
-    return { vendorId: vendor.id };
+    return { vendorId: vendor.id, alreadyOnboarded: false, businessName: vendor.businessName };
   }
 
   /**
