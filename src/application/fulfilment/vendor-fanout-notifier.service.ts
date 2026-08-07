@@ -3,6 +3,7 @@ import type { Response } from '../../domain/models/response';
 import type { Vendor } from '../../domain/models/vendor';
 import {
   CHANNEL_NOTIFIER_REGISTRY,
+  isAccepted,
   type ChannelNotifierRegistryPort,
 } from '../../domain/ports/outbound/channel-notifier.port';
 import { EVENT_PUBLISHER, type EventPublisherPort } from '../../domain/ports/outbound/event-publisher.port';
@@ -75,7 +76,7 @@ export class VendorFanoutNotifier {
         response,
       );
 
-      if (!result.delivered) {
+      if (!isAccepted(result)) {
         // Commonly Meta's 24-hour service window. Not retried: re-minting buttons for a request
         // that may already be answered would be worse than the honest timeout.
         this.logger.stageFailed({
@@ -95,8 +96,9 @@ export class VendorFanoutNotifier {
         content: response.text ?? '',
       });
 
-      // Published only on a delivered ask: `vendor.notified` means "this vendor was actually
-      // asked", which is what makes a later timeout interpretable.
+      // Published once the ask is accepted for delivery — sent now, or durably queued.
+      // `vendor.notified` means "this vendor was asked", which is what makes a later timeout
+      // interpretable as silence rather than as a message we never managed to send.
       await this.events.publish({
         eventId: this.ids.uuid(),
         eventType: 'vendor.notified',

@@ -10,7 +10,14 @@ import type {
   WorkflowStatus,
 } from '../src/domain/models/workflow-instance';
 import { EMPTY_FINGERPRINT, EMPTY_REGISTRY } from '../src/domain/models/workflow-instance';
+import type { Channel } from '../src/domain/models/channel';
 import type { Wallet, WalletDebitResult } from '../src/domain/models/credit';
+import type { OutboundMessage } from '../src/domain/models/outbound-message';
+import type { Response } from '../src/domain/models/response';
+import type {
+  EnqueuedOutboundMessage,
+  OutboundMessageRepositoryPort,
+} from '../src/domain/ports/outbound/outbound-message-repository.port';
 import type { DomainEvent, EventPublisherPort } from '../src/domain/ports/outbound/event-publisher.port';
 import type { StageLog, StageLoggerPort } from '../src/domain/ports/outbound/stage-logger.port';
 import type {
@@ -466,5 +473,118 @@ export class RecordingWalletNotifier {
     balanceAfter: number;
   }): Promise<void> {
     this.onboarding.push(params);
+  }
+}
+
+/**
+ * In-memory outbound queue enforcing the real ordering and lease rules.
+ *
+ * Written by hand because the properties under test are exactly the ones a stub would paper
+ * over: that a conversation with a backlog does not send out of order, and that a claim is a
+ * lease no second worker can take.
+ */
+export class InMemoryOutboundQueue implements OutboundMessageRepositoryPort {
+  readonly rows: OutboundMessage[] = [];
+  private counter = 0;
+
+  async enqueue(params: {
+    id: string;
+    channel: Channel;
+    address: string;
+    conversationId: string;
+    response: Response;
+    at: Date;
+  }): Promise<EnqueuedOutboundMessage> {
+    this.counter += 1;
+
+    const message: OutboundMessage = {
+      id: params.id,
+      channel: params.channel,
+      address: params.address,
+      conversationId: params.conversationId,
+      response: params.response,
+      status: 'pending',
+      attempts: 0,
+      lastError: null,
+      providerMessageId: null,
+      nextAttemptAt: params.at,
+      // Distinct ordering even when the clock is frozen, as Postgres sequences would give.
+      createdAt: new Date(params.at.getTime() + this.counter),
+      sentAt: null,
+    };
+
+    const hasBacklog = this.rows.some(
+      (row) =>
+        row.conversationId === params.conversationId &&
+        row.status === 'pending' &&
+        row.createdAt <= message.createdAt,
+    );
+
+    this.rows.push(message);
+    return { message, hasBacklog };
+  }
+
+  async markSent(id: string, params: { providerMessageId?: string; at: Date }): Promise<void> {
+    this.patch(id, (row) => ({
+      ...row,
+      status: 'sent',
+      sentAt: params.at,
+      attempts: row.attempts + 1,
+      lastError: null,
+      providerMessageId: params.providerMessageId ?? null,
+    }));
+  }
+
+  async scheduleRetry(id: string, params: { error: string; nextAttemptAt: Date }): Promise<void> {
+    this.patch(id, (row) => ({
+      ...row,
+      status: 'pending',
+      attempts: row.attempts + 1,
+      lastError: params.error,
+      nextAttemptAt: params.nextAttemptAt,
+    }));
+  }
+
+  async markFailed(id: string, params: { error: string }): Promise<void> {
+    this.patch(id, (row) => ({
+      ...row,
+      status: 'failed',
+      attempts: row.attempts + 1,
+      lastError: params.error,
+    }));
+  }
+
+  async claimDue(params: {
+    batchSize: number;
+    now: Date;
+    leaseMs: number;
+  }): Promise<readonly OutboundMessage[]> {
+    const due = this.rows
+      .filter((row) => row.status === 'pending' && row.nextAttemptAt <= params.now)
+      .sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime())
+      .slice(0, params.batchSize);
+
+    const leaseUntil = new Date(params.now.getTime() + params.leaseMs);
+    for (const row of due) this.patch(row.id, (current) => ({ ...current, nextAttemptAt: leaseUntil }));
+
+    return due;
+  }
+
+  async purgeSent(params: { sentBefore: Date; limit: number }): Promise<number> {
+    const doomed = this.rows
+      .filter((row) => row.status === 'sent' && row.sentAt !== null && row.sentAt < params.sentBefore)
+      .slice(0, params.limit);
+
+    for (const row of doomed) this.rows.splice(this.rows.indexOf(row), 1);
+    return doomed.length;
+  }
+
+  byId(id: string): OutboundMessage | undefined {
+    return this.rows.find((row) => row.id === id);
+  }
+
+  private patch(id: string, update: (row: OutboundMessage) => OutboundMessage): void {
+    const index = this.rows.findIndex((row) => row.id === id);
+    if (index >= 0) this.rows[index] = update(this.rows[index]);
   }
 }

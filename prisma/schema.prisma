@@ -863,6 +863,44 @@ model PaymentNotification {
 /// Events are written in the same transaction as the state change that caused them, then
 /// relayed to the bus. Without this, a crash between committing a workflow transition and
 /// publishing its event would lose marketplace evidence permanently.
+/// Write-ahead log for every outbound message.
+///
+/// The same guarantee as OutboxEvent, applied to the last mile. A reply composed inside a turn
+/// used to exist only in memory: if the Graph API was unreachable the user simply got silence,
+/// with nothing left behind to try again. The row is written before the send is attempted, so a
+/// network outage or a process death degrades into a delayed message rather than a lost one.
+model OutboundMessage {
+  id String @id @default(uuid()) @db.Uuid
+
+  channel String
+  /// Channel-native address — E.164 for WhatsApp/SMS.
+  address        String
+  conversationId String @map("conversation_id") @db.Uuid
+
+  /// The canonical Response. Stored unrendered so the channel adapter still owns rendering,
+  /// and so a fix to rendering applies to messages already queued.
+  response Json
+
+  /// pending | sent | failed
+  status   String @default("pending")
+  attempts Int    @default(0)
+
+  lastError         String? @map("last_error")
+  providerMessageId String? @map("provider_message_id")
+
+  /// Earliest the next attempt may run; backoff pushes it forward.
+  nextAttemptAt DateTime @default(now()) @map("next_attempt_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  sentAt    DateTime? @map("sent_at")
+
+  /// The sweep claim: due work, oldest first.
+  @@index([status, nextAttemptAt])
+  /// Ordering guard: is anything still owed to this conversation?
+  @@index([conversationId, status, createdAt])
+  @@map("outbound_messages")
+}
+
 model OutboxEvent {
   id        String @id @default(uuid()) @db.Uuid
   eventId   String @unique @map("event_id") @db.Uuid

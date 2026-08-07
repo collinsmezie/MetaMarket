@@ -3,6 +3,7 @@ import { koboToNairaLabel } from '../../domain/models/credit';
 import type { Response } from '../../domain/models/response';
 import {
   CHANNEL_NOTIFIER_REGISTRY,
+  isAccepted,
   type ChannelNotifierRegistryPort,
 } from '../../domain/ports/outbound/channel-notifier.port';
 import { STAGE_LOGGER, type StageLoggerPort } from '../../domain/ports/outbound/stage-logger.port';
@@ -247,7 +248,7 @@ export class WalletNotifier {
           params.response,
         );
 
-      if (!result.delivered) {
+      if (!isAccepted(result)) {
         this.logger.stageFailed({
           component: COMPONENT,
           stage: STAGE,

@@ -264,3 +264,92 @@ Lint + typecheck + build: clean
 Both fixes have regression tests that I confirmed **fail without the fix** — the handoff test
 reproduces the exact "opens shortly" string from your log, and the notifier tests reproduce the
 undici `TypeError: fetch failed` / `AggregateError: ETIMEDOUT` shape.
+
+---
+
+## 9. The durable outbound queue
+
+§8.1 closed with a gap I had not fixed: in-request retries ride out a blip, but a sustained
+outage — the window where even IPv4 POSTs failed 7/8 — still lost the reply. This closes it.
+
+### 9.1 Shape: write-ahead, not try-then-save
+
+Every outbound message is persisted **before** the send is attempted. The inline attempt becomes
+an optimisation; the row is the guarantee. The alternative — try first, save on failure — leaves
+a window where a crash between the failed attempt and the insert loses the message, and it cannot
+preserve ordering because a later reply may succeed inline while an earlier one is still queued.
+
+This is the same pattern as the `OutboxEvent` + `OutboxRelay` pair the platform already uses for
+domain events, applied to the last mile. Nothing new to learn: an interval sweep, a bounded batch,
+an attempt ceiling, failures parked for an operator.
+
+| Piece | Where |
+|---|---|
+| `OutboundMessage` model, backoff, attempt budget (pure) | `src/domain/models/outbound-message.ts` |
+| Repository port | `src/domain/ports/outbound/outbound-message-repository.port.ts` |
+| Postgres adapter, `FOR UPDATE SKIP LOCKED` claim | `prisma-outbound-message.repository.ts` |
+| Write-ahead decorator | `src/adapters/outbound/channel/durable-channel-notifier.ts` |
+| Sweeper | `src/application/delivery/outbound-delivery.sweeper.ts` |
+| Table | migration `20260807180000_outbound_message_queue` |
+
+Durability is applied by **wrapping every notifier in the registry factory**, not by changing
+callers. `TurnProcessor`, `WalletNotifier` and `VendorFanoutNotifier` all send through the
+registry, and "don't lose the message" is not a concern each of them should have to remember to
+opt into.
+
+### 9.2 Three decisions worth stating
+
+**A queued message is late, not lost.** `DeliveryResult` gains `queued`, and callers branch on
+`isAccepted(result)` rather than `delivered`. This matters beyond logging noise: `TurnProcessor`
+records the assistant turn for a queued reply, because the user *will* receive it and the next
+turn must not reason as though the platform stayed silent.
+
+**Ordering is enforced, because a chat that answers the second question first reads as broken.**
+`enqueue` reports, in the same transaction as the insert, whether the conversation already has an
+older undelivered message; if so the inline attempt is skipped entirely and the sweep drains that
+conversation in composition order. The sweeper applies the same rule — a conversation stops at its
+first failure rather than delivering past it. The transaction is what makes this safe: two replies
+composed concurrently for one conversation cannot both conclude they are first in line.
+
+**Only unambiguous failures are queued.** The same analysis as §8.1 and reusing the same
+classification: a connection refused proves nothing was sent; a socket reset mid-flight does not.
+No channel here offers an idempotency key, so an ambiguous failure is parked rather than retried.
+A partially delivered multi-part reply is likewise never replayed wholesale — the user would
+receive the earlier parts twice.
+
+**The claim is a lease, not a status.** `claimDue` pushes `next_attempt_at` forward under
+`FOR UPDATE SKIP LOCKED` instead of moving rows to a `processing` state. Concurrent sweepers take
+disjoint rows, and a worker that dies mid-batch strands nothing — the lease expires and the
+message becomes due again. No reaper to write, no stuck state to explain.
+
+Eight attempts on a jittered 5s-doubling schedule spans about ten minutes. I originally wrote
+"roughly half an hour" in the doc comment; the test I wrote to pin that claim failed at 10.6
+minutes, so I corrected the comment rather than the schedule. Ten minutes covers a transient
+outage, and a conversational reply arriving half an hour late is often worse than one that never
+arrives.
+
+### 9.3 Verification
+
+```
+Unit:        317 passed, 30 suites   (was 291/27)
+Integration: 121 passed,  8 suites   (was 108/7)
+Lint + typecheck + build: clean
+Boot: clean, migration applied
+```
+
+`test/integration/outbound-queue.test.ts` runs against real Postgres, because the two properties
+that would corrupt a user's conversation if wrong are database properties, not code properties:
+two concurrent sweepers claiming ten rows receive **disjoint** sets totalling exactly ten, and the
+backlog check is transactional. The rest — backoff schedule, ordering, retry classification,
+bookkeeping that never fails a delivered message — is unit-tested against an in-memory queue that
+enforces the same rules.
+
+### 9.4 What this still does not do
+
+- **Nothing rescues a message past the attempt budget.** After ~10 minutes it is parked as
+  `failed` and queryable, but there is no operator surface — the same gap as `failed` payment
+  notifications (Credits §5).
+- **Meta's 24-hour service window is unaffected.** A queued vendor ask that ages past the window
+  will be rejected as a decision, not a blip, and parked. Template messages remain the fix.
+- **The queue is per-database, not global.** Two deployments against separate databases would each
+  drain their own; that is the intended topology, but worth stating.

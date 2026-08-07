@@ -8,6 +8,9 @@ import { TwilioSmsNotifier } from '../adapters/outbound/channel/twilio-sms-notif
 import { WhatsAppNotifier } from '../adapters/outbound/channel/whatsapp-notifier.adapter';
 import { OutboxEventPublisher } from '../adapters/outbound/events/outbox-event-publisher';
 import { OutboxRelay } from '../adapters/outbound/events/outbox-relay.service';
+import { DurableChannelNotifier } from '../adapters/outbound/channel/durable-channel-notifier';
+import { PrismaOutboundMessageRepository } from '../adapters/outbound/persistence/prisma-outbound-message.repository';
+import { OutboundDeliverySweeper } from '../application/delivery/outbound-delivery.sweeper';
 import { AnthropicLlmAdapter } from '../adapters/outbound/llm/anthropic-llm.adapter';
 import { GeminiLlmAdapter } from '../adapters/outbound/llm/gemini-llm.adapter';
 import { LlmProviderService } from '../adapters/outbound/llm/llm-provider.service';
@@ -39,6 +42,10 @@ import {
   MEDIA_DOWNLOADER_REGISTRY,
 } from '../application/media/media-downloader.registry';
 import { CHANNEL_NOTIFIER_REGISTRY } from '../domain/ports/outbound/channel-notifier.port';
+import {
+  OUTBOUND_MESSAGE_REPOSITORY,
+  type OutboundMessageRepositoryPort,
+} from '../domain/ports/outbound/outbound-message-repository.port';
 import { CONVERSATION_REPOSITORY } from '../domain/ports/outbound/conversation-repository.port';
 import { DISTRIBUTED_LOCK } from '../domain/ports/outbound/distributed-lock.port';
 import { EMBEDDING_PROVIDER } from '../domain/ports/outbound/embedding-provider.port';
@@ -59,12 +66,18 @@ import {
   SPEECH_TO_TEXT,
 } from '../domain/ports/outbound/media.port';
 import { MESSAGE_REPOSITORY } from '../domain/ports/outbound/message-repository.port';
-import { STAGE_LOGGER } from '../domain/ports/outbound/stage-logger.port';
+import { STAGE_LOGGER, type StageLoggerPort } from '../domain/ports/outbound/stage-logger.port';
 import { SERVICE_CAPABILITY_REPOSITORY } from '../domain/ports/outbound/service-capability-repository.port';
 import { TAXONOMY_REPOSITORY } from '../domain/ports/outbound/taxonomy-repository.port';
 import { VENDOR_REPOSITORY } from '../domain/ports/outbound/vendor-repository.port';
 import { WORKFLOW_REPOSITORY } from '../domain/ports/outbound/workflow-repository.port';
-import { CLOCK, ID_GENERATOR, SystemClock } from '../domain/ports/outbound/system.port';
+import {
+  CLOCK,
+  type ClockPort,
+  ID_GENERATOR,
+  type IdGeneratorPort,
+  SystemClock,
+} from '../domain/ports/outbound/system.port';
 import { StageLogger } from '../shared/logging/stage-logger';
 import { AppConfigService } from './app-config.service';
 
@@ -142,17 +155,40 @@ import { AppConfigService } from './app-config.service';
 
     WhatsAppNotifier,
     TwilioSmsNotifier,
+    PrismaOutboundMessageRepository,
+    { provide: OUTBOUND_MESSAGE_REPOSITORY, useExisting: PrismaOutboundMessageRepository },
     {
       provide: CHANNEL_NOTIFIER_REGISTRY,
-      inject: [WhatsAppNotifier, TwilioSmsNotifier],
+      inject: [
+        WhatsAppNotifier,
+        TwilioSmsNotifier,
+        OUTBOUND_MESSAGE_REPOSITORY,
+        STAGE_LOGGER,
+        CLOCK,
+        ID_GENERATOR,
+      ],
       // Voice and USSD notifiers are not implemented in Phase 1. The registry reports an
       // unsupported channel explicitly rather than silently dropping a reply.
-      useFactory: (whatsapp: WhatsAppNotifier, sms: TwilioSmsNotifier) =>
-        new ChannelNotifierRegistry([whatsapp, sms]),
+      //
+      // Every notifier is wrapped in the write-ahead queue here rather than at each call site,
+      // so durability is a property of outbound delivery itself and not something three
+      // separate services have to remember to opt into.
+      useFactory: (
+        whatsapp: WhatsAppNotifier,
+        sms: TwilioSmsNotifier,
+        queue: OutboundMessageRepositoryPort,
+        logger: StageLoggerPort,
+        clock: ClockPort,
+        ids: IdGeneratorPort,
+      ) =>
+        new ChannelNotifierRegistry(
+          [whatsapp, sms].map((notifier) => new DurableChannelNotifier(notifier, queue, logger, clock, ids)),
+        ),
     },
 
     { provide: EVENT_PUBLISHER, useClass: OutboxEventPublisher },
     OutboxRelay,
+    OutboundDeliverySweeper,
   ],
   exports: [
     PrismaService,

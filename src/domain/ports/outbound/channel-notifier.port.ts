@@ -24,6 +24,32 @@ export interface DeliveryResult {
   readonly error?: string;
   /** Set when one Response had to be split across several provider messages. */
   readonly messageCount?: number;
+  /**
+   * True when delivery failed but the message is durably queued and will be retried.
+   *
+   * The distinction callers care about is not "did this reach the user yet" but "has the
+   * platform taken responsibility for it" — a queued reply is late, not lost, and treating it
+   * as a failure would log noise and, worse, invite a caller to compensate for nothing.
+   */
+  readonly queued?: boolean;
+  /**
+   * Whether a retry could succeed without duplicating the message.
+   *
+   * Set by the channel adapter, which is the only layer that can tell a connection refused from
+   * a socket reset mid-flight. Absent means unknown, which the queue treats as not retryable.
+   */
+  readonly retryable?: boolean;
+}
+
+/**
+ * True when the platform has taken responsibility for a message — delivered now, or durably
+ * queued and delivered shortly.
+ *
+ * Callers should branch on this rather than `delivered` alone; only a result where both are
+ * false is a message the user will never see.
+ */
+export function isAccepted(result: DeliveryResult): boolean {
+  return result.delivered || result.queued === true;
 }
 
 export interface ChannelNotifierPort {

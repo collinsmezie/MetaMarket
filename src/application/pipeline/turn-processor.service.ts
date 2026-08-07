@@ -10,6 +10,7 @@ import { isContinuing } from '../../domain/models/understanding';
 import type { WorkflowInstance } from '../../domain/models/workflow-instance';
 import {
   CHANNEL_NOTIFIER_REGISTRY,
+  isAccepted,
   type ChannelNotifierRegistryPort,
 } from '../../domain/ports/outbound/channel-notifier.port';
 import {
@@ -585,7 +586,9 @@ export class TurnProcessor {
       .forChannel(channel)
       .send({ channel, address: conversation.userId, conversationId: conversation.id }, response);
 
-    if (result.delivered) {
+    // A queued reply counts as said: it is durably recorded and will reach the user, so the
+    // history must contain it or the next turn will reason as though the platform stayed silent.
+    if (isAccepted(result)) {
       await this.context.recordAssistantTurn({
         conversationId: conversation.id,
         channel,
@@ -593,9 +596,21 @@ export class TurnProcessor {
         ...(workflowId !== null ? { workflowId } : {}),
       });
 
-      await this.publishEvent(ConversationEvents.MessageSent, conversation.id, workflowId, {
-        providerMessageId: result.providerMessageId,
-        messageCount: result.messageCount ?? 1,
+      if (result.delivered) {
+        await this.publishEvent(ConversationEvents.MessageSent, conversation.id, workflowId, {
+          providerMessageId: result.providerMessageId,
+          messageCount: result.messageCount ?? 1,
+        });
+
+        return;
+      }
+
+      this.logger.stage({
+        component: COMPONENT,
+        stage: `${STAGE}:Delivery`,
+        input: { channel, conversationId: conversation.id },
+        action: 'Channel is unavailable; the reply is queued and will be delivered on retry',
+        output: { queued: true },
       });
 
       return;

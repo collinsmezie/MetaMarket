@@ -104,6 +104,9 @@ export class WhatsAppNotifier implements ChannelNotifierPort {
             index === 0
               ? result.error
               : `Delivered ${index} of ${payloads.length} messages before failing: ${result.error}`,
+          // A partially delivered multi-part response must never be replayed wholesale: the
+          // user would receive the earlier parts twice.
+          retryable: index === 0 && result.retryable,
           ...(lastProviderMessageId !== undefined ? { providerMessageId: lastProviderMessageId } : {}),
         };
       }
@@ -251,18 +254,24 @@ export class WhatsAppNotifier implements ChannelNotifierPort {
   private async post(
     payload: Record<string, unknown>,
     deadline: number,
-  ): Promise<{ ok: true; providerMessageId?: string } | { ok: false; error: string }> {
+  ): Promise<{ ok: true; providerMessageId?: string } | { ok: false; error: string; retryable: boolean }> {
     let last: { ok: false; error: string; retryable: boolean } = {
       ok: false,
       error: 'no attempt was made',
       retryable: false,
     };
+    const retryable = false;
 
     for (let attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt += 1) {
       const budget = deadline - Date.now();
 
       if (budget <= 0) {
-        return { ok: false, error: `${last.error} (send deadline reached after ${attempt - 1} attempt(s))` };
+        return {
+          ok: false,
+          error: `${last.error} (send deadline reached after ${attempt - 1} attempt(s))`,
+          // Out of time, not out of hope: the durable queue picks it up from here.
+          retryable: true,
+        };
       }
 
       const outcome = await this.attempt(payload, Math.min(SEND_TIMEOUT_MS, budget));
@@ -296,7 +305,7 @@ export class WhatsAppNotifier implements ChannelNotifierPort {
       await this.backoff(attempt);
     }
 
-    return { ok: false, error: last.error };
+    return { ok: false, error: last.error, retryable };
   }
 
   private async attempt(
