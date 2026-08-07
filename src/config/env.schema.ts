@@ -69,6 +69,13 @@ export const envSchema = z
     TWILIO_AUTH_TOKEN: z.string().optional(),
     TWILIO_MESSAGING_FROM: z.string().optional(),
 
+    PAYSTACK_SECRET_KEY: z.string().optional(),
+    PAYSTACK_PUBLIC_KEY: z.string().optional(),
+    PAYSTACK_API_BASE: z.string().url().default('https://api.paystack.co'),
+    PAYSTACK_WEBHOOK_SIGNATURE_VERIFY: booleanFromString(true),
+    /** Naira per credit. Conversion floors, so this is also the minimum fundable amount. */
+    NAIRA_PER_CREDIT: intFromString(100, 1),
+
     CONVERSATION_LOCK_TTL_MS: intFromString(30_000, 1_000),
     CONVERSATION_LOCK_WAIT_MS: intFromString(5_000, 0),
     WORKFLOW_IDLE_EXPIRY_MS: intFromString(86_400_000, 1_000),
@@ -96,6 +103,15 @@ export const envSchema = z
           message: `${key} is required in production (${why}).`,
         });
       }
+    }
+
+    if (!env.PAYSTACK_SECRET_KEY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['PAYSTACK_SECRET_KEY'],
+        message:
+          'PAYSTACK_SECRET_KEY is required in production (credits funding and webhook signature verification).',
+      });
     }
 
     if (!env.OPENAI_API_KEY && !env.GEMINI_API_KEY && !env.ANTHROPIC_API_KEY) {

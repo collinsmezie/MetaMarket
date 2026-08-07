@@ -25,6 +25,7 @@ verified, and what is deliberately deferred.
 | 3 | Evidence Service + event bus consumers | **Implemented** — raw event store, processor, aggregator, internal API |
 | 4 | Capability Matching Engine | **Implemented** — search modes, ambiguity, expansion, retrieval, explainable ranking |
 | 5 | Fan-out + continuous learning | **Implemented** — immediate delivery, billing, fan-out, visibility rules, timeout sweep |
+| — | [Konnet Credits Recharge](docs/design/Konnet-Credits-Recharge-TDR.md) | **Implemented** — dedicated virtual accounts, exactly-once crediting, WhatsApp confirmation |
 
 ---
 
@@ -73,6 +74,16 @@ node dist/cli/capability-probe.js "I sell household items"   # real model, no wr
 node dist/cli/capability-probe.js "I repair generators"
 ```
 
+### Credits recharge
+
+```bash
+node dist/cli/send-test-webhook.js "Recharge"                     # provision + show account
+npm run webhook:payment -- --account <number> --naira 5000        # simulate a bank transfer
+```
+
+Both sign their payloads exactly as Meta and Paystack do, so verification is exercised rather
+than bypassed. Re-run the payment with the same `--reference` to prove exactly-once crediting.
+
 ### GS1 GPC taxonomy
 
 ```bash
@@ -103,6 +114,7 @@ src/
 │   ├── evidence/            Evidence processor, aggregator, internal query API
 │   ├── matching/            Capability Matching Engine
 │   ├── fulfilment/          Request distribution and fan-out
+│   ├── wallet/              Credits: provisioning, crediting, confirmation
 │   ├── pipeline/            Message ingestion, turn processing
 │   └── response/            Response composition
 ├── adapters/

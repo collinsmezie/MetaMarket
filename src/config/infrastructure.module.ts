@@ -23,6 +23,10 @@ import { PrismaService } from '../adapters/outbound/persistence/prisma.service';
 import { PrismaTaxonomyRepository } from '../adapters/outbound/persistence/prisma-taxonomy.repository';
 import { PrismaVendorRepository } from '../adapters/outbound/persistence/prisma-vendor.repository';
 import { PrismaEvidenceRepository } from '../adapters/outbound/persistence/prisma-evidence.repository';
+import { PrismaWalletRepository } from '../adapters/outbound/persistence/prisma-wallet.repository';
+import { PrismaVirtualAccountRepository } from '../adapters/outbound/persistence/prisma-virtual-account.repository';
+import { PrismaPaymentNotificationRepository } from '../adapters/outbound/persistence/prisma-payment-notification.repository';
+import { PaystackClientAdapter } from '../adapters/outbound/paystack/paystack-client.adapter';
 import { PrismaServiceCapabilityRepository } from '../adapters/outbound/persistence/prisma-service-capability.repository';
 import { RedisDistributedLockAdapter } from '../adapters/outbound/persistence/redis-distributed-lock.adapter';
 import { RedisService } from '../adapters/outbound/persistence/redis.service';
@@ -40,6 +44,12 @@ import { DISTRIBUTED_LOCK } from '../domain/ports/outbound/distributed-lock.port
 import { EMBEDDING_PROVIDER } from '../domain/ports/outbound/embedding-provider.port';
 import { EVENT_PUBLISHER } from '../domain/ports/outbound/event-publisher.port';
 import { EVIDENCE_REPOSITORY } from '../domain/ports/outbound/evidence-repository.port';
+import { PAYMENT_PROVIDER } from '../domain/ports/outbound/payment-provider.port';
+import {
+  PAYMENT_NOTIFICATION_REPOSITORY,
+  VIRTUAL_ACCOUNT_REPOSITORY,
+  WALLET_REPOSITORY,
+} from '../domain/ports/outbound/wallet-repository.port';
 import { LLM_PROVIDER_SERVICE } from '../domain/ports/outbound/llm-provider.port';
 import {
   MEDIA_BATCH_TRACKER,
@@ -103,6 +113,10 @@ import { AppConfigService } from './app-config.service';
     { provide: TAXONOMY_REPOSITORY, useClass: PrismaTaxonomyRepository },
     { provide: VENDOR_REPOSITORY, useClass: PrismaVendorRepository },
     { provide: EVIDENCE_REPOSITORY, useClass: PrismaEvidenceRepository },
+    { provide: WALLET_REPOSITORY, useClass: PrismaWalletRepository },
+    { provide: VIRTUAL_ACCOUNT_REPOSITORY, useClass: PrismaVirtualAccountRepository },
+    { provide: PAYMENT_NOTIFICATION_REPOSITORY, useClass: PrismaPaymentNotificationRepository },
+    { provide: PAYMENT_PROVIDER, useClass: PaystackClientAdapter },
     { provide: SERVICE_CAPABILITY_REPOSITORY, useClass: PrismaServiceCapabilityRepository },
     { provide: DISTRIBUTED_LOCK, useClass: RedisDistributedLockAdapter },
 
@@ -153,6 +167,10 @@ import { AppConfigService } from './app-config.service';
     TAXONOMY_REPOSITORY,
     VENDOR_REPOSITORY,
     EVIDENCE_REPOSITORY,
+    WALLET_REPOSITORY,
+    VIRTUAL_ACCOUNT_REPOSITORY,
+    PAYMENT_NOTIFICATION_REPOSITORY,
+    PAYMENT_PROVIDER,
     SERVICE_CAPABILITY_REPOSITORY,
     DISTRIBUTED_LOCK,
     LLM_PROVIDER_SERVICE,

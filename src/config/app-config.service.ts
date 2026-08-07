@@ -127,6 +127,20 @@ export class AppConfigService {
     };
   }
 
+  get paystack() {
+    return {
+      secretKey: this.get('PAYSTACK_SECRET_KEY'),
+      publicKey: this.get('PAYSTACK_PUBLIC_KEY'),
+      apiBase: this.get('PAYSTACK_API_BASE'),
+      verifySignature: this.get('PAYSTACK_WEBHOOK_SIGNATURE_VERIFY'),
+    };
+  }
+
+  get credits() {
+    const nairaPerCredit = this.get('NAIRA_PER_CREDIT');
+    return { nairaPerCredit, koboPerCredit: nairaPerCredit * 100 };
+  }
+
   get conversationPolicy() {
     return {
       lockTtlMs: this.get('CONVERSATION_LOCK_TTL_MS'),

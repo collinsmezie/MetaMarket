@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { WalletModule } from './wallet.module';
 import { HealthController } from '../adapters/inbound/health/health.controller';
 import { WhatsAppWebhookController } from '../adapters/inbound/whatsapp/whatsapp-webhook.controller';
 import { MediaProcessingProcessor } from '../adapters/outbound/queue/media-processing.processor';
@@ -44,6 +45,8 @@ import { ConversationPolicyEngine } from '../domain/workflows/conversation-polic
 import { triageWorkflow } from '../domain/workflows/definitions/triage.workflow';
 import { vendorOnboardingWorkflow } from '../domain/workflows/definitions/vendor-onboarding.workflow';
 import { buyerSearchWorkflow } from '../domain/workflows/definitions/buyer-search.workflow';
+import { creditRechargeWorkflow } from '../domain/workflows/definitions/credit-recharge.workflow';
+import { WalletService } from '../application/wallet/wallet.service';
 import { WorkflowEngine } from '../domain/workflows/workflow-engine';
 import { WorkflowManager } from '../domain/workflows/workflow-manager';
 import { WorkflowDefinitionRegistry } from '../domain/workflows/workflow-registry';
@@ -56,6 +59,7 @@ import { AppConfigService } from './app-config.service';
  * framework-free), so they are assembled here with explicit factories.
  */
 @Module({
+  imports: [WalletModule],
   controllers: [WhatsAppWebhookController, HealthController],
   providers: [
     ConversationContextManager,
@@ -87,6 +91,7 @@ import { AppConfigService } from './app-config.service';
         // priority, so registering it is all that is needed to take over that flow.
         registry.register(vendorOnboardingWorkflow);
         registry.register(buyerSearchWorkflow);
+        registry.register(creditRechargeWorkflow);
         registry.register(triageWorkflow);
         return registry;
       },
@@ -149,6 +154,7 @@ import { AppConfigService } from './app-config.service';
         VendorOnboardingService,
         CapabilityMatchingService,
         RequestDistributionService,
+        WalletService,
       ],
       useFactory: (
         extraction: OnboardingExtractionService,
@@ -156,7 +162,8 @@ import { AppConfigService } from './app-config.service';
         vendors: VendorOnboardingService,
         matching: CapabilityMatchingService,
         distribution: RequestDistributionService,
-      ) => ({ extraction, discovery, vendors, matching, distribution }),
+        wallet: WalletService,
+      ) => ({ extraction, discovery, vendors, matching, distribution, wallet }),
     },
 
     { provide: HANDLE_INCOMING_MESSAGE, useExisting: MessageIngestionService },

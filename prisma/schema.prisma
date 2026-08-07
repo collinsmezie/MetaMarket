@@ -742,6 +742,113 @@ model RequestDelivery {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Credits wallet & funding (Konnet Credits Recharge TDR §7)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// One credit wallet per user (normalised E.164). The root of the credit aggregate.
+/// "One User → One Konnet Account → One Virtual Account → One Wallet."
+model CreditWallet {
+  id String @id @default(uuid()) @db.Uuid
+  /// Platform identity — the normalised E.164 number, same key the Conversation uses.
+  userId String @unique @map("user_id")
+  /// The conversation that first provisioned the wallet, used for outbound pushes.
+  conversationId String @map("conversation_id") @db.Uuid
+  currency       String @default("NGN")
+  /// Whole credits only; conversion floors (see NAIRA_PER_CREDIT). Never negative.
+  balanceCredits Int    @default(0) @map("balance_credits")
+  /// Paystack customer code, cached after first provisioning.
+  providerCustomerCode String? @map("provider_customer_code")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  virtualAccounts VirtualAccount[]
+  transactions    CreditTransaction[]
+
+  @@map("credit_wallets")
+}
+
+/// The user's permanent dedicated virtual account.
+model VirtualAccount {
+  id       String @id @default(uuid()) @db.Uuid
+  walletId String @map("wallet_id") @db.Uuid
+  provider String @default("paystack")
+  /// Paystack DVA id from the provisioning response.
+  providerAccountId String? @map("provider_account_id")
+  accountNumber     String  @unique @map("account_number")
+  accountName       String  @map("account_name")
+  bankName          String  @map("bank_name")
+  /// Idempotency key: one provisioning call, one DVA. Prevents double-provisioning.
+  providerReference String? @unique @map("provider_reference")
+  /// active | failed | deactivated
+  status String @default("active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  wallet CreditWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, status])
+  @@map("virtual_accounts")
+}
+
+/// Immutable ledger of every credit. Source of truth for a balance statement;
+/// `CreditWallet.balanceCredits` is the materialised total.
+model CreditTransaction {
+  id       String @id @default(uuid()) @db.Uuid
+  walletId String @map("wallet_id") @db.Uuid
+  /// credit | debit | adjustment
+  type          String @default("credit")
+  amountCredits Int    @map("amount_credits")
+  /// Exact amount received, in minor units (kobo). Stored so nothing is ever guessed.
+  amountKobo Int @map("amount_kobo")
+  /// Paystack transaction reference. UNIQUE = the exactly-once guarantee.
+  providerReference String? @unique @map("provider_reference")
+  /// Paystack event id, a second idempotency net.
+  eventId String? @unique @map("event_id")
+  /// Reason string, e.g. "dedicated_account.credit".
+  reason String @default("")
+  /// Audit detail: remnant kobo, currency, provider digest.
+  metadata Json @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  wallet CreditWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, createdAt])
+  @@map("credit_transactions")
+}
+
+/// Raw, idempotent record of every payment notification received.
+///
+/// Distinct from CreditTransaction: this is the durable intake log, that one is the money.
+/// Mirrors the Evidence Service split — persist the raw fact first, interpret on a sweep — so
+/// a processing bug can be fixed and the backlog replayed without losing a notification.
+model PaymentNotification {
+  id       String @id @default(uuid()) @db.Uuid
+  provider String @default("paystack")
+  /// e.g. dedicated_account.credit
+  eventType String @map("event_type")
+  /// Paystack event id. UNIQUE → duplicate deliveries are dropped at the door.
+  eventId String @unique @map("event_id")
+  /// Paystack transaction reference. UNIQUE → second idempotency net.
+  providerReference String @unique @map("provider_reference")
+  accountNumber     String @map("account_number")
+  amountKobo        Int    @map("amount_kobo")
+  currency          String @default("NGN")
+  /// received | processing | credited | failed
+  status    String  @default("received")
+  attempts  Int     @default(0)
+  lastError String? @map("last_error")
+
+  receivedAt  DateTime  @default(now()) @map("received_at")
+  processedAt DateTime? @map("processed_at")
+
+  @@index([status, receivedAt])
+  @@map("payment_notifications")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Event outbox
 // ─────────────────────────────────────────────────────────────────────────────
 

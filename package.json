@@ -27,6 +27,7 @@
     "prisma:studio": "prisma studio",
     "seed:taxonomy": "nest build && node dist/cli/seed-taxonomy.js",
     "webhook:test": "node dist/cli/send-test-webhook.js",
+    "webhook:payment": "node dist/cli/payment-webhook-simulator.js",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
     "infra:reset": "docker compose down -v && docker compose up -d"
