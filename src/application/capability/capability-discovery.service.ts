@@ -51,6 +51,14 @@ export interface DiscoveryResult {
   /** Suggested next question, when the engine judges one worth asking. */
   readonly clarificationQuestion: string | null;
   readonly ambiguityScore: number;
+  /**
+   * How much the statement actually told the engine.
+   *
+   * Surfaced because it, not ambiguity, decides whether a clarification is worth asking: a
+   * broad-but-meaningful statement can be expanded, so asking about it wastes the vendor's
+   * limited patience.
+   */
+  readonly informationDensity: InformationDensity;
 }
 
 /**
@@ -173,6 +181,7 @@ export class CapabilityDiscoveryService {
       clarificationQuestion:
         understood.clarificationQuestion.trim().length > 0 ? understood.clarificationQuestion : null,
       ambiguityScore: understood.ambiguityScore,
+      informationDensity: understood.informationDensity as InformationDensity,
     };
   }
 

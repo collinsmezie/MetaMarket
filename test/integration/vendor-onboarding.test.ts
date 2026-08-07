@@ -101,6 +101,7 @@ class ScriptedLlm implements LlmService {
   turns: Turn[] = [];
   ambiguityScore = 0.1;
   clarificationQuestion = '';
+  informationDensity: 'very_low' | 'low' | 'medium' | 'high' | 'very_high' = 'medium';
   readonly operations: string[] = [];
 
   async complete<T>(req: StructuredRequest, validate: (value: unknown) => T): Promise<StructuredResult<T>> {
@@ -149,7 +150,7 @@ class ScriptedLlm implements LlmService {
       case 'business_understanding':
         return {
           expressionType: 'broad_capability_statement',
-          informationDensity: 'medium',
+          informationDensity: this.informationDensity,
           businessArchetype: 'electrical materials shop',
           archetypeConfidence: 0.8,
           products: [
@@ -296,6 +297,7 @@ describe('Vendor onboarding integration', () => {
     llm.turns = [];
     llm.ambiguityScore = 0.1;
     llm.clarificationQuestion = '';
+    llm.informationDensity = 'medium';
   });
 
   it('onboards a vendor who answers one question at a time', async () => {
@@ -389,9 +391,28 @@ describe('Vendor onboarding integration', () => {
     expect(vendor.conversationSummary).toContain('Electrical Wires');
   });
 
-  it('asks at most one clarification however ambiguous the vendor stays', async () => {
+  it('does not clarify a broad but useful statement, however ambiguous it looks', async () => {
+    // Regression guard for live-testing feedback: "I sell sport materials" was being answered
+    // with "what kind of sport materials?". A named trade domain can be expanded, so the
+    // platform proceeds instead of spending its one question.
+    llm.ambiguityScore = 0.95;
+    llm.clarificationQuestion = 'What kind of sport materials do you sell?';
+    llm.informationDensity = 'medium';
+
+    llm.turns = [{}, { capabilityStatement: 'I sell sport materials' }];
+
+    await send('register me');
+    const reply = await send('I sell sport materials');
+
+    expect(reply).not.toContain('What kind of sport materials');
+    expect(reply).toContain('city');
+  });
+
+  it('asks at most one clarification when the vendor says nothing expandable', async () => {
     llm.ambiguityScore = 0.9;
     llm.clarificationQuestion = 'Is it mainly house wiring, home electronics, or repair?';
+    // Only contentless input earns the question.
+    llm.informationDensity = 'very_low';
 
     llm.turns = [
       {},

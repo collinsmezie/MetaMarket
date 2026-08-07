@@ -1,4 +1,5 @@
 import type { SemanticFingerprint } from '../../models/workflow-instance';
+import type { InformationDensity } from '../../models/capability';
 import type { OnboardingFields } from '../../models/vendor';
 import { EMPTY_ONBOARDING_FIELDS, mergeFields } from '../../models/vendor';
 import type {
@@ -42,6 +43,18 @@ const STATE_COMPLETE = 'Complete';
 const CLARIFICATION_AMBIGUITY_THRESHOLD = 0.55;
 
 /**
+ * Densities that leave the engine nothing to work with.
+ *
+ * Anything at `medium` or above names a real commercial domain and can be expanded into
+ * concrete capability hypotheses, so it is worth more than a question.
+ */
+const CONTENTLESS_DENSITIES: readonly InformationDensity[] = ['very_low', 'low'];
+
+function isContentless(density: InformationDensity | null): boolean {
+  return density !== null && CONTENTLESS_DENSITIES.includes(density);
+}
+
+/**
  * Services the workflow needs, supplied by the engine.
  *
  * Declared as an interface so the workflow can be unit-tested with fakes and so the
@@ -65,7 +78,12 @@ export interface OnboardingServices extends WorkflowServices {
       priorStatements?: readonly string[];
       conversationId?: string;
       workflowId?: string;
-    }): Promise<{ clarificationQuestion: string | null; ambiguityScore: number }>;
+    }): Promise<{
+      clarificationQuestion: string | null;
+      ambiguityScore: number;
+      /** How much the statement actually told the engine; the clarification gate. */
+      informationDensity: InformationDensity;
+    }>;
   };
   readonly vendors: {
     ensureVendor(params: { userId: string; conversationId: string }): Promise<{ vendorId: string }>;
@@ -217,6 +235,7 @@ async function handleTurn(context: WorkflowExecutionContext): Promise<StateExecu
   // clarification decision is based on the engine's actual uncertainty.
   let clarificationQuestion: string | null = null;
   let ambiguityScore = 0;
+  let informationDensity: InformationDensity | null = null;
   const statements = [...data.statements];
 
   const newStatement = extraction.fields.capabilityStatement;
@@ -233,6 +252,7 @@ async function handleTurn(context: WorkflowExecutionContext): Promise<StateExecu
     statements.push(newStatement);
     clarificationQuestion = observed.clarificationQuestion;
     ambiguityScore = observed.ambiguityScore;
+    informationDensity = observed.informationDensity;
   }
 
   // `clarificationAsked` is always written, never left absent: the budget is the one piece of
@@ -245,12 +265,23 @@ async function handleTurn(context: WorkflowExecutionContext): Promise<StateExecu
     clarificationAsked: data.clarificationAsked,
   };
 
-  // The one clarification, spent only when the engine is genuinely unsure and has a question
-  // worth the interruption. After this the budget is gone for good and remaining uncertainty
-  // stays in the DNA as hypotheses.
+  // The one clarification, spent only when the statement carries too little information to
+  // expand at all. After this the budget is gone for good and remaining uncertainty stays in
+  // the DNA as hypotheses.
+  //
+  // Information density is the gate, not ambiguity. "I sell sport materials" is broad but
+  // genuinely useful: it names a commercial domain the engine can expand into balls, boots,
+  // jerseys and fitness equipment, so asking "what kind?" wastes the vendor's patience on
+  // something the platform can work out for itself. Only statements that say nothing at all —
+  // "I sell things", "market items", "anything" — leave nothing to expand.
+  //
+  // This is the CDE's own position: broad statements "are not a problem to solve — they are
+  // seeds from which the Capability Discovery System grows an increasingly accurate
+  // understanding", and the marketplace refines them afterwards through real evidence.
   const shouldClarify =
     !data.clarificationAsked &&
     clarificationQuestion !== null &&
+    isContentless(informationDensity) &&
     ambiguityScore >= CLARIFICATION_AMBIGUITY_THRESHOLD &&
     fields.capabilityStatement !== null;
 

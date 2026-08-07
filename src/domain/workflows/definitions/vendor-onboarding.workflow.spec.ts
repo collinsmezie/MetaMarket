@@ -6,6 +6,7 @@ import {
   RecordingStageLogger,
   SequentialIdGenerator,
 } from '@test/fakes';
+import type { InformationDensity } from '../../models/capability';
 import { EMPTY_ONBOARDING_FIELDS, type OnboardingFields } from '../../models/vendor';
 import { WorkflowEngine } from '../workflow-engine';
 import { WorkflowDefinitionRegistry } from '../workflow-registry';
@@ -26,6 +27,8 @@ interface ExtractionScript {
 function buildServices(options: {
   extractions: readonly ExtractionScript[];
   clarification?: { question: string; ambiguityScore: number };
+  /** Defaults to a broad-but-useful statement, which must never trigger a clarification. */
+  informationDensity?: InformationDensity;
 }) {
   const extractions = [...options.extractions];
   const observed: string[] = [];
@@ -53,6 +56,7 @@ function buildServices(options: {
         return {
           clarificationQuestion: options.clarification?.question ?? null,
           ambiguityScore: options.clarification?.ambiguityScore ?? 0,
+          informationDensity: options.informationDensity ?? 'medium',
         };
       },
     },
@@ -199,6 +203,8 @@ describe('Vendor onboarding workflow', () => {
         question: 'Is it mainly house wiring materials, home electronics, or electrical repair?',
         ambiguityScore: 0.8,
       },
+      // Contentless input is the only thing that earns a clarification.
+      informationDensity: 'very_low',
     });
 
     const instance = seed(workflows, 'AskCapability');
@@ -220,6 +226,7 @@ describe('Vendor onboarding workflow', () => {
     const { services } = buildServices({
       extractions: [{ fields: { capabilityStatement: 'still vague' } }],
       clarification: { question: 'Another clarifying question?', ambiguityScore: 0.95 },
+      informationDensity: 'very_low',
     });
 
     const instance = seed(workflows, 'AwaitClarification', {
@@ -231,6 +238,66 @@ describe('Vendor onboarding workflow', () => {
 
     expect(outcome.responses[0].text).not.toContain('Another clarifying question');
     expect(outcome.responses[0].text).toContain('Which city');
+  });
+
+  it('does not clarify a broad but useful statement — it expands it instead', async () => {
+    // Reported from live WhatsApp testing: "I sell sport materials" was answered with
+    // "what kind of sport materials do you sell?". That names a real commercial domain the
+    // engine can expand into balls, boots, jerseys and fitness equipment, so the question
+    // spends the vendor's patience on something the platform can work out itself.
+    const { engine, workflows } = buildEngine();
+    const { services } = buildServices({
+      extractions: [{ fields: { capabilityStatement: 'I sell sport materials' } }],
+      // The CDE still offers a question and rates the term ambiguous...
+      clarification: { question: 'What kind of sport materials do you sell?', ambiguityScore: 0.85 },
+      // ...but the statement carries real information, so the platform proceeds.
+      informationDensity: 'medium',
+    });
+
+    const instance = seed(workflows, 'AskCapability');
+    const outcome = await engine.execute(instance, makeTrigger({ text: 'I sell sport materials' }), services);
+
+    expect(outcome.responses[0].text).not.toContain('What kind of sport materials');
+    expect(outcome.instance.currentState).toBe('AwaitLocation');
+    expect(outcome.instance.data.clarificationAsked).toBe(false);
+  });
+
+  it.each(['medium', 'high', 'very_high'] as const)(
+    'never clarifies a statement of %s information density',
+    async (informationDensity) => {
+      const { engine, workflows } = buildEngine();
+      const { services } = buildServices({
+        extractions: [{ fields: { capabilityStatement: 'I sell electrical materials' } }],
+        clarification: { question: 'Which kind exactly?', ambiguityScore: 0.99 },
+        informationDensity,
+      });
+
+      const instance = seed(workflows, 'AskCapability');
+      const outcome = await engine.execute(
+        instance,
+        makeTrigger({ text: 'I sell electrical materials' }),
+        services,
+      );
+
+      expect(outcome.instance.data.clarificationAsked).toBe(false);
+      expect(outcome.responses[0].text).toContain('city');
+    },
+  );
+
+  it('still clarifies a statement that says nothing at all', async () => {
+    // "I sell things" leaves the engine nothing to expand, so the one question is well spent.
+    const { engine, workflows } = buildEngine();
+    const { services } = buildServices({
+      extractions: [{ fields: { capabilityStatement: 'I sell things' } }],
+      clarification: { question: 'What do customers usually come to buy from you?', ambiguityScore: 0.9 },
+      informationDensity: 'very_low',
+    });
+
+    const instance = seed(workflows, 'AskCapability');
+    const outcome = await engine.execute(instance, makeTrigger({ text: 'I sell things' }), services);
+
+    expect(outcome.responses[0].text).toContain('customers usually come to buy');
+    expect(outcome.instance.data.clarificationAsked).toBe(true);
   });
 
   it('does not spend the clarification on a statement that is merely short', async () => {

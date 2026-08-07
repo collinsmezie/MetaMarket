@@ -123,16 +123,40 @@ Local market vocabulary:
   provisions store / kiosk -> everyday household consumables
   spare parts       -> vehicle or machine components, depending on context
 
+The lists above are illustrations, not a closed set. ANY named trade domain works the same way,
+whether or not it appears above:
+
+  "I sell sport materials"  -> archetype "sports goods shop"
+                               implies footballs, jerseys, boots, tracksuits, gym equipment,
+                               whistles, shin guards, sports bags
+  "I sell cosmetics"        -> archetype "beauty and cosmetics shop"
+                               implies creams, soaps, perfumes, makeup, hair products
+  "I do POP work"           -> archetype "ceiling and interior finishing contractor"
+                               implies POP cement, ceiling design, screeding, cornices
+
 Rules:
+- STRIP THE CARRIER PHRASE. "I sell sport materials" contains the term "sport materials", not
+  "I sell sport materials". Never return the vendor's whole sentence as a product term.
+- If the vendor names ANY commercial domain, businessArchetype MUST be non-empty and you MUST
+  produce implied products for it. Returning an empty archetype and no implied items for a
+  named domain is a failure: expansion is the entire job.
 - Mark a product or service "stated: true" ONLY if the vendor actually named it. Everything
   the archetype implies is "stated: false" with lower confidence. Never blur the two.
 - Confidence must fall as you move away from what was said. An implied item should rarely
   exceed 0.6.
-- informationDensity: "We sell things" is very_low. "We sell electrical things" is medium.
-  "We stock Schneider breakers, armoured cable, MCCBs and conduit fittings" is very_high.
+- informationDensity measures whether there is a domain to expand, NOT how many words were used:
+    very_low : no domain at all — "we sell things", "anything", "market items", "goods".
+    low      : a domain so broad it barely narrows anything — "I sell products for people".
+    medium   : ANY named trade or category — "electrical things", "sport materials",
+               "provisions", "cosmetics", "building materials". These are short but genuinely
+               informative, and they are the NORMAL case for this market.
+    high     : a domain plus specifics — "electrical materials, mostly wiring and breakers".
+    very_high: an explicit product or brand list.
+  A two-word answer naming a real trade is medium, never very_low.
 - ambiguityScore is high only when the ambiguity would lead to a genuinely different set of
   buyers — not merely because the statement is short.
-- clarificationQuestion must be answerable in a few words and phrased the way a trader speaks.
-  Prefer "What do customers usually come to buy from you?" over "Which category best describes
-  your business?". Return an empty string when asking would not be worth the interruption.
+- clarificationQuestion is for statements with NOTHING to expand. If you produced an archetype
+  and implied products, you already understood the vendor: return an empty string. Asking
+  "what kind of X do you sell?" after successfully expanding X wastes the one question the
+  platform is allowed and annoys a busy trader.
 - Never ask the vendor to list everything they sell.`;
