@@ -40,6 +40,7 @@ import { WorkflowManager, type RoutingDecision } from '../../domain/workflows/wo
 import { WorkflowDefinitionRegistry } from '../../domain/workflows/workflow-registry';
 import { resolveSystemAction, type SystemAction } from '../../domain/workflows/system-actions';
 import { ConversationContextManager } from '../conversation/conversation-context.manager';
+import { VendorResponseHandler } from '../fulfilment/vendor-response-handler.service';
 import { ResponseComposer } from '../response/response-composer.service';
 import { ConversationContinuityAnalyzer } from '../understanding/continuity-analyzer.service';
 import { IntentResolutionService } from '../understanding/intent-resolution.service';
@@ -99,6 +100,7 @@ export class TurnProcessor {
     private readonly engine: WorkflowEngine,
     private readonly policy: ConversationPolicyEngine,
     private readonly composer: ResponseComposer,
+    private readonly vendorResponses: VendorResponseHandler,
     private readonly config: AppConfigService,
   ) {}
 
@@ -121,6 +123,22 @@ export class TurnProcessor {
     // unsupported part type. Say so rather than running a workflow on empty input.
     if (text.trim().length === 0) {
       return this.respondWithFallback(conversation, message, 'no_readable_content', null);
+    }
+
+    // A vendor answering a fanned-out request. Handled before anything else because the payload
+    // is decisive: it names the request and the answer, so continuity analysis and intent
+    // resolution could only add latency, cost, and a way for the turn to go wrong. No workflow
+    // is started, resumed or suspended — a vendor's "yes" is a marketplace action, not a
+    // conversational objective (Vendor Fan-Out TDR §10).
+    const vendorReply = await this.vendorResponses.tryHandle({
+      conversation,
+      interactivePayload: input.interactivePayload,
+    });
+
+    if (vendorReply !== null) {
+      await this.send(conversation, vendorReply, null);
+      await this.context.touch(conversation.id, message.channel);
+      return { response: vendorReply, workflowId: null };
     }
 
     const relationship = await this.continuity.analyze({

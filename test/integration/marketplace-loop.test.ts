@@ -7,6 +7,8 @@ import { PrismaService } from '../../src/adapters/outbound/persistence/prisma.se
 import { EvidenceProcessor } from '../../src/application/evidence/evidence-processor.service';
 import { EvidenceQueryService } from '../../src/application/evidence/evidence-query.service';
 import { RequestDistributionService } from '../../src/application/fulfilment/request-distribution.service';
+import { VendorFanoutNotifier } from '../../src/application/fulfilment/vendor-fanout-notifier.service';
+import { VendorResponseHandler } from '../../src/application/fulfilment/vendor-response-handler.service';
 import { WalletNotifier } from '../../src/application/wallet/wallet-notifier.service';
 import { WalletService } from '../../src/application/wallet/wallet.service';
 import { AppConfigModule } from '../../src/config/config.module';
@@ -23,7 +25,9 @@ import {
   VIRTUAL_ACCOUNT_REPOSITORY,
   WALLET_REPOSITORY,
 } from '../../src/domain/ports/outbound/wallet-repository.port';
+import { encodeVendorResponse } from '../../src/domain/workflows/vendor-response';
 import { RecordingStageLogger, RecordingWalletNotifier } from '../fakes';
+import { makeConversation } from '../fakes';
 
 /**
  * The closed marketplace loop: distribution → vendor behaviour → evidence → better ranking.
@@ -32,6 +36,25 @@ import { RecordingStageLogger, RecordingWalletNotifier } from '../fakes';
  * the teacher". Everything here is production code against real Postgres; only the clock is
  * controlled, so response times and timeouts are deterministic.
  */
+/** Captures the asks that would have gone to vendors' phones. */
+class RecordingFanoutNotifier {
+  readonly sent: { requestId: string; vendorId: string; capabilityName: string; fee: number }[] = [];
+
+  async notifyVendor(params: {
+    requestId: string;
+    vendor: { id: string };
+    capabilityName: string;
+    fee: number;
+  }): Promise<void> {
+    this.sent.push({
+      requestId: params.requestId,
+      vendorId: params.vendor.id,
+      capabilityName: params.capabilityName,
+      fee: params.fee,
+    });
+  }
+}
+
 describe('Marketplace learning loop', () => {
   let prisma: PrismaService;
   let distribution: RequestDistributionService;
@@ -40,9 +63,13 @@ describe('Marketplace learning loop', () => {
   let vendors: PrismaVendorRepository;
   let wallet: WalletService;
   let notifier: RecordingWalletNotifier;
+  let responses: VendorResponseHandler;
+  let asks: RecordingFanoutNotifier;
   let fee: number;
 
   const HAMMER = '10003500';
+  /** Only `id` and `userId` are read by the handler; the rest is filler. */
+  const CONVERSATION_STUB = makeConversation();
   const CONVERSATION_ID = '33333333-3333-4333-8333-333333333333';
   const WORKFLOW_ID = '44444444-4444-4444-8444-444444444444';
 
@@ -126,7 +153,9 @@ describe('Marketplace learning loop', () => {
         EvidenceProcessor,
         EvidenceQueryService,
         RequestDistributionService,
+        VendorResponseHandler,
         WalletService,
+        { provide: VendorFanoutNotifier, useValue: new RecordingFanoutNotifier() },
         { provide: EVIDENCE_REPOSITORY, useExisting: PrismaEvidenceRepository },
         { provide: VENDOR_REPOSITORY, useExisting: PrismaVendorRepository },
         { provide: WALLET_REPOSITORY, useExisting: PrismaWalletRepository },
@@ -178,6 +207,8 @@ describe('Marketplace learning loop', () => {
     vendors = moduleRef.get(PrismaVendorRepository);
     evidenceRepo = moduleRef.get(PrismaEvidenceRepository);
     wallet = moduleRef.get(WalletService);
+    responses = moduleRef.get(VendorResponseHandler);
+    asks = moduleRef.get(VendorFanoutNotifier) as unknown as RecordingFanoutNotifier;
     notifier = moduleRef.get(WalletNotifier) as unknown as RecordingWalletNotifier;
     fee = moduleRef.get(AppConfigService).credits.visibilityFee;
 
@@ -197,6 +228,7 @@ describe('Marketplace learning loop', () => {
     await prisma.vendor.deleteMany();
     await prisma.creditTransaction.deleteMany();
     await prisma.creditWallet.deleteMany();
+    asks.sent.length = 0;
     notifier.insufficient.length = 0;
     notifier.connected.length = 0;
     notifier.freeTrial.length = 0;
@@ -541,6 +573,122 @@ describe('Marketplace learning loop', () => {
 
       await distributeTo([vendor]);
       expect(await balanceOf(vendor)).toBe(1_900);
+    });
+  });
+
+  /**
+   * The fan-out loop end to end (Vendor Fan-Out TDR).
+   *
+   * Before this, a fanned-out vendor was written to a delivery row and never spoken to, and
+   * `recordVendorResponse` was called from nowhere — so the only reachable outcome for a
+   * fanned-out vendor was a timeout. These drive the real intake path: a tapped payload in, a
+   * mutated delivery row out.
+   */
+  describe('vendor fan-out', () => {
+    const tap = async (vendorId: string, requestId: string, accepted: boolean) => {
+      const vendor = await vendors.findById(vendorId);
+      return responses.tryHandle({
+        conversation: { ...CONVERSATION_STUB, userId: vendor!.userId },
+        interactivePayload: encodeVendorResponse({ requestId, accepted }),
+      });
+    };
+
+    it('asks every fanned-out vendor, and nobody who was delivered immediately', async () => {
+      const ids = [await createVendor('Top'), await createVendor('Second'), await createVendor('Third')];
+
+      const result = await distributeTo(ids);
+
+      // The immediate vendor is already in front of the customer; asking them would be noise.
+      expect(asks.sent.map((ask) => ask.vendorId)).toEqual([ids[1], ids[2]]);
+      expect(asks.sent[0]).toMatchObject({ requestId: result.requestId, capabilityName: 'Hammers', fee });
+    });
+
+    it('never writes a pending row for a vendor who cannot be asked', async () => {
+      // A row nobody can answer only becomes a spurious timeout, which the Evidence Service
+      // would read as a real vendor ignoring a real customer.
+      const ids = [await createVendor('Top'), await createVendor('Vanishing')];
+      await prisma.vendor.delete({ where: { id: ids[1] } });
+
+      const result = await distributeTo(ids);
+
+      expect(result.fannedOut).toHaveLength(0);
+      expect(await prisma.requestDelivery.count({ where: { requestId: result.requestId } })).toBe(1);
+    });
+
+    it('turns a tapped Yes into a billed, revealed vendor', async () => {
+      const ids = [await createVendor('Top'), await createVendor('Responder')];
+      const result = await distributeTo(ids);
+
+      const reply = await tap(ids[1], result.requestId, true);
+
+      expect(reply?.text).toContain("You're in");
+      expect((await distribution.revealedVendors(result.requestId)).map((e) => e.vendorId)).toEqual(ids);
+      expect(await balanceOf(ids[1])).toBe(2_000 - fee);
+
+      await settleEvidence();
+      expect((await query.getCapabilityEvidence(ids[1], HAMMER))?.counters.accepted).toBe(1);
+    });
+
+    it('turns a tapped No into a recorded decline that costs nothing', async () => {
+      const ids = [await createVendor('Top'), await createVendor('Decliner')];
+      const result = await distributeTo(ids);
+
+      const reply = await tap(ids[1], result.requestId, false);
+
+      expect(reply?.text).toContain('not available this time');
+      expect((await distribution.revealedVendors(result.requestId)).map((e) => e.vendorId)).toEqual([ids[0]]);
+      expect(await balanceOf(ids[1])).toBe(2_000);
+    });
+
+    it('answers a re-tapped button without charging or revealing a second time', async () => {
+      const ids = [await createVendor('Top'), await createVendor('Eager')];
+      const result = await distributeTo(ids);
+
+      await tap(ids[1], result.requestId, true);
+      const second = await tap(ids[1], result.requestId, true);
+
+      expect(second?.text).toContain('no longer open');
+      expect(await balanceOf(ids[1])).toBe(2_000 - fee);
+    });
+
+    it('keeps an insolvent responder hidden while still hearing their yes', async () => {
+      const top = await createVendor('Top');
+      const broke = await createVendor('Broke Responder', 0);
+      const result = await distributeTo([top, broke]);
+
+      const reply = await tap(broke, result.requestId, true);
+
+      expect(reply?.text).toContain("wasn't shared this time");
+      expect((await distribution.revealedVendors(result.requestId)).map((e) => e.vendorId)).toEqual([top]);
+    });
+
+    it('is inert when the payload is tapped by someone who is not a vendor', async () => {
+      const ids = [await createVendor('Top'), await createVendor('Responder')];
+      const result = await distributeTo(ids);
+
+      const reply = await responses.tryHandle({
+        conversation: { ...CONVERSATION_STUB, userId: '+2349999999999' },
+        interactivePayload: encodeVendorResponse({ requestId: result.requestId, accepted: true }),
+      });
+
+      expect(reply?.text).toBe('This link is no longer active.');
+      const delivery = await prisma.requestDelivery.findFirstOrThrow({ where: { vendorId: ids[1] } });
+      expect(delivery.status).toBe('pending');
+    });
+
+    it('times out only vendors who were actually asked', async () => {
+      // The immediate vendor was billed and shown without being asked anything. Sweeping them
+      // would publish request.timeout — read as no_response, polarity -1 — against the one
+      // vendor who did nothing wrong.
+      const ids = [await createVendor('Top'), await createVendor('Ghost')];
+      await distributeTo(ids);
+
+      clockNow = new Date(clockNow.getTime() + 31 * 60_000);
+      await distribution.sweepTimeouts();
+      await settleEvidence();
+
+      expect((await query.getCapabilityEvidence(ids[0], HAMMER))?.counters.noResponse).toBe(0);
+      expect((await query.getCapabilityEvidence(ids[1], HAMMER))?.counters.noResponse).toBe(1);
     });
   });
 

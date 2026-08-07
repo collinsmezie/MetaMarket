@@ -45,6 +45,11 @@ const EVENT_SIGNALS: Readonly<Record<string, readonly InterpretedSignal[]>> = {
     { signal: 'rejected', polarity: -1, weight: 1 },
   ],
 
+  // Being asked is not behaviour, so it carries no counter. It is registered rather than left
+  // unknown because it is what makes a later `request.timeout` interpretable: the vendor was
+  // reachable, was asked, and said nothing.
+  'vendor.notified': [],
+
   'request.timeout': [{ signal: 'no_response', polarity: -1, weight: 1 }],
   'request.expired': [{ signal: 'no_response', polarity: -1, weight: 1 }],
 

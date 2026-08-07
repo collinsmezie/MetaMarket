@@ -1750,7 +1750,7 @@ Example events include:
 - VendorIgnored
 - VendorExpired
 
-Each event SHALL resume the workflow for processing.
+Responses arrive as taps on platform-minted buttons delivered to the vendor's own conversation (Vendor Fan-Out End-to-End TDR §5.2): the tap is routed deterministically to the Request Distribution Service, which records it against the vendor's delivery row and publishes the corresponding event. The waiting workflow is not resumed per event — the delivery row is the shared state, and the Customer Search workflow re-presents responding vendors to the customer on the customer's next turn, reading the revealed deliveries (§6, Vendor Fan-Out End-to-End TDR §5.3).
 
 ---
 
@@ -1785,6 +1785,8 @@ Minimum events include:
 - WorkflowCompleted
 
 These events SHALL be consumed by downstream business services.
+
+The concrete event names emitted by the implementation, and the producers of each, are defined in the Vendor Fan-Out End-to-End TDR §11 (for example `request.created`, `request.delivered`, `vendor.notified`, `request.distributed`, `request.accepted`, `request.rejected`, `request.timeout`).
 
 ---
 

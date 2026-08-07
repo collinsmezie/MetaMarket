@@ -27,6 +27,7 @@ import {
 } from '../../domain/ports/outbound/vendor-repository.port';
 import { WalletNotifier } from '../wallet/wallet-notifier.service';
 import { WalletService } from '../wallet/wallet.service';
+import { VendorFanoutNotifier } from './vendor-fanout-notifier.service';
 
 const COMPONENT = 'RequestDistribution';
 const STAGE = 'RequestDistributionService';
@@ -86,8 +87,24 @@ export class RequestDistributionService {
     @Inject(VENDOR_REPOSITORY) private readonly vendors: VendorRepositoryPort,
     private readonly wallet: WalletService,
     private readonly walletNotifier: WalletNotifier,
+    private readonly fanout: VendorFanoutNotifier,
     private readonly config: AppConfigService,
   ) {}
+
+  /**
+   * Loads the ranked vendors in one concurrent pass, dropping any that no longer exist.
+   *
+   * A missing vendor is not an error worth failing a search over — rankings are built from
+   * materialised beliefs that can outlive a deleted record — so it is simply absent from the map
+   * and every caller treats absence as "cannot be contacted".
+   */
+  private async resolveVendors(vendorIds: readonly string[]): Promise<Map<string, Vendor>> {
+    const records = await Promise.all(vendorIds.map((id) => this.vendors.findById(id)));
+
+    return new Map(
+      records.filter((vendor): vendor is Vendor => vendor !== null).map((vendor) => [vendor.id, vendor]),
+    );
+  }
 
   /** Credits a vendor pays to become visible to one customer (TDR §25.2). */
   private get visibilityFee(): number {
@@ -127,6 +144,12 @@ export class RequestDistributionService {
     // vendor. Beyond this depth a vendor would not have been contacted at all.
     const considered = params.ranked.slice(0, IMMEDIATE_DELIVERY_COUNT + FANOUT_LIMIT);
 
+    // Resolved once, concurrently, because both the billing walk and the fan-out ask need the
+    // vendor record — `userId` to bill and `conversationId` to reach their phone. Fetching them
+    // one at a time down two loops would put up to eighteen sequential round trips on the
+    // buyer's turn for information a single pass already has.
+    const resolved = await this.resolveVendors(considered.map((vendor) => vendor.vendorId));
+
     const request = await this.prisma.customerRequest.create({
       data: {
         id: this.ids.uuid(),
@@ -162,9 +185,9 @@ export class RequestDistributionService {
     for (const [rank, rankedVendor] of considered.entries()) {
       if (selected.length >= IMMEDIATE_DELIVERY_COUNT) break;
 
-      const vendor = await this.vendors.findById(rankedVendor.vendorId);
+      const vendor = resolved.get(rankedVendor.vendorId);
 
-      if (vendor === null) {
+      if (vendor === undefined) {
         // Ranked but no longer on the platform. Not a billing problem, so not a skip: there is
         // nobody to charge and nobody to notify.
         this.logger.stageFailed({
@@ -304,18 +327,25 @@ export class RequestDistributionService {
       );
     }
 
-    // ── Fan-out: asked, but not yet visible, and not billed until they accept ────────
+    // ── Fan-out: asked on WhatsApp, not yet visible, not billed until they accept ────
     const selectedIds = new Set(selected.map((candidate) => candidate.ranked.vendorId));
     const fannedOut = considered
-      .map((rankedVendor, rank) => ({ rankedVendor, rank }))
-      .filter((entry) => !selectedIds.has(entry.rankedVendor.vendorId))
+      .map((rankedVendor, rank) => ({ rankedVendor, rank, vendor: resolved.get(rankedVendor.vendorId) }))
+      .filter(
+        (entry): entry is { rankedVendor: RankedVendor; rank: number; vendor: Vendor } =>
+          // A vendor who cannot be asked cannot answer. Writing a pending row for a vendor who
+          // no longer exists would buy nothing but a spurious `request.timeout` half an hour
+          // later, which the Evidence Service would read as a real vendor ignoring a real
+          // customer (Vendor Fan-Out TDR §14 V2).
+          entry.vendor !== undefined && !selectedIds.has(entry.rankedVendor.vendorId),
+      )
       .slice(0, FANOUT_LIMIT);
 
-    for (const { rankedVendor, rank } of fannedOut) {
-      await this.prisma.requestDelivery.create({
+    for (const { rankedVendor, rank, vendor } of fannedOut) {
+      const delivery = await this.prisma.requestDelivery.create({
         data: {
           requestId: request.id,
-          vendorId: rankedVendor.vendorId,
+          vendorId: vendor.id,
           rank,
           score: rankedVendor.score,
           immediate: false,
@@ -326,8 +356,21 @@ export class RequestDistributionService {
       events.push(
         this.event('request.delivered', {
           requestId: request.id,
-          vendorId: rankedVendor.vendorId,
+          vendorId: vendor.id,
           payload: { capability: params.capabilityId, product: params.product, immediate: false },
+        }),
+      );
+
+      // The ask. Best-effort: it publishes its own `vendor.notified` on success and swallows
+      // every failure, so a vendor whose phone is unreachable cannot break the buyer's turn.
+      pushes.push(
+        this.fanout.notifyVendor({
+          requestId: request.id,
+          deliveryId: delivery.id,
+          vendor,
+          capabilityName,
+          customerCity: params.customerCity,
+          fee,
         }),
       );
     }
@@ -683,7 +726,12 @@ export class RequestDistributionService {
 
     try {
       const stale = await this.prisma.requestDelivery.findMany({
-        where: { status: 'pending', deliveredAt: { lte: cutoff } },
+        // Fan-out rows only. An immediate delivery is also created `pending`, but it was never a
+        // question: that vendor was billed and shown to the customer without being asked
+        // anything, so sweeping them would publish `request.timeout` — read by the Evidence
+        // Service as `no_response`, polarity -1 — against the one vendor who did nothing wrong.
+        // Silence is only evidence when there was a question.
+        where: { status: 'pending', immediate: false, deliveredAt: { lte: cutoff } },
         include: { request: true },
         take: 200,
       });

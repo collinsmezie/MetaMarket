@@ -211,6 +211,33 @@ function textWebhook(from: string, body: string, id: string) {
   };
 }
 
+function buttonWebhook(from: string, buttonId: string, title: string, id: string) {
+  return {
+    object: 'whatsapp_business_account',
+    entry: [
+      {
+        changes: [
+          {
+            field: 'messages',
+            value: {
+              contacts: [{ wa_id: from, profile: { name: 'Emeka' } }],
+              messages: [
+                {
+                  from,
+                  id,
+                  timestamp: '1785412800',
+                  type: 'interactive',
+                  interactive: { type: 'button_reply', button_reply: { id: buttonId, title } },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  };
+}
+
 function voiceWebhook(from: string, mediaId: string, id: string) {
   return {
     object: 'whatsapp_business_account',
@@ -553,5 +580,208 @@ describe('WhatsApp pipeline integration', () => {
     await waitForReply(2);
 
     expect(await prisma.conversation.count()).toBe(2);
+  });
+
+  /**
+   * The vendor fan-out reply, over the real webhook path (Vendor Fan-Out TDR §18.2).
+   *
+   * Everything from the signed Meta payload to the mutated delivery row is production code: the
+   * payload mapper turning `button_reply` into an interactive part, the ingestion service pulling
+   * the payload out, the turn processor's intake branch, and `recordVendorResponse`.
+   */
+  describe('vendor fan-out reply', () => {
+    const VENDOR_PHONE = '2348055550001';
+    const REQUEST_ID = '55555555-5555-4555-8555-555555555555';
+    const VENDOR_ID = '66666666-6666-4666-8666-666666666666';
+
+    beforeEach(async () => {
+      await prisma.requestDelivery.deleteMany();
+      await prisma.customerRequest.deleteMany();
+      await prisma.vendor.deleteMany();
+
+      await prisma.vendor.create({
+        data: {
+          id: VENDOR_ID,
+          // The E.164 the platform normalises the sender to; this is what links tap to vendor.
+          userId: `+${VENDOR_PHONE}`,
+          conversationId: '77777777-7777-4777-8777-777777777777',
+          businessName: 'Fan-out Hardware',
+          status: 'active',
+        },
+      });
+
+      await prisma.customerRequest.create({
+        data: {
+          id: REQUEST_ID,
+          conversationId: '88888888-8888-4888-8888-888888888888',
+          workflowId: '99999999-9999-4999-8999-999999999999',
+          customerId: '+2348011112222',
+          query: 'I need a hammer',
+          capabilityName: 'Hammers',
+          product: 'hammer',
+          expiresAt: new Date(Date.now() + 3_600_000),
+        },
+      });
+
+      await prisma.requestDelivery.create({
+        data: { requestId: REQUEST_ID, vendorId: VENDOR_ID, rank: 1, score: 0.8, immediate: false },
+      });
+
+      await prisma.creditTransaction.deleteMany();
+      await prisma.creditWallet.deleteMany();
+    });
+
+    /** Funds the vendor, as the onboarding grant would have. */
+    const fund = async (credits: number) => {
+      await prisma.creditWallet.create({
+        data: {
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          userId: `+${VENDOR_PHONE}`,
+          conversationId: '77777777-7777-4777-8777-777777777777',
+          balanceCredits: credits,
+        },
+      });
+    };
+
+    const textsSent = () => notifier.sent.map((entry) => entry.response.text ?? '');
+
+    afterAll(async () => {
+      await prisma.requestDelivery.deleteMany();
+      await prisma.customerRequest.deleteMany();
+      await prisma.vendor.deleteMany();
+      await prisma.creditTransaction.deleteMany();
+      await prisma.creditWallet.deleteMany();
+    });
+
+    it('records a tapped Yes, bills the vendor and answers them deterministically', async () => {
+      await fund(2_000);
+
+      await post(
+        buttonWebhook(
+          VENDOR_PHONE,
+          `mm|vendor-response|accept|${REQUEST_ID}`,
+          'Yes, I have it',
+          'wamid.fanout.1',
+        ),
+      ).expect(200);
+
+      // Two messages: the deduction notice from billing, and the handler's confirmation.
+      await waitForReply(2);
+
+      expect(textsSent().some((text) => text.includes("You've been connected"))).toBe(true);
+      expect(textsSent().some((text) => text.includes("You're in"))).toBe(true);
+
+      const delivery = await prisma.requestDelivery.findFirstOrThrow({ where: { requestId: REQUEST_ID } });
+      expect(delivery).toMatchObject({ status: 'accepted', revealedToCustomer: true, creditDeducted: true });
+
+      const wallet = await prisma.creditWallet.findFirstOrThrow();
+      expect(wallet.balanceCredits).toBe(1_900);
+    });
+
+    it('hears an insolvent vendor\u2019s Yes but never reveals them', async () => {
+      await fund(10);
+
+      await post(
+        buttonWebhook(
+          VENDOR_PHONE,
+          `mm|vendor-response|accept|${REQUEST_ID}`,
+          'Yes, I have it',
+          'wamid.fanout.6',
+        ),
+      ).expect(200);
+
+      await waitForReply(2);
+
+      // The full explanation comes from the wallet push; the handler only confirms the tap.
+      expect(textsSent().some((text) => text.includes('You said yes'))).toBe(true);
+      expect(textsSent().some((text) => text.includes("wasn't shared this time"))).toBe(true);
+
+      const delivery = await prisma.requestDelivery.findFirstOrThrow({ where: { requestId: REQUEST_ID } });
+      expect(delivery).toMatchObject({
+        status: 'accepted',
+        revealedToCustomer: false,
+        creditDeducted: false,
+      });
+      expect((await prisma.creditWallet.findFirstOrThrow()).balanceCredits).toBe(10);
+    });
+
+    it('never asks the model what the tap meant', async () => {
+      // A button carries no ambiguity, and an accept spends the vendor's credits. Routing it
+      // through classification could only agree, cost latency, or be wrong.
+      llm.operations.length = 0;
+
+      await post(
+        buttonWebhook(
+          VENDOR_PHONE,
+          `mm|vendor-response|decline|${REQUEST_ID}`,
+          "I don't have it",
+          'wamid.fanout.2',
+        ),
+      ).expect(200);
+
+      await waitForReply(1);
+
+      expect(llm.operations).toHaveLength(0);
+      expect(notifier.sent[0].response.text).toContain('not available this time');
+
+      const delivery = await prisma.requestDelivery.findFirstOrThrow({ where: { requestId: REQUEST_ID } });
+      expect(delivery).toMatchObject({ status: 'rejected', revealedToCustomer: false });
+    });
+
+    it('starts no workflow for a vendor reply — it is a marketplace action, not an objective', async () => {
+      await post(
+        buttonWebhook(
+          VENDOR_PHONE,
+          `mm|vendor-response|accept|${REQUEST_ID}`,
+          'Yes, I have it',
+          'wamid.fanout.3',
+        ),
+      ).expect(200);
+
+      await waitForReply(1);
+
+      expect(await prisma.workflowInstance.count()).toBe(0);
+    });
+
+    it('answers a stale tap without mutating anything', async () => {
+      await prisma.requestDelivery.updateMany({
+        where: { requestId: REQUEST_ID },
+        data: { status: 'timeout' },
+      });
+
+      await post(
+        buttonWebhook(
+          VENDOR_PHONE,
+          `mm|vendor-response|accept|${REQUEST_ID}`,
+          'Yes, I have it',
+          'wamid.fanout.4',
+        ),
+      ).expect(200);
+
+      await waitForReply(1);
+
+      expect(notifier.sent[0].response.text).toContain('no longer open');
+
+      const delivery = await prisma.requestDelivery.findFirstOrThrow({ where: { requestId: REQUEST_ID } });
+      expect(delivery.status).toBe('timeout');
+    });
+
+    it('is inert when a non-vendor taps the payload, and touches no delivery', async () => {
+      await post(
+        buttonWebhook(
+          '2348099998888',
+          `mm|vendor-response|accept|${REQUEST_ID}`,
+          'Yes, I have it',
+          'wamid.fanout.5',
+        ),
+      ).expect(200);
+
+      await waitForReply(1);
+
+      expect(notifier.sent[0].response.text).toBe('This link is no longer active.');
+
+      const delivery = await prisma.requestDelivery.findFirstOrThrow({ where: { requestId: REQUEST_ID } });
+      expect(delivery.status).toBe('pending');
+    });
   });
 });

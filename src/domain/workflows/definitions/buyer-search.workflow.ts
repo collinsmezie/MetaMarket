@@ -286,9 +286,13 @@ const awaitResponses = {
 
     // A tap on a vendor card is the customer choosing — the strongest evidence signal there is.
     if (trigger.interactivePayload !== null && data.requestId !== null) {
-      const chosen = trigger.interactivePayload.split('|')[3];
+      const [, , action, chosen] = trigger.interactivePayload.split('|');
 
-      if (chosen !== undefined && chosen.length > 0) {
+      // The action is checked, not just the position. Reading the fourth segment of whatever
+      // arrives would let any other button's payload be recorded as a vendor selection — and
+      // `vendor.selected` is the strongest signal the Evidence Service accepts, so a wrong one
+      // is expensive to unlearn.
+      if (action === 'select' && chosen !== undefined && chosen.length > 0) {
         await services.distribution.recordSelection({ requestId: data.requestId, vendorId: chosen });
 
         return {

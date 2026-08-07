@@ -16,6 +16,8 @@ import { EvidenceQueryService } from '../application/evidence/evidence-query.ser
 import { DemandUnderstandingService } from '../application/matching/demand-understanding.service';
 import { CapabilityMatchingService } from '../application/matching/capability-matching.service';
 import { RequestDistributionService } from '../application/fulfilment/request-distribution.service';
+import { VendorFanoutNotifier } from '../application/fulfilment/vendor-fanout-notifier.service';
+import { VendorResponseHandler } from '../application/fulfilment/vendor-response-handler.service';
 import { MessageIngestionService } from '../application/pipeline/message-ingestion.service';
 import { TurnProcessor } from '../application/pipeline/turn-processor.service';
 import { WORKFLOW_SERVICES } from '../application/pipeline/workflow-services';
@@ -75,6 +77,8 @@ import { AppConfigService } from './app-config.service';
     DemandUnderstandingService,
     CapabilityMatchingService,
     RequestDistributionService,
+    VendorFanoutNotifier,
+    VendorResponseHandler,
     ResponseComposer,
     ConversationContinuityAnalyzer,
     SemanticResolutionService,
