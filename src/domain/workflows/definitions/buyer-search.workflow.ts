@@ -170,9 +170,15 @@ const resolveDemand = {
       customerCity: typeof customerCity === 'string' ? customerCity : null,
     });
 
+    const resolvedProduct =
+      result.outcome === 'ranked'
+        ? (result as any).resolvedProduct ??
+          result.resolved.primaryCapabilities[0]?.name ??
+          result.resolved.demand.products[0] ??
+          query
+        : query;
+
     if (result.outcome === 'clarification_needed') {
-      // Retrieval was not performed: showing vendors chosen from the wrong reading would be
-      // worse than one question (CME Test 2).
       return {
         transitionTo: STATE_AWAIT_CLARIFICATION,
         response: { text: result.question },
@@ -182,25 +188,15 @@ const resolveDemand = {
       };
     }
 
-    if (result.outcome === 'no_capability') {
+    if (result.outcome === 'no_capability' || result.vendors.length === 0) {
       return {
-        transitionTo: STATE_COMPLETE,
+        transitionTo: STATE_AWAIT_RESPONSES,
         response: {
-          text: `I could not work out what "${query}" maps to in the marketplace yet. Could you describe it a different way?`,
+          text: "We're on it. We'll notify you as soon as we find the right vendors that can fulfill your request.",
         },
-        summary: `Buyer search: "${query}" did not resolve to any capability.`,
-        status: 'completed',
-      };
-    }
-
-    if (result.vendors.length === 0) {
-      return {
-        transitionTo: STATE_COMPLETE,
-        response: {
-          text: `No vendor on the platform covers "${query}" yet. I will let you know as more sellers join.`,
-        },
-        summary: `Buyer search: "${query}" matched no vendors.`,
-        status: 'completed',
+        dataPatch: { query, resolvedProduct },
+        summary: `Buyer search for "${resolvedProduct}": Optimistic fallback issued while searching vendors.`,
+        semanticFingerprint: fingerprintFor(trigger, query),
       };
     }
 
@@ -212,11 +208,34 @@ const resolveDemand = {
       customerId: trigger.conversation.userId,
       query,
       capabilityId: capability?.id ?? null,
-      capabilityName: capability?.name ?? null,
-      product: result.resolved.demand.products[0] ?? null,
+      capabilityName: capability?.name ?? resolvedProduct,
+      product: resolvedProduct,
       customerCity: typeof customerCity === 'string' ? customerCity : null,
       ranked: result.vendors,
     });
+
+    if (distribution.immediate.length === 0) {
+      const waitingCount = distribution.fannedOut.length;
+      return {
+        transitionTo: STATE_AWAIT_RESPONSES,
+        response: {
+          text: `We're on it. We'll notify you as soon as we find the right vendors that can fulfill your request for *${resolvedProduct}*.${
+            waitingCount > 0 ? ` (Fanned out to ${waitingCount} vendor${waitingCount === 1 ? '' : 's'})` : ''
+          }`,
+        },
+        dataPatch: {
+          query,
+          resolvedProduct,
+          requestId: distribution.requestId,
+          capabilityId: capability?.id ?? null,
+          capabilityName: capability?.name ?? resolvedProduct,
+          presentedVendorIds: [],
+        },
+        summary: `Buyer search: "${resolvedProduct}". Awaiting ${waitingCount} fanned out vendors.`,
+        semanticFingerprint: fingerprintFor(trigger, query),
+        importantEntities: { request_id: distribution.requestId },
+      };
+    }
 
     const rendered = renderVendors(distribution.immediate, context.instance.id);
 
@@ -226,20 +245,20 @@ const resolveDemand = {
         : '';
 
     return {
-      // Straight to waiting: the search stays open while responses arrive (§9).
       transitionTo: STATE_AWAIT_RESPONSES,
       response: {
-        text: `Here ${distribution.immediate.length === 1 ? 'is' : 'are'} the best match${distribution.immediate.length === 1 ? '' : 'es'} for "${query}":\n\n${rendered.text}${waiting}`,
+        text: `Here ${distribution.immediate.length === 1 ? 'is' : 'are'} the best match${distribution.immediate.length === 1 ? '' : 'es'} for *${resolvedProduct}*:\n\n${rendered.text}${waiting}`,
         actions: rendered.actions,
       },
       dataPatch: {
         query,
+        resolvedProduct,
         requestId: distribution.requestId,
         capabilityId: capability?.id ?? null,
-        capabilityName: capability?.name ?? null,
+        capabilityName: capability?.name ?? resolvedProduct,
         presentedVendorIds: distribution.immediate.map((vendor) => vendor.vendorId),
       },
-      summary: `Buyer search: "${query}". Delivered ${distribution.immediate.length} vendor(s), awaiting ${distribution.fannedOut.length} more.`,
+      summary: `Buyer search: "${resolvedProduct}". Delivered ${distribution.immediate.length} vendor(s), awaiting ${distribution.fannedOut.length} more.`,
       semanticFingerprint: fingerprintFor(trigger, query),
       importantEntities: { request_id: distribution.requestId },
     };

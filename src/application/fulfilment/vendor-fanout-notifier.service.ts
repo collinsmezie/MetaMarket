@@ -141,26 +141,46 @@ export class VendorFanoutNotifier {
     customerCity: string | null;
     fee: number;
   }): Response {
-    const where = params.customerCity ?? params.vendor.location?.city ?? null;
-    const near = where === null ? 'A customer' : `A customer near ${where}`;
+    const city = params.customerCity ?? params.vendor.location?.city ?? 'your area';
 
     return {
       text: [
-        `${near} is looking for "${params.capabilityName}".`,
-        'Your profile is a strong match. Would you like to be introduced?',
+        '*New Customer Request*',
         '',
-        `If you accept, the visibility fee (${params.fee} credits) is charged and your profile is sent to them.`,
+        `A customer in ${city} is looking for *${params.capabilityName}*`,
+        '',
+        'Can you fulfill this request?',
+        '1. Yes, I have it',
+        "2. No, I don't have it",
+        '3. I can get it',
+        '4. I can refer someone',
+        "5. I don't sell this, not my line of business",
       ].join('\n'),
       actions: [
         {
           type: 'vendor_response',
-          title: 'Yes, I have it',
-          payload: encodeVendorResponse({ requestId: params.requestId, accepted: true }),
+          title: '1. Yes, I have it',
+          payload: encodeVendorResponse({ requestId: params.requestId, option: 'YES_HAVE_IT' }),
         },
         {
           type: 'vendor_response',
-          title: "I don't have it",
-          payload: encodeVendorResponse({ requestId: params.requestId, accepted: false }),
+          title: "2. No, I don't have it",
+          payload: encodeVendorResponse({ requestId: params.requestId, option: 'NO_DONT_HAVE' }),
+        },
+        {
+          type: 'vendor_response',
+          title: '3. I can get it',
+          payload: encodeVendorResponse({ requestId: params.requestId, option: 'CAN_GET_IT' }),
+        },
+        {
+          type: 'vendor_response',
+          title: '4. I can refer someone',
+          payload: encodeVendorResponse({ requestId: params.requestId, option: 'REFER_SOMEONE' }),
+        },
+        {
+          type: 'vendor_response',
+          title: "5. Not my line of business",
+          payload: encodeVendorResponse({ requestId: params.requestId, option: 'NOT_MY_LINE' }),
         },
       ],
       metadata: { vendorAsk: true, requestId: params.requestId },

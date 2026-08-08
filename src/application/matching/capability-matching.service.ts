@@ -46,7 +46,10 @@ export type MatchResult =
   | {
       readonly outcome: 'ranked';
       readonly resolved: ResolvedDemand;
+      readonly resolvedProduct: string;
       readonly vendors: readonly RankedVendor[];
+      readonly buyerDisplayedVendors: readonly RankedVendor[];
+      readonly fannedOutVendors: readonly RankedVendor[];
     }
   /** Ambiguity would materially change the vendor set; no retrieval performed (CME Test 2). */
   | {
@@ -139,7 +142,19 @@ export class CapabilityMatchingService {
         output: { candidates: 0 },
       });
 
-      return { outcome: 'ranked', resolved, vendors: [] };
+      const resolvedProduct =
+        resolved.primaryCapabilities[0]?.name ??
+        resolved.demand.products[0] ??
+        request.query;
+
+      return {
+        outcome: 'ranked',
+        resolved,
+        resolvedProduct,
+        vendors: [],
+        buyerDisplayedVendors: [],
+        fannedOutVendors: [],
+      };
     }
 
     // ── Stages 7-8: Evidence Lookup and Ranking ──────────────────────────────────────
@@ -149,6 +164,13 @@ export class CapabilityMatchingService {
       customerCity: request.customerCity ?? null,
       limit: request.limit ?? DEFAULT_RESULT_LIMIT,
     });
+
+    const resolvedProduct =
+      resolved.primaryCapabilities[0]?.name ??
+      resolved.demand.products[0] ??
+      request.query;
+
+    const buyerDisplayedVendors = ranked.filter((vendor) => vendor.score >= 0.85);
 
     this.logger.stage({
       component: COMPONENT,
@@ -166,11 +188,20 @@ export class CapabilityMatchingService {
           capability: Number(vendor.components.capabilityMatch.toFixed(2)),
           evidence: Number(vendor.components.evidenceScore.toFixed(2)),
         })),
+        buyerDisplayed: buyerDisplayedVendors.length,
+        fannedOut: ranked.length,
       },
       durationMs: Date.now() - startedAt,
     });
 
-    return { outcome: 'ranked', resolved, vendors: ranked };
+    return {
+      outcome: 'ranked',
+      resolved,
+      resolvedProduct,
+      vendors: ranked,
+      buyerDisplayedVendors,
+      fannedOutVendors: ranked,
+    };
   }
 
   /**

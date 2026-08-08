@@ -71,6 +71,8 @@ const EVENT_SIGNALS: Readonly<Record<string, readonly InterpretedSignal[]>> = {
   'seller.onboarded': [],
   'seller.capability.confirmed': [{ signal: 'accepted', polarity: 1, weight: 0.5 }],
   'seller.inventory.updated': [{ signal: 'accepted', polarity: 1, weight: 0.5 }],
+  'vendor.referral.provided': [{ signal: 'responded', polarity: 1, weight: 1 }],
+  'vendor.capability.pruned': [{ signal: 'rejected', polarity: -1, weight: 1 }],
 };
 
 export function signalsFor(eventType: string): readonly InterpretedSignal[] {

@@ -424,10 +424,12 @@ Retrieve vendors matching:
 - Canonical Capabilities
 - GPC mappings
 - Vendor DNA
+- Location scope: Vendors located in the buyer's **City OR State**
 
-This stage intentionally retrieves a broad candidate set.
+This stage intentionally retrieves a broad candidate set across the buyer's geographic area for both product and service capabilities.
 
-No ranking occurs here.
+No final ranking occurs here.
+
 
 ---
 
@@ -452,7 +454,7 @@ Maintain evidence for:
 ## Evidence Sources
 
 - Vendor onboarding
-- Vendor confirmations (Yes, I have it / No, I don't have it / I can get it / I can refer someone / I don't sell this, not my line of business)
+- Vendor confirmations(Yes I have it now/No, I don't have it now/Can have it later/I don't sell this)
 - Vendor responses
 - Post onboarding questions 
 - Customer clicks
@@ -464,9 +466,8 @@ Maintain evidence for:
 - LLM inference (initial bootstrap)
 
 - Request received
-- Request accepted (Yes, I have it / I can get it)
-- Request declined (No, I don't have it / I don't sell this, not my line of business)
-- Request referral (I can refer someone)
+- Request accepted(Yes I have it now/I Can get it)
+- Request declined(No, I don't have it now/I don't sell this)
 - No response
 - Response time
 - Successful introduction
@@ -519,7 +520,7 @@ Increase confidence.
 
 ---
 
-Seller rejects request (No, I don't have it / I don't sell this, not my line of business).
+Seller rejects request.
 
 ↓
 
@@ -607,20 +608,51 @@ Located 1.2 km away.
 
 ---
 
-# 15. Outputs
+# 15. Outputs & Multi-Option Interaction Feedback
+
+## 15.1 Search Output Contract
+
+The CME returns the canonical `resolvedProduct` string alongside two categorized candidate lists:
+
+1. **Buyer Display Candidates (`buyerDisplayedVendors`):** Matched vendors in the buyer's city or state with a CME score of **85% and above** ($\ge 85\%$). These top-tier vendors are presented directly to the buyer upon initial response.
+2. **Fan-Out Messaging Candidates (`fannedOutVendors`):** **ALL and EVERY matched vendor** in the buyer's city or state, regardless of whether their score reaches the 85% display threshold. All matched vendors MUST receive customer request messages via WhatsApp fan-out to maximize potential sales conversions.
+3. **Product & Service Equivalence:** The output contract and ranking logic apply identically to product and service capabilities.
+
+Example Output:
 
 ```yaml
-Vendor:
-    Vendor A
+ResolvedProduct:
+    Billiard Balls
 
-Score:
-    97
+BuyerDisplayedVendors (CME Score >= 85%):
+  - Vendor: Vendor A
+    Score: 97
+    Reasons:
+      - Hardware / Sporting Capability
+      - Confirmed Stock Evidence
+  - Vendor: Vendor B
+    Score: 88
+    Reasons:
+      - High Evidence Score
 
-Reasons:
-    Hardware Capability
-    Seller Confirmation
-    Marketplace Evidence
+FannedOutVendors (ALL Matched Vendors in City/State):
+  - Vendor: Vendor A (Score 97)
+  - Vendor: Vendor B (Score 88)
+  - Vendor: Vendor C (Score 72)
+  - Vendor: Vendor D (Score 61)
 ```
+
+---
+
+## 15.2 Multi-Option Interaction Feedback & Ranking Adjustments
+
+Vendor interactions from the WhatsApp fan-out workflow feed back into CME candidate scoring:
+
+- **Option 1 ("Yes, I have it") & Option 3 ("I can get it"):** Increases vendor capability confidence score; auto-populates resolved product in vendor inventory.
+- **Option 2 ("No, I don't have it"):** Records temporary unavailability without penalizing base capability.
+- **Option 4 ("I can refer someone"):** Strengthens vendor referral network graph weight for product category.
+- **Option 5 ("Not my line of business"):** Triggers immediate capability pruning, removing/penalizing capability score for the vendor.
+
 
 ---
 
@@ -854,7 +886,7 @@ Medium.
 
 Day 5
 
-Seller confirms customer request for Hammer (Yes, I have it).
+Seller confirms customer request for Hammer(Yes, I have it now).
 
 Evidence
 

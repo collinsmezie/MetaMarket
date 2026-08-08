@@ -492,11 +492,53 @@ export class RequestDistributionService {
    * the product, which is a positive capability signal the Evidence Service should learn from;
    * what they do not get is the reveal.
    */
+  async findPendingDeliveryForVendor(vendorId: string): Promise<{
+    requestId: string;
+    deliveryId: string;
+    request: {
+      id: string;
+      conversationId: string;
+      customerId: string;
+      capabilityId: string | null;
+      capabilityName: string | null;
+      product: string | null;
+      query: string;
+    };
+  } | null> {
+    const delivery = await this.prisma.requestDelivery.findFirst({
+      where: { vendorId, status: 'pending' },
+      orderBy: { deliveredAt: 'desc' },
+      include: { request: true },
+    });
+
+    if (delivery === null) return null;
+
+    return {
+      requestId: delivery.requestId,
+      deliveryId: delivery.id,
+      request: delivery.request,
+    };
+  }
+
+  /**
+   * Records a vendor's answer to a fanned-out request.
+   */
   async recordVendorResponse(params: {
     requestId: string;
     vendorId: string;
     accepted: boolean;
-  }): Promise<{ revealed: boolean } | null> {
+  }): Promise<{
+    revealed: boolean;
+    request: {
+      id: string;
+      conversationId: string;
+      customerId: string;
+      capabilityId: string | null;
+      capabilityName: string | null;
+      product: string | null;
+      query: string;
+    };
+  } | null> {
     const delivery = await this.prisma.requestDelivery.findUnique({
       where: { requestId_vendorId: { requestId: params.requestId, vendorId: params.vendorId } },
       include: { request: true },
@@ -556,7 +598,7 @@ export class RequestDistributionService {
       output: { responseTimeMs, revealed: billing.revealed, creditDeducted: billing.creditDeducted },
     });
 
-    return { revealed: billing.revealed };
+    return { revealed: billing.revealed, request: delivery.request };
   }
 
   /**

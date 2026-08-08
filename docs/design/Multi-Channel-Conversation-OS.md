@@ -2022,3 +2022,16 @@ Although only capability was requested, the system SHALL also extract:
 and automatically mark those workflow steps as complete.
 
 The Conversation OS SHALL never ignore useful information simply because it was provided earlier than expected.
+
+---
+
+# 22. Buyer Search Workflow Operational Rules
+
+To guarantee a frictionless experience, MCOS enforces the following rules for `BuyerSearch` workflow execution:
+
+1. **Typing Indicator Simulation:** The channel adapter SHALL display WhatsApp typing indicators (`typing` state) **ONLY** when the system is actively searching and executing CME vendor matching. The typing indicator SHALL NOT be sent if the system is stuck in an error, loop, or glitch.
+2. **Zero-Vendor Safe Fallback Message:** The system SHALL **NEVER** inform the buyer that no vendors were found. In cases where no vendors are currently matched or available, MCOS SHALL rephrase the response as:
+   > *"We're on it. We'll notify you as soon as we find the right vendors that can fulfill your request."*
+3. **Resolved Product Name Enforcement:** MCOS SHALL use the **Resolved Product Name** exclusively during the entire turn lifecycle (when formatting vendor request pushes, rendering vendor profile cards, and auto-populating inventory). Raw unstructured queries SHALL NOT leak into outbound messages.
+4. **Vendor Profile Cards with CTA:** Profile cards dispatched to buyers SHALL include vendor details (Business Name, City, Star Rating, WhatsApp Number, Capability Description) and an interactive CTA `"Message Vendor"` link initiating a direct WhatsApp DM with the seller.
+5. **Product & Service Equivalence:** All operational rules and state execution pathways apply identically to Product Vendors and Service Vendors.

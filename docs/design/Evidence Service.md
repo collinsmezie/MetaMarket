@@ -143,56 +143,69 @@ Timestamp:
 
 ## Vendor Responds
 
-Possible responses
+Possible responses (Numbered Options & Categories):
 
-### Accepted
-
-```text
-Yes, I have it.
-```
-
-Evidence
+### Option 1 ("Yes, I have it") / Option 3 ("I can get it") — Positive Confirmation & Auto-Inventory
 
 ```yaml
 Event:
-    Request Accepted
-
+    request.accepted
 Vendor:
     Vendor A
-
 Product:
-    Hammer
-
-Timestamp:
-    2026-08-05T10:08Z
-
-Response Time:
-    3 minutes
+    Resolved_Product_Name
+Metadata:
+    option: YES_HAVE_IT | CAN_GET_IT
+    autoInventoryAdded: true
 ```
 
 ---
 
-### Rejected
-
-```text
-Sorry, I don't have it.
-```
-
-Evidence
+### Option 2 ("No, I don't have it") — Temporary Unavailability
 
 ```yaml
 Event:
-    Request Rejected
-
+    request.rejected
 Vendor:
     Vendor A
-
 Product:
-    Hammer
-
-Timestamp:
-    2026-08-05T10:09Z
+    Resolved_Product_Name
+Metadata:
+    option: NO_DONT_HAVE
+    stockStatus: out_of_stock
 ```
+
+---
+
+### Option 4 ("I can refer someone") — Referral Capability Network
+
+```yaml
+Event:
+    vendor.referral.provided
+Vendor:
+    Vendor A
+Product:
+    Resolved_Product_Name
+Metadata:
+    referredVendorName: Vendor B
+    referredPhone: +2348000000000
+```
+
+---
+
+### Option 5 ("I don't sell this, not my line of business") — Capability Scope Pruning
+
+```yaml
+Event:
+    vendor.capability.pruned
+Vendor:
+    Vendor A
+Product:
+    Resolved_Product_Name
+Metadata:
+    action: prune_capability_mapping
+```
+
 
 ---
 

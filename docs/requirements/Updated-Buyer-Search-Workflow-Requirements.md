@@ -45,7 +45,7 @@ if a vendor responds with "i don't sell this, not my line of business", the syst
 Vendor responses are numbered and vendor can respond by replying with the number corresponding to their response or by sending the response in text. They are also allowed to pick multiple options. Selected numbers are separated by commas or dashes in the response and the order in which they were selected does not matter but selected numbers must be mapped to their corresponding text responses for MCOS/CME to handle each request as intended.
 
 
-The vendors that are ranked highest by the CME (typically 85% in CME terms and above) in the buyers city or state must be shown to the buyer even as they recieve customer request messages so as to ensure that we are not missing out on any potential sales. 
+The vendors that are ranked highest by the CME (typically 85% in CME terms and above) in the buyers city or state must be shown to the buyer but all and every matched vendor MUST recieve customer request messages so as to ensure that we are not missing out on any potential sales. 
 
 The system should only use Resolved Product name during the entire workflow i.e. when messaging the vendor about the customer request or when sending the vendor card to the buyer e.g If the user says "I want to buy Billiard Balls" the system should use the resolved product name "Billiard Balls" when messaging the vendor or when sending the vendor card to the buyer. The system should use the resolved product name when saving the product to the vendor's inventory.
 
