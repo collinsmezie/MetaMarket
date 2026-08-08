@@ -219,3 +219,83 @@ No additional operational complexity is introduced.
 **Feature Summary**
 
 The Dedicated Virtual Account model makes funding a konnet wallet feel as natural as making a normal bank transfer. Users always recharge using the same personal account details, while konnet automatically detects incoming payments, converts them into platform credits, updates the user's wallet, and confirms the transaction within WhatsApp. This keeps the entire experience simple, trustworthy, and scalable while minimizing payment friction.  
+
+
+
+
+
+## Technical Requirements: Dedicated Virtual Account (DVA) Integration (Test Mode)
+
+## 1. Objective
+Implement an automated wallet onboarding flow by integrating Paystack’s Dedicated Virtual Account (DVA) API. This will automatically assign a unique, permanent virtual bank account to every new user who registers on our platform using Paystack's sandbox environment.
+
+## 2. User Flow Summary
+
+   1. Vendor completes onboarding.
+   2. Our backend creates a corresponding Customer Profile on Paystack.
+   3. Our backend automatically requests a Dedicated Virtual Account for that customer.
+   4. The system stores the account details and displays them to the user as their personal wallet funding account.
+
+------------------------------
+## 3. Core Technical Steps & API Specifications
+
+## Step 1: Create Paystack Customer
+Every virtual account must be tied to a Paystack customer object.
+
+* Endpoint: POST https://paystack.co
+* Headers:
+* Authorization: Bearer {{PAYSTACK_TEST_SECRET_KEY}}
+   * Content-Type: application/json
+* Payload Structure:
+
+{
+  "email": "user@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "+2348012345678"
+}
+
+
+* Success Criteria: Capture and store the customer_code (e.g., CUS_xnxdt6h1g0bgojg) in our local database against the user's ID.
+
+## Step 2: Request the Virtual Account (Test Mode)
+Generate the account immediately after a successful customer creation response.
+
+* Endpoint: POST https://paystack.co
+* Headers:
+* Authorization: Bearer {{PAYSTACK_TEST_SECRET_KEY}}
+   * Content-Type: application/json
+* Payload Structure:
+
+{
+  "customer": "CUS_xnxdt6h1g0bgojg", 
+  "preferred_bank": "test-bank"
+}
+
+
+* Success Criteria: Extract and store the following fields from the Paystack JSON response (data.bank and data.account_number) into our database:
+* bank_name (Will return "Test Bank" in sandbox)
+   * account_number
+   * account_name
+
+------------------------------
+## 4. Webhook Handling & Wallet Funding Simulation
+To update the user's wallet balance when they "transfer money" to the test account, the engineer must build a webhook listener.
+
+* Webhook Event to Listen For: charge.success
+* Verification Required: Implement Paystack IP/Signature validation using our test webhook secret to prevent spoofing.
+* Logic Flow:
+1. Parse the incoming payload for data.customer.customer_code or data.dedicated_account.account_number.
+   2. Locate the corresponding user in our database.
+   3. Credit the user's local wallet balance with the value found in data.amount (Note: Paystack sends amounts in kobo/minor units, so divide by 100).
+
+------------------------------
+## 5. Acceptance Criteria for Testing
+
+* The system automatically generates a virtual account upon user registration without manual intervention.
+* Errors (e.g., missing phone number format) are caught gracefully and retried.
+* The user profile UI successfully displays the account number and "Test Bank".
+* Triggering a mock charge.success event via the Paystack Dashboard Webhook Simulator successfully increments the target user's wallet balance.
+
+
+

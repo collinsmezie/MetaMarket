@@ -452,7 +452,7 @@ Maintain evidence for:
 ## Evidence Sources
 
 - Vendor onboarding
-- Vendor confirmations(Yes I have it now/No, I don't have it now/Can have it later/I don't sell this)
+- Vendor confirmations (Yes, I have it / No, I don't have it / I can get it / I can refer someone / I don't sell this, not my line of business)
 - Vendor responses
 - Post onboarding questions 
 - Customer clicks
@@ -464,8 +464,9 @@ Maintain evidence for:
 - LLM inference (initial bootstrap)
 
 - Request received
-- Request accepted(Yes I have it now/I Can get it)
-- Request declined(No, I don't have it now/I don't sell this)
+- Request accepted (Yes, I have it / I can get it)
+- Request declined (No, I don't have it / I don't sell this, not my line of business)
+- Request referral (I can refer someone)
 - No response
 - Response time
 - Successful introduction
@@ -518,7 +519,7 @@ Increase confidence.
 
 ---
 
-Seller rejects request.
+Seller rejects request (No, I don't have it / I don't sell this, not my line of business).
 
 ↓
 
@@ -853,7 +854,7 @@ Medium.
 
 Day 5
 
-Seller confirms customer request for Hammer(Yes, I have it now).
+Seller confirms customer request for Hammer (Yes, I have it).
 
 Evidence
 
