@@ -98,6 +98,9 @@ node dist/cli/taxonomy-search.js "hammer"     # inspect retrieval quality
 
 Hexagonal (ports and adapters), per [ADR-001](docs/architecture/ADR-001-Hexagonal-Architecture.md).
 
+**Before contributing, read [CONTRIBUTING.md](CONTRIBUTING.md)** — the engineering standards every
+change must meet, and the pre-merge checklist.
+
 ```
 src/
 ├── domain/                  PURE business logic — no framework, driver or SDK imports

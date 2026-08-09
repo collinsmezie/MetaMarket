@@ -23,7 +23,11 @@ The platform MUST be built using the following production-grade tech stack:
 
 ## 2. Mandatory Clean Code Design Principles
 
-All code contributions MUST strictly adhere to these principles:
+All code contributions MUST strictly adhere to these principles.
+
+> These are the constitution. [`CONTRIBUTING.md`](CONTRIBUTING.md) expands them into applicable,
+> reviewable rules — each one traced to a defect that reached the running platform — plus the
+> quality gate and the pre-merge checklist. Cite it from code comments as `CONTRIBUTING §N.N`.
 
 1. **Strict Separation of Concerns (Hexagonal / Clean Architecture):**
    * **Adapters (`src/adapters/`):** Translate provider payloads (WhatsApp, SMS, Voice) to `Canonical Message` models. *Never put business logic or AI calls inside adapters.*
