@@ -6,6 +6,10 @@ import {
   type ChannelNotifierRegistryPort,
 } from '../../domain/ports/outbound/channel-notifier.port';
 import {
+  CONVERSATION_REPOSITORY,
+  type ConversationRepositoryPort,
+} from '../../domain/ports/outbound/conversation-repository.port';
+import {
   EVENT_PUBLISHER,
   type EventPublisherPort,
 } from '../../domain/ports/outbound/event-publisher.port';
@@ -26,6 +30,7 @@ import {
   type VendorOptionCode,
 } from '../../domain/workflows/vendor-response';
 import { RequestDistributionService } from './request-distribution.service';
+import { WalletService } from '../wallet/wallet.service';
 
 const COMPONENT = 'RequestDistribution';
 const STAGE = 'VendorResponseHandler';
@@ -43,12 +48,14 @@ export interface VendorResponseInput {
 export class VendorResponseHandler {
   constructor(
     @Inject(VENDOR_REPOSITORY) private readonly vendors: VendorRepositoryPort,
+    @Inject(CONVERSATION_REPOSITORY) private readonly conversations: ConversationRepositoryPort,
     @Inject(EVENT_PUBLISHER) private readonly events: EventPublisherPort,
     @Inject(CHANNEL_NOTIFIER_REGISTRY) private readonly notifiers: ChannelNotifierRegistryPort,
     @Inject(STAGE_LOGGER) private readonly logger: StageLoggerPort,
     @Inject(CLOCK) private readonly clock: ClockPort,
     @Inject(ID_GENERATOR) private readonly ids: IdGeneratorPort,
     private readonly distribution: RequestDistributionService,
+    private readonly wallet: WalletService,
   ) {}
 
   async tryHandle(params: VendorResponseInput): Promise<Response | null> {
@@ -129,6 +136,8 @@ export class VendorResponseHandler {
             resolvedProduct: productName,
           });
 
+          const balance = await this.wallet.getBalance(vendor.userId);
+
           this.logger.stage({
             component: COMPONENT,
             stage: `${STAGE}:OptionAccept`,
@@ -138,7 +147,11 @@ export class VendorResponseHandler {
           });
 
           replies.push(
-            "You're in — your profile has been sent to the customer. Get ready for their call or message.",
+            [
+              "🎉 You're in — your profile has been sent to the customer. Get ready for their call or message.",
+              'Current Balance:',
+              `${balance} Credits`,
+            ].join('\n'),
           );
         } else {
           this.logger.stage({
@@ -258,33 +271,40 @@ export class VendorResponseHandler {
     resolvedProduct: string;
   }): Promise<void> {
     try {
-      const cleanPhone = params.vendor.userId.replace(/[^0-9]/g, '');
-      const waUrl = `https://wa.me/${cleanPhone}`;
+      const formattedBusinessName = params.vendor.businessName.replace(/\w\S*/g, (txt: string) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+      const cleanPhone = (params.vendor.userId ?? '').replace(/[^0-9]/g, '');
+      const formattedPhone = cleanPhone.startsWith('234') && cleanPhone.length === 13 ? '0' + cleanPhone.slice(3) : cleanPhone;
+      const firstName = (formattedBusinessName.trim().split(/\s+/)[0] ?? formattedBusinessName).replace(/[*_~`]/g, '');
       const location = params.vendor.location
         ? `${params.vendor.location.city ?? ''}${params.vendor.location.state ? `, ${params.vendor.location.state}` : ''}`
         : 'Local';
+      
+      const rawSummary = (params.vendor.conversationSummary ?? '').trim();
+      const summary = (!rawSummary || rawSummary.toLowerCase().startsWith('sells:'))
+        ? `${firstName} sells all kinds of sport and gym materials`
+        : rawSummary;
+
+      const chatLine = formattedPhone ? `Chat ${firstName} - ${formattedPhone}` : `Chat ${firstName}`;
 
       const cardText = [
-        `*Match Found for "${params.resolvedProduct}"!*`,
+        `We found a match for *${params.resolvedProduct}*:`,
         '',
-        `*Business:* ${params.vendor.businessName}`,
-        `*Location:* ${location}`,
-        '',
-        `📲 *Message Vendor:* ${waUrl}`,
+        `*${formattedBusinessName}*`,
+        location,
+        '⭐⭐⭐⭐⭐',
+        summary,
+        chatLine,
       ].join('\n');
+
+      const conversation = await this.conversations.findById(params.buyerConversationId);
+      const recipientAddress = conversation?.userId ?? params.buyerConversationId;
 
       if (this.notifiers.supports('whatsapp')) {
         await this.notifiers.forChannel('whatsapp').send(
-          { channel: 'whatsapp', address: params.buyerConversationId, conversationId: params.buyerConversationId },
+          { channel: 'whatsapp', address: recipientAddress, conversationId: params.buyerConversationId },
           {
             text: cardText,
-            actions: [
-              {
-                type: 'url',
-                title: 'Message Vendor',
-                payload: waUrl,
-              },
-            ],
+            actions: [],
             metadata: { vendorProfileCard: true, vendorId: params.vendor.id },
           },
         );

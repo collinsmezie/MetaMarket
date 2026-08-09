@@ -220,13 +220,7 @@ export class RequestDistributionService {
         continue;
       }
 
-      // `debited` or `duplicate`. Duplicate means a retry already paid for this exact
-      // (request, vendor) pair, so the work is funded and must complete — charging again is the
-      // only wrong answer here.
-      const balanceAfter =
-        debit.outcome === 'debited' ? debit.balanceAfter : await this.wallet.getBalance(vendor.userId);
-
-      await this.recordDelivery({
+      const deliveryRow = await this.recordDelivery({
         requestId: request.id,
         candidate,
         now,
@@ -263,12 +257,13 @@ export class RequestDistributionService {
       );
 
       pushes.push(
-        this.walletNotifier.notifyConnected({
-          userId: vendor.userId,
-          conversationId: vendor.conversationId,
+        this.fanout.notifyVendor({
+          requestId: request.id,
+          deliveryId: deliveryRow.id,
+          vendor,
           capabilityName,
-          credits: fee,
-          balanceAfter,
+          customerCity: params.customerCity,
+          fee,
         }),
       );
     }
@@ -413,7 +408,8 @@ export class RequestDistributionService {
     await this.events.publishAll(events);
 
     // The notifier swallows its own failures, so this settles rather than rejects.
-    await Promise.allSettled(pushes);
+    // Executed asynchronously so vendor network latencies never block the buyer's turn.
+    void Promise.allSettled(pushes).catch(() => {});
 
     const immediate = selected.map((candidate) => candidate.ranked);
 
@@ -453,7 +449,7 @@ export class RequestDistributionService {
     revealed: boolean;
     creditDeducted: boolean;
     tolerateExisting: boolean;
-  }): Promise<void> {
+  }): Promise<{ id: string }> {
     const data = {
       rank: params.candidate.rank,
       score: params.candidate.ranked.score,
@@ -464,13 +460,12 @@ export class RequestDistributionService {
     };
 
     if (!params.tolerateExisting) {
-      await this.prisma.requestDelivery.create({
+      return this.prisma.requestDelivery.create({
         data: { requestId: params.requestId, vendorId: params.candidate.vendor.id, ...data },
       });
-      return;
     }
 
-    await this.prisma.requestDelivery.upsert({
+    return this.prisma.requestDelivery.upsert({
       where: {
         requestId_vendorId: { requestId: params.requestId, vendorId: params.candidate.vendor.id },
       },
@@ -675,11 +670,6 @@ export class RequestDistributionService {
       };
     }
 
-    // `duplicate` here is the crash-recovery path: the fee was taken and the reveal never
-    // landed. Charging again would punish the vendor for our outage.
-    const balanceAfter =
-      debit.outcome === 'debited' ? debit.balanceAfter : await this.wallet.getBalance(vendor.userId);
-
     return {
       revealed: true,
       creditDeducted: true,
@@ -694,15 +684,7 @@ export class RequestDistributionService {
           },
         }),
       ],
-      pushes: [
-        this.walletNotifier.notifyConnected({
-          userId: vendor.userId,
-          conversationId: vendor.conversationId,
-          capabilityName,
-          credits: fee,
-          balanceAfter,
-        }),
-      ],
+      pushes: [],
     };
   }
 

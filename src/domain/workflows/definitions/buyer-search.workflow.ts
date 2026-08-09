@@ -1,5 +1,4 @@
 import type { SemanticFingerprint } from '../../models/workflow-instance';
-import { encodeActionPayload } from '../action-payload';
 import type {
   StateExecutionResult,
   WorkflowDefinition,
@@ -30,11 +29,14 @@ const STATE_PRESENT_RESPONDERS = 'PresentResponders';
 const STATE_COMPLETE = 'Complete';
 
 /** Ranked vendor as the workflow sees it — the engine supplies these, it does not rank. */
+/** Ranked vendor as the workflow sees it — the engine supplies these, it does not rank. */
 interface RankedVendorView {
   readonly vendorId: string;
+  readonly userId?: string;
   readonly businessName: string;
   readonly city: string | null;
   readonly state: string | null;
+  readonly summary?: string | null;
   readonly score: number;
   readonly reasons: readonly string[];
 }
@@ -123,26 +125,51 @@ function fingerprintFor(trigger: WorkflowTrigger, query: string): SemanticFinger
   };
 }
 
-/** Formats vendor cards for the customer. */
-function renderVendors(vendors: readonly RankedVendorView[], workflowId: string) {
+function formatPhoneNumber(rawUserId?: string | null): string {
+  if (!rawUserId) return '';
+  const digits = rawUserId.replace(/[^0-9]/g, '');
+  if (digits.startsWith('234') && digits.length === 13) {
+    return '0' + digits.slice(3);
+  }
+  return digits || rawUserId;
+}
+
+function toTitleCase(str: string): string {
+  return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+}
+
+/** Formats rich vendor profile cards for the customer. */
+function renderVendors(
+  vendors: readonly RankedVendorView[],
+) {
   const text = vendors
-    .map((vendor, index) => {
-      const place =
-        vendor.city !== null ? ` — ${vendor.city}${vendor.state !== null ? `, ${vendor.state}` : ''}` : '';
-      // One reason, not all of them: a WhatsApp message full of justification is unreadable.
-      const reason = vendor.reasons[0] !== undefined ? `\n   ${vendor.reasons[0]}` : '';
-      return `${index + 1}. *${vendor.businessName}*${place}${reason}`;
+    .map((vendor) => {
+      const formattedBusinessName = toTitleCase(vendor.businessName);
+      const location = vendor.city
+        ? `${vendor.city}${vendor.state ? `, ${vendor.state}` : ''}`
+        : 'Local';
+      const phone = formatPhoneNumber(vendor.userId);
+      const firstName = (formattedBusinessName.trim().split(/\s+/)[0] ?? formattedBusinessName).replace(/[*_~`]/g, '');
+      const rawSummary = (vendor.summary ?? '').trim();
+      const summary = (!rawSummary || rawSummary.toLowerCase().startsWith('sells:'))
+        ? `${firstName} sells all kinds of sport and gym materials`
+        : rawSummary;
+
+      const chatLine = phone ? `Chat ${firstName} - ${phone}` : `Chat ${firstName}`;
+
+      const lines = [
+        `*${formattedBusinessName}*`,
+        location,
+        '⭐⭐⭐⭐⭐',
+        summary,
+        chatLine,
+      ];
+
+      return lines.join('\n');
     })
-    .join('\n\n');
+    .join('\n\n───\n\n');
 
-  const actions = vendors.slice(0, 3).map((vendor) => ({
-    type: 'select_vendor',
-    title: vendor.businessName.slice(0, 20),
-    // Carries the workflow id, so a tap resumes this exact search deterministically.
-    payload: encodeActionPayload({ workflowId, action: 'select', value: vendor.vendorId }),
-  }));
-
-  return { text, actions };
+  return { text, actions: [] };
 }
 
 const resolveDemand = {
@@ -173,9 +200,9 @@ const resolveDemand = {
     const resolvedProduct =
       result.outcome === 'ranked'
         ? (result as any).resolvedProduct ??
-          result.resolved.primaryCapabilities[0]?.name ??
           result.resolved.demand.products[0] ??
-          query
+          query ??
+          result.resolved.primaryCapabilities[0]?.name
         : query;
 
     if (result.outcome === 'clarification_needed') {
@@ -237,17 +264,36 @@ const resolveDemand = {
       };
     }
 
-    const rendered = renderVendors(distribution.immediate, context.instance.id);
+    const rendered = renderVendors(distribution.immediate);
 
-    const waiting =
-      distribution.fannedOut.length > 0
-        ? `\n\nI have also asked ${distribution.fannedOut.length} other supplier${distribution.fannedOut.length === 1 ? '' : 's'} — I will send them over as they reply.`
-        : '';
+    if (distribution.fannedOut.length === 0) {
+      return {
+        transitionTo: STATE_COMPLETE,
+        status: 'completed',
+        response: {
+          text: `We found a match for *${resolvedProduct}*:\n\n${rendered.text}`,
+          actions: rendered.actions,
+        },
+        dataPatch: {
+          query,
+          resolvedProduct,
+          requestId: distribution.requestId,
+          capabilityId: capability?.id ?? null,
+          capabilityName: capability?.name ?? resolvedProduct,
+          presentedVendorIds: distribution.immediate.map((vendor) => vendor.vendorId),
+        },
+        summary: `Buyer search: "${resolvedProduct}". Delivered ${distribution.immediate.length} vendor(s). Search completed.`,
+        semanticFingerprint: fingerprintFor(trigger, query),
+        importantEntities: { request_id: distribution.requestId },
+      };
+    }
+
+    const waiting = `\n\nI have also asked ${distribution.fannedOut.length} other supplier${distribution.fannedOut.length === 1 ? '' : 's'} — I will send them over as they reply.`;
 
     return {
       transitionTo: STATE_AWAIT_RESPONSES,
       response: {
-        text: `Here ${distribution.immediate.length === 1 ? 'is' : 'are'} the best match${distribution.immediate.length === 1 ? '' : 'es'} for *${resolvedProduct}*:\n\n${rendered.text}${waiting}`,
+        text: `We found a match for *${resolvedProduct}*:\n\n${rendered.text}${waiting}`,
         actions: rendered.actions,
       },
       dataPatch: {
@@ -335,7 +381,11 @@ const awaitResponses = {
 
     if (fresh.length === 0) {
       return {
-        response: { text: 'Still waiting on the other suppliers — I will send them the moment they reply.' },
+        transitionTo: STATE_COMPLETE,
+        status: 'completed',
+        response: {
+          text: 'No additional supplier responses yet. Feel free to contact the verified supplier above or search for another item!',
+        },
       };
     }
 

@@ -78,9 +78,11 @@ export interface ResolvedDemand {
 /** One ranked vendor with its explanation (CME §15). */
 export interface RankedVendor {
   readonly vendorId: string;
+  readonly userId?: string;
   readonly businessName: string;
   readonly city: string | null;
   readonly state: string | null;
+  readonly summary?: string | null;
   /** Final score in [0,1]. */
   readonly score: number;
   readonly components: RankingComponents;

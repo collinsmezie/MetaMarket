@@ -157,8 +157,8 @@ export class PrismaEvidenceRepository implements EvidenceRepositoryPort {
       responseTimeCount: counters.responseTimeCount,
       ratingSum: counters.ratingSum,
       ratingCount: counters.ratingCount,
-      evidenceScore: aggregate.score,
-      scoreConfidence: aggregate.scoreConfidence,
+      evidenceScore: Number.isFinite(aggregate.score) ? aggregate.score : 0.5,
+      scoreConfidence: Number.isFinite(aggregate.scoreConfidence) ? aggregate.scoreConfidence : 0,
       lastObservedAt: aggregate.lastObservedAt,
     };
 

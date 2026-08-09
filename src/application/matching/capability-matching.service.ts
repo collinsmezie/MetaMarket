@@ -143,9 +143,9 @@ export class CapabilityMatchingService {
       });
 
       const resolvedProduct =
-        resolved.primaryCapabilities[0]?.name ??
         resolved.demand.products[0] ??
-        request.query;
+        request.query ??
+        resolved.primaryCapabilities[0]?.name;
 
       return {
         outcome: 'ranked',
@@ -166,9 +166,9 @@ export class CapabilityMatchingService {
     });
 
     const resolvedProduct =
-      resolved.primaryCapabilities[0]?.name ??
       resolved.demand.products[0] ??
-      request.query;
+      request.query ??
+      resolved.primaryCapabilities[0]?.name;
 
     const buyerDisplayedVendors = ranked.filter((vendor) => vendor.score >= 0.85);
 
@@ -305,11 +305,19 @@ export class CapabilityMatchingService {
         availability: profile.vendor.status === 'active' ? 1 : 0,
       };
 
+      const firstName = (profile.vendor.businessName.trim().split(/\s+/)[0] ?? profile.vendor.businessName).replace(/[*_~`]/g, '');
+      const rawSummary = (profile.vendor.conversationSummary ?? '').trim();
+      const summary = (!rawSummary || rawSummary.toLowerCase().startsWith('sells:'))
+        ? `${firstName} sells all kinds of sport and gym materials`
+        : rawSummary;
+
       return {
         vendorId: profile.vendor.id,
+        userId: profile.vendor.userId,
         businessName: profile.vendor.businessName,
         city: profile.vendor.location?.city ?? null,
         state: profile.vendor.location?.state ?? null,
+        summary,
         score: combineRanking(components),
         components,
         reasons: this.explain(profile, resolved, components, evidence?.reasons ?? []),
