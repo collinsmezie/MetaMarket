@@ -78,11 +78,9 @@ export interface ResolvedDemand {
 /** One ranked vendor with its explanation (CME §15). */
 export interface RankedVendor {
   readonly vendorId: string;
-  readonly userId?: string;
   readonly businessName: string;
   readonly city: string | null;
   readonly state: string | null;
-  readonly summary?: string | null;
   /** Final score in [0,1]. */
   readonly score: number;
   readonly components: RankingComponents;
@@ -188,4 +186,5 @@ export function proximityScore(distanceKm: number | null): number {
 
   const HORIZON_KM = 25;
   return Math.max(0, 1 - Math.min(distanceKm, HORIZON_KM) / HORIZON_KM);
+}
 }

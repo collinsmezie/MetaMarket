@@ -220,7 +220,13 @@ export class RequestDistributionService {
         continue;
       }
 
-      const deliveryRow = await this.recordDelivery({
+      // `debited` or `duplicate`. Duplicate means a retry already paid for this exact
+      // (request, vendor) pair, so the work is funded and must complete — charging again is the
+      // only wrong answer here.
+      const balanceAfter =
+        debit.outcome === 'debited' ? debit.balanceAfter : await this.wallet.getBalance(vendor.userId);
+
+      await this.recordDelivery({
         requestId: request.id,
         candidate,
         now,
@@ -257,13 +263,12 @@ export class RequestDistributionService {
       );
 
       pushes.push(
-        this.fanout.notifyVendor({
-          requestId: request.id,
-          deliveryId: deliveryRow.id,
-          vendor,
+        this.walletNotifier.notifyConnected({
+          userId: vendor.userId,
+          conversationId: vendor.conversationId,
           capabilityName,
-          customerCity: params.customerCity,
-          fee,
+          credits: fee,
+          balanceAfter,
         }),
       );
     }
@@ -408,8 +413,7 @@ export class RequestDistributionService {
     await this.events.publishAll(events);
 
     // The notifier swallows its own failures, so this settles rather than rejects.
-    // Executed asynchronously so vendor network latencies never block the buyer's turn.
-    void Promise.allSettled(pushes).catch(() => {});
+    await Promise.allSettled(pushes);
 
     const immediate = selected.map((candidate) => candidate.ranked);
 
@@ -449,7 +453,7 @@ export class RequestDistributionService {
     revealed: boolean;
     creditDeducted: boolean;
     tolerateExisting: boolean;
-  }): Promise<{ id: string }> {
+  }): Promise<void> {
     const data = {
       rank: params.candidate.rank,
       score: params.candidate.ranked.score,
@@ -460,12 +464,13 @@ export class RequestDistributionService {
     };
 
     if (!params.tolerateExisting) {
-      return this.prisma.requestDelivery.create({
+      await this.prisma.requestDelivery.create({
         data: { requestId: params.requestId, vendorId: params.candidate.vendor.id, ...data },
       });
+      return;
     }
 
-    return this.prisma.requestDelivery.upsert({
+    await this.prisma.requestDelivery.upsert({
       where: {
         requestId_vendorId: { requestId: params.requestId, vendorId: params.candidate.vendor.id },
       },
@@ -487,53 +492,11 @@ export class RequestDistributionService {
    * the product, which is a positive capability signal the Evidence Service should learn from;
    * what they do not get is the reveal.
    */
-  async findPendingDeliveryForVendor(vendorId: string): Promise<{
-    requestId: string;
-    deliveryId: string;
-    request: {
-      id: string;
-      conversationId: string;
-      customerId: string;
-      capabilityId: string | null;
-      capabilityName: string | null;
-      product: string | null;
-      query: string;
-    };
-  } | null> {
-    const delivery = await this.prisma.requestDelivery.findFirst({
-      where: { vendorId, status: 'pending' },
-      orderBy: { deliveredAt: 'desc' },
-      include: { request: true },
-    });
-
-    if (delivery === null) return null;
-
-    return {
-      requestId: delivery.requestId,
-      deliveryId: delivery.id,
-      request: delivery.request,
-    };
-  }
-
-  /**
-   * Records a vendor's answer to a fanned-out request.
-   */
   async recordVendorResponse(params: {
     requestId: string;
     vendorId: string;
     accepted: boolean;
-  }): Promise<{
-    revealed: boolean;
-    request: {
-      id: string;
-      conversationId: string;
-      customerId: string;
-      capabilityId: string | null;
-      capabilityName: string | null;
-      product: string | null;
-      query: string;
-    };
-  } | null> {
+  }): Promise<{ revealed: boolean } | null> {
     const delivery = await this.prisma.requestDelivery.findUnique({
       where: { requestId_vendorId: { requestId: params.requestId, vendorId: params.vendorId } },
       include: { request: true },
@@ -593,7 +556,7 @@ export class RequestDistributionService {
       output: { responseTimeMs, revealed: billing.revealed, creditDeducted: billing.creditDeducted },
     });
 
-    return { revealed: billing.revealed, request: delivery.request };
+    return { revealed: billing.revealed };
   }
 
   /**
@@ -670,6 +633,11 @@ export class RequestDistributionService {
       };
     }
 
+    // `duplicate` here is the crash-recovery path: the fee was taken and the reveal never
+    // landed. Charging again would punish the vendor for our outage.
+    const balanceAfter =
+      debit.outcome === 'debited' ? debit.balanceAfter : await this.wallet.getBalance(vendor.userId);
+
     return {
       revealed: true,
       creditDeducted: true,
@@ -684,7 +652,15 @@ export class RequestDistributionService {
           },
         }),
       ],
-      pushes: [],
+      pushes: [
+        this.walletNotifier.notifyConnected({
+          userId: vendor.userId,
+          conversationId: vendor.conversationId,
+          capabilityName,
+          credits: fee,
+          balanceAfter,
+        }),
+      ],
     };
   }
 

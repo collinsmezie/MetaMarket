@@ -49,47 +49,37 @@ A buyer's search resolves and matches vendors. `BuyerSearch.ResolveDemand` calls
 
 1. The immediate vendor is billed and revealed (existing, Konnet Credits Recharge TDR §25.6).
 2. The remaining ranked vendors (up to `FANOUT_LIMIT` = 8) each get a `requestDelivery` row with status `pending` (existing, request-distribution.service.ts:314-324).
-3. **Updated:** for each fanned-out vendor in the buyer's city or state, the service loads the `Vendor` record, captures the delivery row id, and enqueues an ask push. The push uses the strict **Resolved Product Name** and composes a canonical `Response`:
+3. **New:** for each fanned-out vendor, the service loads the `Vendor` record, captures the delivery row id, and enqueues an ask push. The push composes a canonical `Response`:
 
 ```text
-New Customer Request
+A customer near {city} is looking for "{capabilityName}".
+Your profile is a strong match. Would you like to be introduced?
 
-A customer in {City} is looking for {Resolved_Product_Name}
-
-Can you fulfill this request?  
-1. Yes, I have it  
-2. No, I don't have it  
-3. I can get it  
-4. I can refer someone  
-5. I don't sell this, not my line of business
+If the customer picks you, the visibility fee ({fee} credits) is charged.
 ```
 
-The vendor may reply using interactive buttons, single numbers (`1` to `5`), text, or multi-option combinations separated by commas or dashes (e.g., `1, 3` or `1-4`).
+with two quick-reply buttons:
 
-4. The push is best-effort (never throws) and is awaited with the rest of the distribution pushes. On successful delivery it is recorded in the vendor's conversation history. A failed ask leaves the delivery row pending; the existing 30-minute sweep later records `request.timeout`.
+| Title | Payload |
+| --- | --- |
+| Yes, I have it | `mm|vendor-response|accept|<requestId>` |
+| I don't have it | `mm|vendor-response|decline|<requestId>` |
+
+4. The push is best-effort (never throws) and is awaited with the rest of the distribution pushes. On successful delivery it is recorded in the vendor's conversation history. A failed ask leaves the delivery row pending; the existing 30-minute sweep later records `request.timeout` — honest, because a vendor who never received the ask did not respond.
 5. `vendor.notified` is published for each successfully-sent ask, alongside the existing `request.delivered`.
 
-### 5.2 Inbound — Vendor Response Processing (5 Options & Multi-Option Intake)
+### 5.2 Inbound — the vendor's answer
 
-The vendor's phone receives the ask message. When the vendor replies via button tap, number, or text:
+The vendor's phone shows the ask with buttons. Tapping one sends a Meta `interactive` message whose `button_reply.id` is the payload. The existing adapter stack already maps this (whatsapp-payload.mapper.ts:210-214 → `button_reply` part; message-ingestion.service.ts:237-240 extracts the payload; the part's `title` becomes the turn's text artifact, artifact.ts:58-68).
 
-1. `TurnProcessor.process()` receives the message and invokes `VendorResponseHandler.tryHandle()`.
-2. The payload or text is parsed to normalize multi-option selections (e.g., `1, 3` maps to `YES_HAVE_IT` and `CAN_GET_IT`).
-3. **Execution by Option Category:**
-   - **Option 1 ("Yes, I have it") & Option 3 ("I can get it"):**
-     - Vendor Profile Card (Business name, City, Star rating, WhatsApp number, capability description) with interactive CTA `"Message Vendor"` (WhatsApp DM link) is sent to the buyer.
-     - Product is saved to vendor inventory under the **Resolved Product Name**.
-     - Evidence Service increments vendor capability confidence.
-   - **Option 2 ("No, I don't have it"):**
-     - System replies to vendor: `"ok, noted"`. Profile is NOT sent to buyer.
-     - Evidence Service records temporary stock unavailability.
-   - **Option 4 ("I can refer someone"):**
-     - System prompts vendor asking for contact details (Name and WhatsApp number) of the referral.
-     - Evidence Service records referral network capability.
-   - **Option 5 ("I don't sell this, not my line of business"):**
-     - System replies: `"Thank you for letting us know! We've updated our records..."`
-     - System prunes vendor capability in CDE/CME scope.
+`TurnProcessor.process()` then:
 
+1. Loads the vendor's conversation by `(userId, channel)`.
+2. **New:** checks the interactive payload against `resolveVendorResponse(payload)`. If it is a vendor-response payload:
+   - `VendorRepository.findByUserId(conversation.userId)` resolves the vendor (vendor-repository.port.ts:45). A tapped payload only mutates the delivery of the vendor who received it — the button is inert in any other conversation.
+   - `RequestDistributionService.recordVendorResponse({ requestId, vendorId, accepted })` records the answer. This is the existing method: accept bills the visibility fee and reveals the vendor; decline stays hidden; a delivery no longer `pending` returns `null` (no double-answer, no double-charge).
+   - The handler composes the deterministic reply and delivers it to the vendor's conversation.
+3. Returns without intent resolution, semantics, or any workflow instance — the tap is a marketplace action, not a conversational objective.
 
 The vendor's reply path never touches the customer's `BuyerSearch` instance. The delivery row is the shared state; the customer's next message picks up newly-revealed vendors.
 

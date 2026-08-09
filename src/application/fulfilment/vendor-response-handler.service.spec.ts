@@ -37,20 +37,9 @@ function build(options: { vendor?: Vendor | null; outcome?: { revealed: boolean 
     },
   } as unknown as RequestDistributionService;
 
-  const conversations = {
-    async findById() {
-      return null;
-    },
-  } as any;
-
   const logger = new RecordingStageLogger();
-  const events = { async publish() {} } as any;
-  const notifiers = { supports: () => false, forChannel: () => ({}) } as any;
-  const clock = { now: () => NOW } as any;
-  const ids = { uuid: () => 'test-uuid' } as any;
-  const wallet = { async getBalance() { return 100; } } as any;
 
-  return { handler: new VendorResponseHandler(vendors, conversations, events, notifiers, logger, clock, ids, distribution, wallet), calls, logger };
+  return { handler: new VendorResponseHandler(vendors, logger, distribution), calls, logger };
 }
 
 const conversation = makeConversation({ userId: VENDOR.userId });

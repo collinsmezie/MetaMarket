@@ -44,20 +44,17 @@ export interface MatchRequest {
 
 export type MatchResult =
   | {
-      readonly outcome: 'ranked';
-      readonly resolved: ResolvedDemand;
-      readonly resolvedProduct: string;
-      readonly vendors: readonly RankedVendor[];
-      readonly buyerDisplayedVendors: readonly RankedVendor[];
-      readonly fannedOutVendors: readonly RankedVendor[];
-    }
+    readonly outcome: 'ranked';
+    readonly resolved: ResolvedDemand;
+    readonly vendors: readonly RankedVendor[];
+  }
   /** Ambiguity would materially change the vendor set; no retrieval performed (CME Test 2). */
   | {
-      readonly outcome: 'clarification_needed';
-      readonly demand: DemandObject;
-      readonly question: string;
-      readonly options: readonly string[];
-    }
+    readonly outcome: 'clarification_needed';
+    readonly demand: DemandObject;
+    readonly question: string;
+    readonly options: readonly string[];
+  }
   | { readonly outcome: 'no_capability'; readonly demand: DemandObject };
 
 /**
@@ -78,7 +75,7 @@ export class CapabilityMatchingService {
     private readonly understanding: DemandUnderstandingService,
     private readonly resolver: CapabilityResolver,
     private readonly evidence: EvidenceQueryService,
-  ) {}
+  ) { }
 
   async match(request: MatchRequest): Promise<MatchResult> {
     const startedAt = Date.now();
@@ -142,19 +139,7 @@ export class CapabilityMatchingService {
         output: { candidates: 0 },
       });
 
-      const resolvedProduct =
-        resolved.demand.products[0] ??
-        request.query ??
-        resolved.primaryCapabilities[0]?.name;
-
-      return {
-        outcome: 'ranked',
-        resolved,
-        resolvedProduct,
-        vendors: [],
-        buyerDisplayedVendors: [],
-        fannedOutVendors: [],
-      };
+      return { outcome: 'ranked', resolved, vendors: [] };
     }
 
     // ── Stages 7-8: Evidence Lookup and Ranking ──────────────────────────────────────
@@ -164,13 +149,6 @@ export class CapabilityMatchingService {
       customerCity: request.customerCity ?? null,
       limit: request.limit ?? DEFAULT_RESULT_LIMIT,
     });
-
-    const resolvedProduct =
-      resolved.demand.products[0] ??
-      request.query ??
-      resolved.primaryCapabilities[0]?.name;
-
-    const buyerDisplayedVendors = ranked.filter((vendor) => vendor.score >= 0.85);
 
     this.logger.stage({
       component: COMPONENT,
@@ -188,20 +166,11 @@ export class CapabilityMatchingService {
           capability: Number(vendor.components.capabilityMatch.toFixed(2)),
           evidence: Number(vendor.components.evidenceScore.toFixed(2)),
         })),
-        buyerDisplayed: buyerDisplayedVendors.length,
-        fannedOut: ranked.length,
       },
       durationMs: Date.now() - startedAt,
     });
 
-    return {
-      outcome: 'ranked',
-      resolved,
-      resolvedProduct,
-      vendors: ranked,
-      buyerDisplayedVendors,
-      fannedOutVendors: ranked,
-    };
+    return { outcome: 'ranked', resolved, vendors: ranked };
   }
 
   /**
@@ -305,19 +274,11 @@ export class CapabilityMatchingService {
         availability: profile.vendor.status === 'active' ? 1 : 0,
       };
 
-      const firstName = (profile.vendor.businessName.trim().split(/\s+/)[0] ?? profile.vendor.businessName).replace(/[*_~`]/g, '');
-      const rawSummary = (profile.vendor.conversationSummary ?? '').trim();
-      const summary = (!rawSummary || rawSummary.toLowerCase().startsWith('sells:'))
-        ? `${firstName} sells all kinds of sport and gym materials`
-        : rawSummary;
-
       return {
         vendorId: profile.vendor.id,
-        userId: profile.vendor.userId,
         businessName: profile.vendor.businessName,
         city: profile.vendor.location?.city ?? null,
         state: profile.vendor.location?.state ?? null,
-        summary,
         score: combineRanking(components),
         components,
         reasons: this.explain(profile, resolved, components, evidence?.reasons ?? []),

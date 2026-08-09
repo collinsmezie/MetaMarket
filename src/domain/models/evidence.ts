@@ -238,11 +238,11 @@ export function computeEvidenceScore(counters: EvidenceCounters): {
 
   const raw = activeWeight === 0 ? NEUTRAL_EVIDENCE_SCORE : weighted / activeWeight;
 
+  // Shrink toward neutral while evidence is thin.
   const confidence = Math.min(1, totalInteractions / CONFIDENCE_SATURATION);
-  const calculatedScore = NEUTRAL_EVIDENCE_SCORE + (raw - NEUTRAL_EVIDENCE_SCORE) * confidence;
-  const score = Number.isFinite(calculatedScore) ? calculatedScore : NEUTRAL_EVIDENCE_SCORE;
+  const score = NEUTRAL_EVIDENCE_SCORE + (raw - NEUTRAL_EVIDENCE_SCORE) * confidence;
 
-  return { score: Math.min(1, Math.max(0, score)), confidence: Number.isFinite(confidence) ? confidence : 0 };
+  return { score: Math.min(1, Math.max(0, score)), confidence };
 }
 
 /** Applies one record's effect to a counter set. Pure, so aggregation is replayable. */

@@ -103,7 +103,7 @@ export class TurnProcessor {
     private readonly composer: ResponseComposer,
     private readonly vendorResponses: VendorResponseHandler,
     private readonly config: AppConfigService,
-  ) {}
+  ) { }
 
   async process(input: TurnInput): Promise<TurnOutcome> {
     const now = this.clock.now();
@@ -134,7 +134,6 @@ export class TurnProcessor {
     const vendorReply = await this.vendorResponses.tryHandle({
       conversation,
       interactivePayload: input.interactivePayload,
-      text,
     });
 
     if (vendorReply !== null) {

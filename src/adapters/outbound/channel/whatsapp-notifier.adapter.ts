@@ -13,8 +13,17 @@ import { STAGE_LOGGER, type StageLoggerPort } from '../../../domain/ports/outbou
 const COMPONENT = 'MCOS';
 const STAGE = 'WhatsAppNotifier';
 
-const SEND_TIMEOUT_MS = 5_000;
-const SEND_DEADLINE_MS = 10_000;
+const SEND_TIMEOUT_MS = 15_000;
+
+/**
+ * Ceiling on one `send`, across every payload and every retry.
+ *
+ * Deliberately below `CONVERSATION_LOCK_TTL_MS` (30s). Delivery happens inside the turn, which
+ * holds the conversation lock; if retries outlived the lock, a second worker could pick up the
+ * same conversation while this one was still writing to it. Bounding the send is what keeps
+ * "retry harder" from turning a network problem into a concurrency problem.
+ */
+const SEND_DEADLINE_MS = 20_000;
 
 /**
  * Attempts per message before giving up.
@@ -85,20 +94,7 @@ export class WhatsAppNotifier implements ChannelNotifierPort {
     const deadline = Date.now() + SEND_DEADLINE_MS;
 
     for (const [index, payload] of payloads.entries()) {
-      let result = await this.post(payload, deadline);
-
-      // Robust fallback: If an interactive payload fails (e.g., outside 24h window or invalid button ID),
-      // fall back to sending plain text body so the message is guaranteed to reach the user.
-      if (!result.ok && payload.type === 'interactive' && response.text) {
-        const textPayload = {
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: target.address,
-          type: 'text',
-          text: { body: response.text, preview_url: false },
-        };
-        result = await this.post(textPayload, deadline);
-      }
+      const result = await this.post(payload, deadline);
 
       if (!result.ok) {
         // Report partial delivery honestly: earlier messages did reach the user.
