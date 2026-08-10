@@ -79,6 +79,12 @@ The workflow operates at the intersection of four core platform systems:
 - **Zero-Vendor Safe Fallback Policy:** The system **MUST NEVER** inform the customer that no vendors were found. If no vendors match or respond initially, the system must issue an encouraging, optimistic rephrase:
   > *"We're on it. We'll notify you as soon as we find the right vendors that can fulfill your request."*
 
+### 3.6 Domain-Aligned Expansion Matching (DAEM) Integration
+- **Two-Tier Retrieval Strategy:** When no Tier-1 direct inventory stockists (`capabilityMatch > 0`) are available in the buyer's region, the workflow utilizes Tier-2 **Domain-Aligned Expanded Candidates (`expansionMatch > 0` + Commercial Domain Alignment)**.
+- **Cross-Domain Suppression:** Candidates from unrelated commercial domains (e.g., tailors or restaurants matching automotive queries) are strictly suppressed (`score = 0`).
+- **Contextual Buyer Presentation:** Domain-aligned expanded vendors are presented with domain-contextualized wording (e.g., *"AutoZone Ventures in Warri specializes in automotive spare parts and accessories"*).
+- **Fan-Out & Self-Learning Promotion:** Fanning out lead requests to Tier-2 domain-aligned vendors allows the platform to dynamically discover inventory. When a Tier-2 vendor responds over WhatsApp with Option 1 (*"Yes, I have it"*) or Option 3 (*"I can get it"*), the `EvidenceProcessor` automatically promotes that product capability to a `DIRECT` inventory belief in Vendor DNA for future buyer matches.
+
 ---
 
 ## 4. End-to-End Workflow State Machine

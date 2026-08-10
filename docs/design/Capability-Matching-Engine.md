@@ -1314,3 +1314,93 @@ The search modes in §20 do not introduce a separate pipeline. They only determi
 5. Business searches bypass unnecessary product reasoning.
 6. Vibe searches expand customer intent into candidate products and capabilities before retrieval.
 7. All search modes converge into the same semantic matching, evidence, and ranking pipeline.
+
+---
+
+# 28. Domain-Aligned Expansion Matching (DAEM)
+
+## 28.1 Overview & Problem Statement
+In informal commerce ecosystems (e.g., Nigerian open-air markets), merchants who operate within a specific commercial domain (such as Automotive Spare Parts, Bookstores & Stationery, Building Materials, Beauty & Cosmetics, or Consumer Electronics) frequently stock fast-moving accessories, consumables, and complementary items. For example:
+- An **Automotive Spare Parts Dealer** stocks mechanical components as well as fast-moving car accessories (steering wheel covers, wiper blades, floor mats, dash polish).
+- A **Bookstore / Educational Supplier** stocks textbooks as well as stationery, mathematical sets, art brushes, and office desk items.
+- A **Building Materials Merchant** stocks cement/blocks as well as fasteners, paintbrushes, and hand tools.
+
+Strict primary capability matching (`capabilityMatch > 0`) prevents false-positive matches across unrelated commercial domains (e.g., suppressing a tailoring shop from surfacing for automotive repair). However, absolute zero-expansion filtering introduces severe false negatives for **domain-aligned merchants** who naturally carry overlapping inventories within their commercial domain but have not yet explicitly declared every individual SKU during initial onboarding.
+
+Domain-Aligned Expansion Matching (DAEM) bridges this gap across all business domains.
+
+---
+
+## 28.2 Architectural Principles of DAEM
+
+1. **Commercial Domain Preservation**: Every GS1 GPC Segment/Brick and Vendor Archetype belongs to a high-level Commercial Domain (e.g., `AUTOMOTIVE`, `STATIONERY_BOOKS`, `BUILDING_MATERIALS`, `CLOTHING_FASHION`, `BEAUTY_PERSONAL_CARE`, `ELECTRONICS_COMPUTING`).
+2. **Domain-Bound Candidate Expansion**: When a buyer requests a product for which zero direct primary capability matches (`capabilityMatch > 0`) currently exist in the active vendor pool, the CME evaluates candidate vendors using **Domain-Aligned Expansion Matching (`expansionMatch > 0`)**.
+3. **Cross-Domain Suppression**: Candidates with `expansionMatch > 0` whose Commercial Domain differs from the Target Demand Domain (e.g., a `CLOTHING_FASHION` vendor matching an `AUTOMOTIVE` query) are strictly suppressed (`score = 0`).
+4. **Contextual Buyer Presentation**: Domain-aligned expanded vendors are presented to buyers with domain-contextualized messaging (e.g., *"AutoZone Ventures in Warri specializes in automotive spare parts and accessories"*).
+5. **Interactive Self-Learning Loop**: Fanning out a lead to a domain-aligned expanded vendor creates an interactive discovery opportunity. When the vendor responds over WhatsApp with Option 1 (*"Yes, I have it"*) or Option 3 (*"I can get it"*), the `EvidenceProcessor` automatically promotes the product capability to a `DIRECT` verified inventory belief (confidence: 0.95) in Vendor DNA. Option 5 (*"Not my line of business"*) prunes the expansion branch.
+
+---
+
+## 28.3 Commercial Domain Classification Schema
+
+Universal mapping of GS1 GPC segments and business archetypes into commercial domains:
+
+| Commercial Domain | GS1 GPC Segments | Representative Business Archetypes | Inventory Expansion Affinities |
+| :--- | :--- | :--- | :--- |
+| `AUTOMOTIVE` | Vehicle, Automotive Accessories & Maintenance | Automotive Spare Parts Dealer, Car Accessories Shop, Auto Mechanic | Steering wheel covers, wiper blades, car polish, seat covers, dash mats, tire pressure gauges |
+| `STATIONERY_BOOKS` | Office Supplies, Textual/Printed Materials, Educational | Bookstore, Stationery Supplier, Printing & Publishing Shop | Mathematical sets, art brushes, drawing pads, desk organizers, file folders, calculators |
+| `BUILDING_MATERIALS` | Building Products, Hardware, Plumbing, Electrical | Building Materials Merchant, Hardware Store, Plumbing Vendor | Fasteners, tape measures, paintbrushes, sealants, hand tools, safety gloves |
+| `BEAUTY_PERSONAL_CARE` | Personal Care, Cosmetics, Grooming | Cosmetics Shop, Beauty Supply Store, Pharmacy | Hair accessories, makeup organizers, body lotions, perfume atomizers, grooming kits |
+| `ELECTRONICS_COMPUTING` | Computing, Consumer Electronics, Communications | Computer Accessories Shop, Electronics Store, Phone Vendor | USB cables, screen protectors, phone stands, power banks, cleaning kits |
+
+---
+
+## 28.4 Two-Tier Candidate Scoring & Ranking Function
+
+The CME Ranking Engine computes vendor score using a two-tier scoring function:
+
+$$\text{Final Score} = \begin{cases} 
+0 & \text{if } \text{Domain}(V) \neq \text{Domain}(D) \text{ and } \text{capabilityMatch} = 0 \\
+\mathbf{W_{\text{capability}}} \cdot \text{capabilityMatch} + \mathbf{W_{\text{expansion}}} \cdot \text{expansionMatch} + \mathbf{W_{\text{evidence}}} \cdot \text{evidenceScore} + \text{Proximity} & \text{if } \text{capabilityMatch} > 0 \\
+\mathbf{W_{\text{daem}}} \cdot \text{expansionMatch} + \mathbf{W_{\text{affinity}}} \cdot \text{domainAffinity} + \mathbf{W_{\text{evidence}}} \cdot \text{evidenceScore} + \text{Proximity} & \text{if } \text{capabilityMatch} = 0 \text{ and } \text{Domain}(V) = \text{Domain}(D)
+\end{cases}$$
+
+### Scoring Weight Configuration
+- **Tier 1 (Direct Inventory Stockist)**: `capabilityMatch` weight = `0.45` (Ranked #1).
+- **Tier 2 (Domain-Aligned Expansion)**: `daem` weight = `0.25`, `domainAffinity` weight = `0.20` (Surfaced when Tier 1 candidate pool is empty or low).
+
+---
+
+## 28.5 Self-Learning Lifecycle & Evidence Pipeline
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Buyer
+    participant CME as Capability Matching Engine
+    participant Dist as Request Distribution Service
+    actor Vendor as Domain-Aligned Merchant (e.g. AutoZone)
+    participant Evid as Evidence Processor
+    participant DNA as Vendor DNA
+
+    Buyer->>CME: "I need steering cover in Warri"
+    CME->>CME: Tier-1 (Direct): 0 candidates
+    CME->>CME: Tier-2 (DAEM): AutoZone (Domain = AUTOMOTIVE) -> Score > 0.65
+    CME->>Buyer: "Checking sellers. AutoZone Ventures specializes in auto parts & accessories."
+    CME->>Dist: Fan-out Lead Request to AutoZone WhatsApp
+    Dist->>Vendor: WhatsApp Push: "Customer looking for Steering Wheel Covers. 1. Yes, I have it"
+    Vendor->>Dist: Taps "1. Yes, I have it"
+    Dist->>Evid: Emit `request.accepted` event
+    Evid->>DNA: Record evidence & promote "Steering Wheel Covers" to DIRECT (0.95)
+    Evid->>Buyer: Reveal AutoZone contact details
+    Note over DNA: AutoZone is now a Tier-1 Direct Stockist for Steering Wheel Covers across all future queries
+```
+
+---
+
+## 28.6 Summary of DAEM Guarantees
+
+1. **Zero Irrelevant False Positives**: Tailors, restaurants, and unrelated services are mathematically filtered out of automotive or stationery queries (`score = 0`).
+2. **High Recall for Informal Markets**: Merchants with domain-aligned inventory affinities are surfaced instead of returning blank 0-vendor fallbacks.
+3. **Autonomous Learning**: Every vendor lead acceptance converts inferred expansion signals into verified `DIRECT` capability DNA.
+
