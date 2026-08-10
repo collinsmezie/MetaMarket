@@ -213,30 +213,37 @@ const resolveDemand = {
       };
     }
 
-    if (result.outcome === 'no_capability') {
-      return {
-        transitionTo: STATE_COMPLETE,
-        response: {
-          text: `We're checking our vendor network for "${query}" and will notify you as soon as matching suppliers are available.`,
-        },
-        summary: `Buyer search: "${query}" registered for network vendor discovery.`,
-        status: 'completed',
-      };
-    }
+    const extractedProduct =
+      trigger.semanticRequest?.products[0]?.normalized ??
+      trigger.semanticRequest?.products[0]?.raw ??
+      null;
 
-    if (result.vendors.length === 0) {
+    if (result.outcome === 'no_capability') {
+      const resolvedName = extractedProduct ?? 'your item';
       return {
         transitionTo: STATE_COMPLETE,
         response: {
-          text: `We're checking across our seller network for "${query}" and will notify you the moment a supplier is ready.`,
+          text: `We're checking across our seller network for *${resolvedName}* and will notify you as soon as matching suppliers are available.`,
         },
-        summary: `Buyer search: "${query}" registered for network vendor discovery.`,
+        summary: `Buyer search: "${resolvedName}" registered for network vendor discovery.`,
         status: 'completed',
       };
     }
 
     const capability = result.resolved.primaryCapabilities[0] ?? null;
-    const resolvedProductName = result.resolved.demand.products[0] ?? capability?.name ?? query;
+    const resolvedProductName =
+      result.resolved.demand.products[0] ?? capability?.name ?? extractedProduct ?? 'your item';
+
+    if (result.vendors.length === 0) {
+      return {
+        transitionTo: STATE_COMPLETE,
+        response: {
+          text: `We're checking across our seller network for *${resolvedProductName}* and will notify you the moment a supplier is ready.`,
+        },
+        summary: `Buyer search: "${resolvedProductName}" registered for network vendor discovery.`,
+        status: 'completed',
+      };
+    }
 
     const distribution = await services.distribution.distribute({
       conversationId: trigger.conversation.id,
