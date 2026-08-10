@@ -204,7 +204,7 @@ const awaitDetail = {
           status: 'completed',
           response: {
             text: [
-              'Pls Whenever you are ready, just tell me what you need. For example: "I need cement in Aba", or "I sell electrical materials".',
+              'Pls whenever you are ready, just tell me what you need. For example: "I need cement in Aba", or "I sell electrical materials".',
             ].join('\n'),
           },
           summary: `Triage: the user never clarified after ${attempts} attempts; closed the conversation.`,
