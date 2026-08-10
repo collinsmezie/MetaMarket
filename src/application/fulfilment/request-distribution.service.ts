@@ -6,7 +6,6 @@ import { PrismaService } from '../../adapters/outbound/persistence/prisma.servic
 import { AppConfigService } from '../../config/app-config.service';
 import {
   WALLET_DEBIT_REASONS,
-  deliveryDebitReference,
   responseDebitReference,
 } from '../../domain/models/credit';
 import {
@@ -178,166 +177,13 @@ export class RequestDistributionService {
     // collecting them keeps the outcome observable instead of racing the caller's next turn.
     const pushes: Promise<void>[] = [];
 
-    // ── Immediate delivery: billed first, revealed second ────────────────────────────
+    // ── Request Distribution: Fan out 5-option customer request ask to all matched vendors ────
     const selected: Candidate[] = [];
-    const skipped: { candidate: Candidate; balance: number }[] = [];
-
-    for (const [rank, rankedVendor] of considered.entries()) {
-      if (selected.length >= IMMEDIATE_DELIVERY_COUNT) break;
-
-      const vendor = resolved.get(rankedVendor.vendorId);
-
-      if (vendor === undefined) {
-        // Ranked but no longer on the platform. Not a billing problem, so not a skip: there is
-        // nobody to charge and nobody to notify.
-        this.logger.stageFailed({
-          component: COMPONENT,
-          stage: `${STAGE}:Billing`,
-          input: { requestId: request.id, vendorId: rankedVendor.vendorId },
-          action: 'Ranked vendor no longer exists; passing over them for the immediate slot',
-          error: new Error('vendor not found'),
-        });
-        continue;
-      }
-
-      const candidate: Candidate = { ranked: rankedVendor, rank, vendor };
-
-      const debit = await this.wallet.debit({
-        userId: vendor.userId,
-        amountCredits: fee,
-        reason: WALLET_DEBIT_REASONS.profileDelivery,
-        providerReference: deliveryDebitReference(request.id, vendor.id),
-        metadata: {
-          requestId: request.id,
-          vendorId: vendor.id,
-          capabilityId: params.capabilityId,
-          nairaPerCredit: this.config.credits.nairaPerCredit,
-        },
-      });
-
-      if (debit.outcome === 'insufficient') {
-        skipped.push({ candidate, balance: debit.balance });
-        continue;
-      }
-
-      // `debited` or `duplicate`. Duplicate means a retry already paid for this exact
-      // (request, vendor) pair, so the work is funded and must complete — charging again is the
-      // only wrong answer here.
-      const balanceAfter =
-        debit.outcome === 'debited' ? debit.balanceAfter : await this.wallet.getBalance(vendor.userId);
-
-      await this.recordDelivery({
-        requestId: request.id,
-        candidate,
-        now,
-        immediate: true,
-        revealed: true,
-        creditDeducted: true,
-        tolerateExisting: debit.outcome === 'duplicate',
-      });
-
-      selected.push(candidate);
-
-      events.push(
-        this.event('request.delivered', {
-          requestId: request.id,
-          vendorId: vendor.id,
-          payload: { capability: params.capabilityId, product: params.product, immediate: true },
-        }),
-        this.event('vendor.profile.delivered', {
-          requestId: request.id,
-          vendorId: vendor.id,
-          payload: { customerId: params.customerId, query: params.query },
-        }),
-        // The unchanged marketplace signal. `wallet.debited` is the money event and is published
-        // by WalletService; this one says a lead was billed, which the Evidence Service reads.
-        this.event('vendor.credit.deducted', {
-          requestId: request.id,
-          vendorId: vendor.id,
-          payload: {
-            reason: WALLET_DEBIT_REASONS.profileDelivery,
-            capability: params.capabilityId,
-            credits: fee,
-          },
-        }),
-      );
-
-      pushes.push(
-        this.walletNotifier.notifyConnected({
-          userId: vendor.userId,
-          conversationId: vendor.conversationId,
-          capabilityName,
-          credits: fee,
-          balanceAfter,
-        }),
-      );
-    }
-
-    // ── Unpaid fallback: the customer always gets an answer ──────────────────────────
-    while (selected.length < IMMEDIATE_DELIVERY_COUNT && skipped.length > 0) {
-      const { candidate } = skipped.shift()!;
-
-      await this.recordDelivery({
-        requestId: request.id,
-        candidate,
-        now,
-        immediate: true,
-        revealed: true,
-        creditDeducted: false,
-        tolerateExisting: false,
-      });
-
-      selected.push(candidate);
-
-      events.push(
-        this.event('request.delivered', {
-          requestId: request.id,
-          vendorId: candidate.vendor.id,
-          payload: {
-            capability: params.capabilityId,
-            product: params.product,
-            immediate: true,
-            unpaid: true,
-          },
-        }),
-        this.event('vendor.profile.delivered', {
-          requestId: request.id,
-          vendorId: candidate.vendor.id,
-          payload: { customerId: params.customerId, query: params.query, unpaid: true },
-        }),
-      );
-
-      // No `vendor.credit.deducted`: nothing was deducted, and claiming otherwise would corrupt
-      // both the ledger's story and the Evidence Service's.
-      this.logger.stage({
-        component: COMPONENT,
-        stage: `${STAGE}:Billing`,
-        input: { requestId: request.id, vendorId: candidate.vendor.id, fee },
-        action:
-          'No ranked vendor could pay the visibility fee; delivered the top-ranked vendor unpaid so the customer still gets an answer',
-        output: { degraded: true, creditDeducted: false },
-      });
-
-      pushes.push(
-        this.walletNotifier.notifyFreeTrial({
-          userId: candidate.vendor.userId,
-          conversationId: candidate.vendor.conversationId,
-          capabilityName,
-        }),
-      );
-    }
-
-    // ── Fan-out: asked on WhatsApp, not yet visible, not billed until they accept ────
-    const selectedIds = new Set(selected.map((candidate) => candidate.ranked.vendorId));
     const fannedOut = considered
       .map((rankedVendor, rank) => ({ rankedVendor, rank, vendor: resolved.get(rankedVendor.vendorId) }))
       .filter(
         (entry): entry is { rankedVendor: RankedVendor; rank: number; vendor: Vendor } =>
-          // A vendor who cannot be asked cannot answer. Writing a pending row for a vendor who
-          // no longer exists would buy nothing but a spurious `request.timeout` half an hour
-          // later, which the Evidence Service would read as a real vendor ignoring a real
-          // customer (Vendor Fan-Out TDR §14 V2).
-          entry.vendor !== undefined && !selectedIds.has(entry.rankedVendor.vendorId),
+          entry.vendor !== undefined,
       )
       .slice(0, FANOUT_LIMIT);
 
@@ -361,8 +207,7 @@ export class RequestDistributionService {
         }),
       );
 
-      // The ask. Best-effort: it publishes its own `vendor.notified` on success and swallows
-      // every failure, so a vendor whose phone is unreachable cannot break the buyer's turn.
+      // The 5-option ask. Best-effort: publishes its own vendor.notified on success.
       pushes.push(
         this.fanout.notifyVendor({
           requestId: request.id,
@@ -371,32 +216,6 @@ export class RequestDistributionService {
           capabilityName,
           customerCity: params.customerCity,
           fee,
-        }),
-      );
-    }
-
-    // ── Missed leads: every vendor passed over for want of credits ───────────────────
-    for (const { candidate, balance } of skipped) {
-      events.push(
-        this.event('vendor.credit.insufficient', {
-          requestId: request.id,
-          vendorId: candidate.vendor.id,
-          payload: {
-            requiredCredits: fee,
-            balance,
-            capability: params.capabilityId,
-          },
-        }),
-      );
-
-      pushes.push(
-        this.walletNotifier.notifyInsufficient({
-          userId: candidate.vendor.userId,
-          conversationId: candidate.vendor.conversationId,
-          capabilityName,
-          requiredCredits: fee,
-          balance,
-          variant: 'lead',
         }),
       );
     }
@@ -421,12 +240,10 @@ export class RequestDistributionService {
       component: COMPONENT,
       stage: STAGE,
       input: { query: params.query, rankedVendors: params.ranked.length, visibilityFee: fee },
-      action: `Delivered ${immediate.length} vendor(s) immediately and fanned the request out to ${fannedOut.length} more`,
+      action: `Fanned the request out to ${fannedOut.length} vendor(s)`,
       output: {
         requestId: request.id,
-        immediate: immediate.map((vendor) => vendor.businessName),
         fannedOut: fannedOut.map((entry) => entry.rankedVendor.businessName),
-        skippedForCredits: skipped.map((entry) => entry.candidate.ranked.businessName),
       },
       durationMs: Date.now() - startedAt,
     });
@@ -436,47 +253,6 @@ export class RequestDistributionService {
       immediate,
       fannedOut: fannedOut.map((entry) => entry.rankedVendor),
     };
-  }
-
-  /**
-   * Writes the delivery row for a vendor filling an immediate slot.
-   *
-   * `tolerateExisting` is the crash-recovery path: a debit that committed before the row was
-   * written leaves the fee paid and the delivery missing, and the retry has to be able to finish
-   * the job rather than trip over its own unique constraint.
-   */
-  private async recordDelivery(params: {
-    requestId: string;
-    candidate: Candidate;
-    now: Date;
-    immediate: boolean;
-    revealed: boolean;
-    creditDeducted: boolean;
-    tolerateExisting: boolean;
-  }): Promise<void> {
-    const data = {
-      rank: params.candidate.rank,
-      score: params.candidate.ranked.score,
-      immediate: params.immediate,
-      revealedToCustomer: params.revealed,
-      creditDeducted: params.creditDeducted,
-      deliveredAt: params.now,
-    };
-
-    if (!params.tolerateExisting) {
-      await this.prisma.requestDelivery.create({
-        data: { requestId: params.requestId, vendorId: params.candidate.vendor.id, ...data },
-      });
-      return;
-    }
-
-    await this.prisma.requestDelivery.upsert({
-      where: {
-        requestId_vendorId: { requestId: params.requestId, vendorId: params.candidate.vendor.id },
-      },
-      create: { requestId: params.requestId, vendorId: params.candidate.vendor.id, ...data },
-      update: { revealedToCustomer: params.revealed, creditDeducted: params.creditDeducted },
-    });
   }
 
   /**
@@ -496,7 +272,7 @@ export class RequestDistributionService {
     requestId: string;
     vendorId: string;
     accepted: boolean;
-  }): Promise<{ revealed: boolean } | null> {
+  }): Promise<{ revealed: boolean; balanceAfter?: number } | null> {
     const delivery = await this.prisma.requestDelivery.findUnique({
       where: { requestId_vendorId: { requestId: params.requestId, vendorId: params.vendorId } },
       include: { request: true },
@@ -512,7 +288,7 @@ export class RequestDistributionService {
     // A decline needs no vendor record and no wallet: nothing becomes visible, so nothing is due.
     const billing = params.accepted
       ? await this.billResponder({ delivery, request: delivery.request })
-      : { revealed: false, creditDeducted: false, events: [], pushes: [] };
+      : { revealed: false, creditDeducted: false, balanceAfter: undefined, events: [], pushes: [] };
 
     events.push(...billing.events);
     pushes.push(...billing.pushes);
@@ -556,7 +332,7 @@ export class RequestDistributionService {
       output: { responseTimeMs, revealed: billing.revealed, creditDeducted: billing.creditDeducted },
     });
 
-    return { revealed: billing.revealed };
+    return { revealed: billing.revealed, balanceAfter: billing.balanceAfter };
   }
 
   /**
@@ -576,6 +352,7 @@ export class RequestDistributionService {
   }): Promise<{
     revealed: boolean;
     creditDeducted: boolean;
+    balanceAfter?: number;
     events: DomainEvent[];
     pushes: Promise<void>[];
   }> {
@@ -641,6 +418,7 @@ export class RequestDistributionService {
     return {
       revealed: true,
       creditDeducted: true,
+      balanceAfter,
       events: [
         this.event('vendor.credit.deducted', {
           requestId: delivery.requestId,
@@ -652,16 +430,18 @@ export class RequestDistributionService {
           },
         }),
       ],
-      pushes: [
-        this.walletNotifier.notifyConnected({
-          userId: vendor.userId,
-          conversationId: vendor.conversationId,
-          capabilityName,
-          credits: fee,
-          balanceAfter,
-        }),
-      ],
+      pushes: [],
     };
+  }
+
+  /** Finds the newest pending request delivery for a vendor. */
+  async findPendingDelivery(vendorId: string): Promise<{ requestId: string } | null> {
+    const delivery = await this.prisma.requestDelivery.findFirst({
+      where: { vendorId, status: 'pending' },
+      orderBy: { deliveredAt: 'desc' },
+      select: { requestId: true },
+    });
+    return delivery;
   }
 
   /** Vendors who have accepted and may therefore be shown to the customer. */

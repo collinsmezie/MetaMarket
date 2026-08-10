@@ -162,14 +162,23 @@ export class WhatsAppNotifier implements ChannelNotifierPort {
     const limit = capabilities.maxTextLength ?? text.length;
 
     if (actions.length === 0) {
-      for (const chunk of splitText(text, limit)) {
-        payloads.push({
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to,
-          type: 'text',
-          text: { body: chunk, preview_url: false },
-        });
+      const messageList =
+        Array.isArray(response.metadata?.messages) && response.metadata.messages.length > 0
+          ? (response.metadata.messages as string[])
+          : [text];
+
+      for (const msg of messageList) {
+        const trimmed = msg.trim();
+        if (trimmed.length === 0) continue;
+        for (const chunk of splitText(trimmed, limit)) {
+          payloads.push({
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to,
+            type: 'text',
+            text: { body: chunk, preview_url: false },
+          });
+        }
       }
 
       return payloads;

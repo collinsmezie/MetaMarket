@@ -142,24 +142,35 @@ export class VendorFanoutNotifier {
     fee: number;
   }): Response {
     const where = params.customerCity ?? params.vendor.location?.city ?? null;
-    const near = where === null ? 'A customer' : `A customer near ${where}`;
+    const near = where === null ? 'A customer' : `A customer in ${where}`;
 
     return {
       text: [
-        `${near} is looking for "${params.capabilityName}".`,
-        'Your profile is a strong match. Would you like to be introduced?',
+        'New Customer Request',
         '',
-        `If you accept, the visibility fee (${params.fee} credits) is charged and your profile is sent to them.`,
+        `${near} is looking for "${params.capabilityName}".`,
+        '',
+        'Can you fulfill this request?',
+        '1. Yes, I have it',
+        "2. No, I don't have it",
+        '3. I can get it',
+        '4. I can refer someone',
+        "5. I don't sell this, not my line of business",
       ].join('\n'),
       actions: [
         {
           type: 'vendor_response',
           title: 'Yes, I have it',
-          payload: encodeVendorResponse({ requestId: params.requestId, accepted: true }),
+          payload: encodeVendorResponse({ requestId: params.requestId, accepted: true, variant: 'have' }),
         },
         {
           type: 'vendor_response',
-          title: "I don't have it",
+          title: 'I can get it',
+          payload: encodeVendorResponse({ requestId: params.requestId, accepted: true, variant: 'get' }),
+        },
+        {
+          type: 'vendor_response',
+          title: "No, I don't have it",
           payload: encodeVendorResponse({ requestId: params.requestId, accepted: false }),
         },
       ],

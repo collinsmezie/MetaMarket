@@ -54,6 +54,22 @@ function isContentless(density: InformationDensity | null): boolean {
   return density !== null && CONTENTLESS_DENSITIES.includes(density);
 }
 
+const GENERIC_INTENT_PATTERNS = [
+  'i want to sell',
+  'i want to sell something',
+  'sell',
+  'seller',
+  'vendor',
+  'i am a seller',
+  'i am a vendor',
+];
+
+function isGenericIntentStatement(text: string | null): boolean {
+  if (text === null) return false;
+  const normalized = text.trim().toLowerCase();
+  return GENERIC_INTENT_PATTERNS.includes(normalized);
+}
+
 /**
  * Services the workflow needs, supplied by the engine.
  *
@@ -243,15 +259,24 @@ async function handleTurn(context: WorkflowExecutionContext): Promise<StateExecu
   });
 
   let fields = mergeFields(data.fields, extraction.fields);
+
+  // Generic intent phrases (e.g. "I want to Sell", "sell") indicate the user's objective to onboard
+  // as a seller, but carry no commercial product/service capability. Filter them out so the workflow
+  // asks "What do you sell or what service do you provide?" as the first question.
+  if (fields.capabilityStatement !== null && isGenericIntentStatement(fields.capabilityStatement)) {
+    fields = { ...fields, capabilityStatement: null };
+  }
+
   let proposedState = data.proposedState;
 
   // A confirmation resolves the state that was proposed last turn.
   if (context.instance.currentState === STATE_CONFIRM_STATE && data.proposedState !== null) {
-    if (extraction.confirmation === 'yes') {
-      fields = { ...fields, state: data.proposedState };
-      proposedState = null;
-    } else if (extraction.confirmation === 'no') {
+    if (extraction.confirmation === 'no') {
       // The vendor rejected the inference; ask outright rather than guessing again.
+      proposedState = null;
+    } else {
+      // 'yes' or any non-negative response resolves the inferred state to avoid repeating the confirmation prompt.
+      fields = { ...fields, state: data.proposedState };
       proposedState = null;
     }
   }
@@ -451,7 +476,7 @@ const createProfile = {
           '',
           `You're listed in ${data.fields.city}, ${data.fields.state} State. Buyers looking for what you sell can now find you.`,
           '',
-          "I'll check in now and then to learn more about your business — no forms, just a quick question here and there.",
+          "I'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
         ].join('\n'),
       },
       dataPatch: { pendingQuestion: null },

@@ -1,10 +1,42 @@
-import { setDefaultResultOrder } from 'node:dns';
+import { lookup, resolve4, setDefaultResultOrder, setServers } from 'node:dns';
+import { setDefaultAutoSelectFamily } from 'node:net';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import * as express from 'express';
 import { AppModule } from './app.module';
 import { AppConfigService } from './config/app-config.service';
+
+// Enforce reliable DNS servers (8.8.8.8, 1.1.1.1) and IPv4 resolution across Nest and native fetch
+try {
+  setServers(['8.8.8.8', '1.1.1.1']);
+} catch {
+  // Ignore if setServers fails in constrained environments
+}
+setDefaultResultOrder('ipv4first');
+setDefaultAutoSelectFamily(false);
+
+const originalLookup = lookup;
+// Override dns.lookup so Node's internal undici fetch uses reliable DNS resolution
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(lookup as any) = function (hostname: string, options: any, callback: any) {
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+  resolve4(hostname, (err, addresses) => {
+    if (!err && addresses && addresses.length > 0) {
+      if (typeof options === 'object' && options?.all) {
+        return callback(
+          null,
+          addresses.map((a) => ({ address: a, family: 4 })),
+        );
+      }
+      return callback(null, addresses[0], 4);
+    }
+    return originalLookup(hostname, options, callback);
+  });
+};
 
 /**
  * Application bootstrap.
@@ -24,14 +56,6 @@ async function bootstrap(): Promise<void> {
 
   const config = app.get(AppConfigService);
   const logger = new Logger('Bootstrap');
-
-  // Set before any outbound call is made.
-  //
-  // Node 22 defaults to `verbatim`, handing back AAAA records first. On a host with no IPv6
-  // route every one of those connections fails, and because graph.facebook.com publishes AAAA,
-  // WhatsApp sends fail intermittently — measured here at 3/10 succeeding on `verbatim` against
-  // 10/10 on `ipv4first`. The symptom is a bare "fetch failed" and a user who never got a reply.
-  setDefaultResultOrder(config.dnsResultOrder);
 
   app.use(
     express.json({

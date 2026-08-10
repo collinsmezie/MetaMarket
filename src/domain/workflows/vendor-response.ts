@@ -23,10 +23,16 @@ export interface VendorResponseAction {
 }
 
 /** Mints the button payload carried out to the vendor and echoed back verbatim on a tap. */
-export function encodeVendorResponse(params: { requestId: string; accepted: boolean }): string {
+export function encodeVendorResponse(params: {
+  requestId: string;
+  accepted: boolean;
+  variant?: string;
+}): string {
+  const baseAction = params.accepted ? ACCEPT : DECLINE;
+  const action = params.variant !== undefined ? `${baseAction}_${params.variant}` : baseAction;
   return encodeActionPayload({
     workflowId: VENDOR_RESPONSE_WORKFLOW_ID,
-    action: params.accepted ? ACCEPT : DECLINE,
+    action,
     value: params.requestId,
   });
 }
@@ -44,8 +50,10 @@ export function resolveVendorResponse(interactivePayload: string | null): Vendor
 
   const decoded = decodeActionPayload(interactivePayload);
   if (decoded === null || decoded.workflowId !== VENDOR_RESPONSE_WORKFLOW_ID) return null;
-  if (decoded.action !== ACCEPT && decoded.action !== DECLINE) return null;
+  const isAccept = decoded.action.startsWith(ACCEPT);
+  const isDecline = decoded.action.startsWith(DECLINE);
+  if (!isAccept && !isDecline) return null;
   if (decoded.value === undefined || decoded.value.length === 0) return null;
 
-  return { requestId: decoded.value, accepted: decoded.action === ACCEPT };
+  return { requestId: decoded.value, accepted: isAccept };
 }

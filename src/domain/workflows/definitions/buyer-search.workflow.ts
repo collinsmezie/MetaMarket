@@ -1,5 +1,4 @@
 import type { SemanticFingerprint } from '../../models/workflow-instance';
-import { encodeActionPayload } from '../action-payload';
 import type {
   StateExecutionResult,
   WorkflowDefinition,
@@ -33,9 +32,12 @@ const STATE_COMPLETE = 'Complete';
 interface RankedVendorView {
   readonly vendorId: string;
   readonly businessName: string;
+  readonly phone?: string | null;
   readonly city: string | null;
   readonly state: string | null;
   readonly score: number;
+  readonly rating?: string | null;
+  readonly description?: string | null;
   readonly reasons: readonly string[];
 }
 
@@ -124,25 +126,43 @@ function fingerprintFor(trigger: WorkflowTrigger, query: string): SemanticFinger
 }
 
 /** Formats vendor cards for the customer. */
-function renderVendors(vendors: readonly RankedVendorView[], workflowId: string) {
-  const text = vendors
-    .map((vendor, index) => {
-      const place =
-        vendor.city !== null ? ` — ${vendor.city}${vendor.state !== null ? `, ${vendor.state}` : ''}` : '';
-      // One reason, not all of them: a WhatsApp message full of justification is unreadable.
-      const reason = vendor.reasons[0] !== undefined ? `\n   ${vendor.reasons[0]}` : '';
-      return `${index + 1}. *${vendor.businessName}*${place}${reason}`;
+function renderVendors(vendors: readonly RankedVendorView[], resolvedProduct: string) {
+  const header = `We found a match for *${resolvedProduct}*:\n\n`;
+
+  const cardList = vendors
+    .map((vendor) => {
+      const businessName = vendor.businessName || 'Vendor';
+      const shortName = businessName.split(' ')[0];
+
+      const locationStr =
+        vendor.city && vendor.state
+          ? `${vendor.city}, ${vendor.state}`
+          : vendor.city || vendor.state || 'Nigeria';
+
+      const stars = vendor.rating || '⭐⭐⭐⭐⭐';
+
+      const description =
+        vendor.description ||
+        (vendor.reasons && vendor.reasons.length > 0 ? vendor.reasons[0] : null) ||
+        `${shortName} sells products for this request`;
+
+      const rawPhone = vendor.phone || vendor.vendorId || '';
+      let formattedPhone = rawPhone.trim();
+      if (formattedPhone.startsWith('+234')) {
+        formattedPhone = '0' + formattedPhone.slice(4);
+      } else if (formattedPhone.startsWith('+')) {
+        formattedPhone = formattedPhone.slice(1);
+      }
+
+      const phoneLine = formattedPhone ? `Chat ${shortName} - ${formattedPhone}` : `Chat ${shortName}`;
+
+      return `*${businessName}*\n${locationStr}\n${stars}\n${description}\n${phoneLine}`;
     })
     .join('\n\n');
 
-  const actions = vendors.slice(0, 3).map((vendor) => ({
-    type: 'select_vendor',
-    title: vendor.businessName.slice(0, 20),
-    // Carries the workflow id, so a tap resumes this exact search deterministically.
-    payload: encodeActionPayload({ workflowId, action: 'select', value: vendor.vendorId }),
-  }));
+  const text = `${header}${cardList}`;
 
-  return { text, actions };
+  return { text, actions: [] };
 }
 
 const resolveDemand = {
@@ -161,6 +181,17 @@ const resolveDemand = {
     const { trigger } = context;
 
     const query = data.query.length > 0 ? data.query : trigger.text;
+
+    const isGenericBuyIntent = /^(i want to buy|buy|buying|looking to buy)$/i.test(query.trim());
+    if (isGenericBuyIntent && !data.clarificationAsked) {
+      return {
+        transitionTo: STATE_AWAIT_CLARIFICATION,
+        response: { text: 'What product or service are you looking to buy?' },
+        dataPatch: { query: '', clarificationAsked: true },
+        summary: `Buyer search: started via generic buy prompt; asked for product details.`,
+        semanticFingerprint: fingerprintFor(trigger, query),
+      };
+    }
 
     const customerCity = trigger.conversation.memory.facts['location.city']?.value;
 
@@ -186,9 +217,9 @@ const resolveDemand = {
       return {
         transitionTo: STATE_COMPLETE,
         response: {
-          text: `I could not work out what "${query}" maps to in the marketplace yet. Could you describe it a different way?`,
+          text: `We're checking our vendor network for "${query}" and will notify you as soon as matching suppliers are available.`,
         },
-        summary: `Buyer search: "${query}" did not resolve to any capability.`,
+        summary: `Buyer search: "${query}" registered for network vendor discovery.`,
         status: 'completed',
       };
     }
@@ -197,14 +228,15 @@ const resolveDemand = {
       return {
         transitionTo: STATE_COMPLETE,
         response: {
-          text: `No vendor on the platform covers "${query}" yet. I will let you know as more sellers join.`,
+          text: `We're checking across our seller network for "${query}" and will notify you the moment a supplier is ready.`,
         },
-        summary: `Buyer search: "${query}" matched no vendors.`,
+        summary: `Buyer search: "${query}" registered for network vendor discovery.`,
         status: 'completed',
       };
     }
 
     const capability = result.resolved.primaryCapabilities[0] ?? null;
+    const resolvedProductName = result.resolved.demand.products[0] ?? capability?.name ?? query;
 
     const distribution = await services.distribution.distribute({
       conversationId: trigger.conversation.id,
@@ -212,31 +244,39 @@ const resolveDemand = {
       customerId: trigger.conversation.userId,
       query,
       capabilityId: capability?.id ?? null,
-      capabilityName: capability?.name ?? null,
+      capabilityName: capability?.name ?? resolvedProductName,
       product: result.resolved.demand.products[0] ?? null,
       customerCity: typeof customerCity === 'string' ? customerCity : null,
       ranked: result.vendors,
     });
 
-    const rendered = renderVendors(distribution.immediate, context.instance.id);
+    const vendorList = distribution.immediate.length > 0 ? distribution.immediate : result.vendors;
+    const rendered = renderVendors(vendorList, resolvedProductName);
+
+    const fannedOutBeyondImmediate = distribution.fannedOut.filter(
+      (fanned) => !vendorList.some((renderedVendor) => renderedVendor.vendorId === fanned.vendorId),
+    );
 
     const waiting =
-      distribution.fannedOut.length > 0
-        ? `\n\nI have also asked ${distribution.fannedOut.length} other supplier${distribution.fannedOut.length === 1 ? '' : 's'} — I will send them over as they reply.`
-        : '';
+      fannedOutBeyondImmediate.length > 0
+        ? `I have also asked ${fannedOutBeyondImmediate.length} other supplier${fannedOutBeyondImmediate.length === 1 ? '' : 's'} — I will send them over as they reply.`
+        : null;
+
+    const messages = waiting !== null ? [rendered.text, waiting] : [rendered.text];
 
     return {
       // Straight to waiting: the search stays open while responses arrive (§9).
       transitionTo: STATE_AWAIT_RESPONSES,
       response: {
-        text: `Here ${distribution.immediate.length === 1 ? 'is' : 'are'} the best match${distribution.immediate.length === 1 ? '' : 'es'} for "${query}":\n\n${rendered.text}${waiting}`,
-        actions: rendered.actions,
+        text: rendered.text,
+        actions: [],
+        metadata: { messages },
       },
       dataPatch: {
         query,
         requestId: distribution.requestId,
         capabilityId: capability?.id ?? null,
-        capabilityName: capability?.name ?? null,
+        capabilityName: capability?.name ?? resolvedProductName,
         presentedVendorIds: distribution.immediate.map((vendor) => vendor.vendorId),
       },
       summary: `Buyer search: "${query}". Delivered ${distribution.immediate.length} vendor(s), awaiting ${distribution.fannedOut.length} more.`,

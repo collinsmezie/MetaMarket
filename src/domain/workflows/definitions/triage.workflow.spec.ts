@@ -106,8 +106,8 @@ describe('Triage workflow', () => {
     expect(outcome.responses[0].text).toContain('complaint');
   });
 
-  it('still carries a response alongside a handoff, as the fallback if nothing claims it', async () => {
-    // A deployment without VendorOnboarding registered must not answer with silence.
+  it('suppresses text response on handoff to prevent duplicate messages', async () => {
+    // When handoff occurs, the text response is omitted so the successor workflow generates the reply.
     const { engine, workflows } = buildEngine();
     const instance = seed(workflows, 'AwaitDetail');
 
@@ -120,7 +120,7 @@ describe('Triage workflow', () => {
       {},
     );
 
-    expect(outcome.responses[0].text).toBeDefined();
+    expect(outcome.responses).toHaveLength(0);
   });
 
   it('asks again rather than guessing when the reply is still unclear', async () => {
@@ -134,7 +134,7 @@ describe('Triage workflow', () => {
     );
 
     expect(outcome.handoff).toBeUndefined();
-    expect(outcome.responses[0].text).toContain('did not catch that');
+    expect(outcome.responses[0].text).toContain('I want to make sure I help you with the right thing');
   });
 
   it('stays the lowest-priority workflow, so it never wins an intent someone else owns', () => {

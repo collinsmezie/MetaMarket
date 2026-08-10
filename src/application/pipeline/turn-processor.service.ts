@@ -134,6 +134,7 @@ export class TurnProcessor {
     const vendorReply = await this.vendorResponses.tryHandle({
       conversation,
       interactivePayload: input.interactivePayload,
+      text,
     });
 
     if (vendorReply !== null) {

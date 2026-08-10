@@ -111,8 +111,7 @@ describe('WalletNotifier.notifyConnected', () => {
     });
 
     const text = sent[0].response.text ?? '';
-    expect(text).toContain("You've been connected");
-    expect(text).toContain('100-credit visibility fee has been deducted');
+    expect(text).toContain("You're in — your profile has been sent to the customer.");
     expect(text).toContain('1900 Credits');
   });
 });
@@ -139,8 +138,8 @@ describe('WalletNotifier.notifyOnboardingCredit', () => {
     await notifier.notifyOnboardingCredit({ ...target, credits: 2_000, balanceAfter: 2_000 });
 
     const text = sent[0].response.text ?? '';
-    expect(text).toContain('Welcome to Konnet');
-    expect(text).toContain('2000 free credits');
+    expect(text).toContain('Welcome, Grant Received!');
+    expect(text).toContain('2000 free visibility credits');
     expect(sent[0].response.actions).toBeUndefined();
   });
 });
@@ -182,6 +181,6 @@ describe('WalletNotifier failure handling', () => {
       balanceAfter: 900,
     });
 
-    expect(recorded[0]).toContain("You've been connected");
+    expect(recorded[0]).toContain("You're in — your profile has been sent to the customer.");
   });
 });

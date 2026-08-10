@@ -47,14 +47,25 @@ export class VendorResponseHandler {
   async tryHandle(params: {
     conversation: Conversation;
     interactivePayload: string | null;
+    text?: string;
   }): Promise<Response | null> {
-    const action = resolveVendorResponse(params.interactivePayload);
-    if (action === null) return null;
+    let action = resolveVendorResponse(params.interactivePayload);
 
-    // The identity comes from the conversation, never from the payload. The payload names a
-    // request; it does not name who is answering, so a leaked button is inert in anyone else's
-    // hands and cannot touch another vendor's delivery.
     const vendor = await this.vendors.findByUserId(params.conversation.userId);
+
+    if (action === null && params.text !== undefined && vendor !== null) {
+      const pending = await this.distribution.findPendingDelivery(vendor.id);
+      if (pending !== null) {
+        const input = params.text.trim().toLowerCase();
+        if (/^(1|3|yes|i can get it|yes, i have it|1\.|3\.)/i.test(input) || input.includes('have it') || input.includes('can get it')) {
+          action = { requestId: pending.requestId, accepted: true };
+        } else if (/^(2|4|5|no|refer|2\.|4\.|5\.)/i.test(input) || input.includes("don't have") || input.includes("not my line")) {
+          action = { requestId: pending.requestId, accepted: false };
+        }
+      }
+    }
+
+    if (action === null) return null;
 
     if (vendor === null) {
       this.logger.stageFailed({
@@ -100,25 +111,23 @@ export class VendorResponseHandler {
       output: { recorded: true, revealed: outcome.revealed },
     });
 
+    const text = this.replyFor(action.accepted, outcome.revealed, outcome.balanceAfter);
+
     return {
-      text: this.replyFor(action.accepted, outcome.revealed),
+      text,
       metadata: { vendorResponse: 'recorded' },
     };
   }
 
   /**
    * The vendor's confirmation.
-   *
-   * The insolvent-accept case is deliberately brief: `recordVendorResponse` has already sent the
-   * full missed-lead push with the recharge button (Konnet Credits Recharge TDR §25.7), and
-   * repeating the explanation here would be two messages saying the same thing. This one only
-   * confirms the tap was heard.
    */
-  private replyFor(accepted: boolean, revealed: boolean): string {
+  private replyFor(accepted: boolean, revealed: boolean, balanceAfter?: number): string {
     if (!accepted) return "No problem — I've let the customer know you're not available this time.";
 
     if (revealed) {
-      return "You're in — your profile has been sent to the customer. Get ready for their call or message.";
+      const balanceText = balanceAfter !== undefined ? `\nCurrent Balance:\n${balanceAfter} Credits` : '';
+      return `🎉 You're in — your profile has been sent to the customer. Get ready for their call or message.${balanceText}`;
     }
 
     return "Thanks for accepting. Your profile wasn't shared this time — see the message just above for why, and recharge so the next one reaches the customer.";

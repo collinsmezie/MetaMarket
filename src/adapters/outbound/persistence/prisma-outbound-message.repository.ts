@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type { Channel } from '../../../domain/models/channel';
-import type { OutboundMessage, OutboundMessageStatus } from '../../../domain/models/outbound-message';
+import { nextOutboundAttemptAt, type OutboundMessage, type OutboundMessageStatus } from '../../../domain/models/outbound-message';
 import type { Response } from '../../../domain/models/response';
 import type {
   EnqueuedOutboundMessage,
@@ -52,7 +52,7 @@ export class PrismaOutboundMessageRepository implements OutboundMessageRepositor
           address: params.address,
           conversationId: params.conversationId,
           response: params.response as unknown as Prisma.InputJsonValue,
-          nextAttemptAt: params.at,
+          nextAttemptAt: nextOutboundAttemptAt(1, params.at),
           createdAt: params.at,
         },
       });

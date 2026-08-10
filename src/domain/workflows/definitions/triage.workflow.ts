@@ -82,7 +82,7 @@ function concludeWith(
 ): StateExecutionResult {
   return {
     transitionTo: STATE_COMPLETE,
-    response: { text: known.response },
+    ...(known.handsOff !== true ? { response: { text: known.response } } : {}),
     ...(known.handsOff === true ? { handoff: { intent } } : {}),
     ...extra,
   };
@@ -123,12 +123,12 @@ function choiceActions(workflowId: string) {
   return [
     {
       type: 'triage_choice',
-      title: 'I want to buy',
+      title: 'I want to Buy',
       payload: encodeActionPayload({ workflowId, action: 'buy' }),
     },
     {
       type: 'triage_choice',
-      title: 'I want to sell',
+      title: 'I want to Sell',
       payload: encodeActionPayload({ workflowId, action: 'sell' }),
     },
   ];
@@ -160,7 +160,7 @@ const classify = {
         transitionTo: STATE_AWAIT_DETAIL,
         response: {
           text: [
-            'I want to make sure I help you with the right thing.',
+            'Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.',
             '',
             'Are you looking to buy something, or do you want to list your business so buyers can find you?',
           ].join('\n'),
@@ -216,7 +216,11 @@ const awaitDetail = {
 
       return {
         response: {
-          text: 'Sorry, I still did not catch that. Are you buying something, or do you want to list your business?',
+          text: [
+            'Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.',
+            '',
+            'Are you looking to buy something, or do you want to list your business so buyers can find you?',
+          ].join('\n'),
           actions: choiceActions(context.instance.id),
         },
         summary: `Triage: intent unclear from "${context.data.originalMessage ?? ''}". Re-asked (${attempts}/${MAX_CLARIFICATION_ATTEMPTS}).`,

@@ -141,11 +141,7 @@ export class WalletNotifier {
       detail: { credits: params.credits, balanceAfter: params.balanceAfter },
       response: {
         text: [
-          "🎉 You've been connected",
-          '',
-          `A customer asked about "${params.capabilityName}" and your profile has been shared with them. Get ready — they may call or message you shortly.`,
-          '',
-          `The ${params.credits}-credit visibility fee has been deducted.`,
+          "🎉 You're in — your profile has been sent to the customer. Get ready for their call or message.",
           'Current Balance:',
           `${params.balanceAfter} Credits`,
         ].join('\n'),
@@ -203,12 +199,9 @@ export class WalletNotifier {
       detail: { credits: params.credits, balanceAfter: params.balanceAfter },
       response: {
         text: [
-          '🎉 Welcome to Konnet!',
-          '',
-          `${params.credits} free credits have been added to your account to get you started.`,
-          '',
-          'Current Balance:',
-          `${params.balanceAfter} Credits`,
+          '🎁 Welcome, Grant Received!',
+          `You have been credited with ${params.credits} free visibility credits to get started.`,
+          `Current Balance: ${params.balanceAfter} Credits`,
         ].join('\n'),
         metadata: { walletOnboardingGrant: true },
       },

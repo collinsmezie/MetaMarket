@@ -82,7 +82,7 @@ const ask = (overrides: Partial<Parameters<VendorFanoutNotifier['notifyVendor']>
  * able to break someone else's search.
  */
 describe('VendorFanoutNotifier', () => {
-  it('asks the vendor with two buttons carrying resolvable payloads', async () => {
+  it('asks the vendor with interactive buttons carrying resolvable payloads', async () => {
     const { notifier, sent } = build();
 
     await notifier.notifyVendor(ask());
@@ -92,27 +92,30 @@ describe('VendorFanoutNotifier', () => {
       {
         type: 'vendor_response',
         title: 'Yes, I have it',
-        payload: `mm|vendor-response|accept|${REQUEST_ID}`,
+        payload: `mm|vendor-response|accept_have|${REQUEST_ID}`,
       },
       {
         type: 'vendor_response',
-        title: "I don't have it",
+        title: 'I can get it',
+        payload: `mm|vendor-response|accept_get|${REQUEST_ID}`,
+      },
+      {
+        type: 'vendor_response',
+        title: "No, I don't have it",
         payload: `mm|vendor-response|decline|${REQUEST_ID}`,
       },
     ]);
   });
 
-  it('names the capability, the customer city and the fee', async () => {
-    // A vendor tapping yes is agreeing to be charged; learning the price afterwards from the
-    // deduction notice would be a worse product than one more line of text.
+  it('names the capability and customer location', async () => {
     const { notifier, sent } = build();
 
     await notifier.notifyVendor(ask());
 
     const text = sent[0].response.text ?? '';
     expect(text).toContain('Hammers');
-    expect(text).toContain('near Aba');
-    expect(text).toContain('100 credits');
+    expect(text).toContain('in Aba');
+    expect(text).toContain('1. Yes, I have it');
   });
 
   it('falls back to the vendor city when the customer did not give one', async () => {
@@ -120,7 +123,7 @@ describe('VendorFanoutNotifier', () => {
 
     await notifier.notifyVendor(ask({ customerCity: null }));
 
-    expect(sent[0].response.text).toContain('near Aba');
+    expect(sent[0].response.text).toContain('in Aba');
   });
 
   it('publishes vendor.notified only once the ask actually reached the vendor', async () => {

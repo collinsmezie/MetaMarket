@@ -1,5 +1,5 @@
 import type { Conversation } from '../models/conversation';
-import type { ConversationRelationship, IntentResult } from '../models/understanding';
+import { isContinuing, type ConversationRelationship, type IntentResult } from '../models/understanding';
 import type { WorkflowInstance, WorkflowRegistry } from '../models/workflow-instance';
 import { canResume, findInstance } from '../models/workflow-instance';
 import type { EmbeddingProviderPort } from '../ports/outbound/embedding-provider.port';
@@ -133,7 +133,12 @@ export class WorkflowManager {
         : { action: 'restart', instance: target.instance };
     }
 
-    if (relationship === 'new' || relationship === 'topic_shift') {
+    // Top-level greetings (Hi, Hello, Start, Menu) initiate a fresh Triage flow
+    // when relationship is new or topic_shift or no active target is present.
+    const isGreeting = /^(hi|hello|hey|good day|good morning|good evening|start|menu)$/i.test(
+      input.text.trim(),
+    );
+    if ((isGreeting && relationship !== 'continuation' && relationship !== 'clarification') || relationship === 'new' || relationship === 'topic_shift') {
       return this.startNew(input, registry);
     }
 
@@ -182,6 +187,14 @@ export class WorkflowManager {
     const resumable = registry.workflowInstances.filter((instance) => canResume(instance, input.now));
     if (resumable.length === 0) return null;
 
+    // ── Candidate Workflow IDs specified by continuity analysis ──────────────────────
+    for (const candidateId of input.relationship.candidateWorkflowIds) {
+      const candidate = findInstance(registry, candidateId);
+      if (candidate !== undefined && canResume(candidate, input.now)) {
+        return { instance: candidate, via: 'active_workflow' };
+      }
+    }
+
     // ── Layer 2: deterministic identifiers the user quoted (order id, request id) ─────
     const byIdentifier = await this.resolveByDeterministicIdentifier(input, resumable);
     if (byIdentifier !== null) return { instance: byIdentifier, via: 'deterministic_identifier' };
@@ -210,10 +223,9 @@ export class WorkflowManager {
     const byEmbedding = await this.resolveByEmbedding(input, registry);
     if (byEmbedding !== null) return { instance: byEmbedding, via: 'embedding_similarity' };
 
-    // Fall back to whatever is in focus, but only when the analyzer read this as a direct
-    // continuation. Anything weaker should reach Layer 6 (ask the user) instead.
+    // Fall back to whatever is in focus when the analyzer read this as a continuing turn.
     const active = registry.activeWorkflowId;
-    if (active !== null && input.relationship.relationship === 'continuation') {
+    if (active !== null && isContinuing(input.relationship.relationship)) {
       const instance = findInstance(registry, active);
       if (instance !== undefined && canResume(instance, input.now)) {
         return { instance, via: 'active_workflow' };
@@ -315,17 +327,19 @@ export class WorkflowManager {
    */
   private startNew(input: RoutingInput, registry: WorkflowRegistry): RoutingDecision {
     const intent = input.intent?.intent;
+    const isGreeting = /^(hi|hello|hey|good day|good morning|good evening|start|menu)$/i.test(
+      input.text.trim(),
+    );
 
-    if (intent === undefined) {
-      return { action: 'unroutable', reason: 'No intent was resolved for a new objective.' };
+    let workflowType = intent !== undefined ? this.definitions.resolveByIntent(intent) : null;
+    if (workflowType === null) {
+      if (isGreeting || intent === undefined || intent === 'unknown') {
+        workflowType = this.definitions.has('Triage') ? 'Triage' : null;
+      }
     }
 
-    const workflowType = this.definitions.resolveByIntent(intent);
     if (workflowType === null) {
-      return {
-        action: 'unroutable',
-        reason: `No workflow is registered for intent "${intent}".`,
-      };
+      return { action: 'unroutable', reason: `No workflow registered for intent: ${intent}` };
     }
 
     const active =

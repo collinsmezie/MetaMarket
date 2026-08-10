@@ -48,13 +48,9 @@ export interface Response {
  */
 export const FALLBACK_ENVELOPE: Response = {
   text: [
-    "Sorry — I didn't quite get that.",
+    'Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.',
     '',
-    'You can tell me what you need in a few words, for example:',
-    '• "I need a hammer"',
-    '• "I sell electrical materials" (to list your business)',
-    '',
-    'You can also send a voice note and I will listen.',
+    'Are you looking to buy something, or do you want to list your business so buyers can find you?',
   ].join('\n'),
   metadata: { fallback: true, reason: 'understanding_failed' },
 };

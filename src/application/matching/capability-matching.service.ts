@@ -274,12 +274,40 @@ export class CapabilityMatchingService {
         availability: profile.vendor.status === 'active' ? 1 : 0,
       };
 
+      const businessName = profile.vendor.businessName;
+      const conversationSummary = profile.vendor.conversationSummary?.trim() ?? '';
+      const dnaSummary = profile.dna.summary.trim();
+      const declaredProducts = profile.dna.declaredProducts;
+
+      let rawDescription =
+        conversationSummary.length > 0
+          ? conversationSummary
+          : dnaSummary.length > 0
+            ? dnaSummary
+            : declaredProducts.length > 0
+              ? `${businessName} sells ${declaredProducts.join(', ')}`
+              : null;
+
+      let description: string | null = null;
+      if (rawDescription !== null) {
+        let cleaned = rawDescription.trim();
+        if (/^sells:\s*/i.test(cleaned)) {
+          cleaned = `${businessName} sells ${cleaned.replace(/^sells:\s*/i, '').replace(/\.$/, '')}`;
+        } else if (/^capabilities:\s*/i.test(cleaned)) {
+          cleaned = `${businessName} specializes in ${cleaned.replace(/^capabilities:\s*/i, '').replace(/\.$/, '')}`;
+        }
+        description = cleaned;
+      }
+
       return {
         vendorId: profile.vendor.id,
         businessName: profile.vendor.businessName,
+        phone: profile.vendor.userId,
         city: profile.vendor.location?.city ?? null,
         state: profile.vendor.location?.state ?? null,
         score: combineRanking(components),
+        rating: '⭐⭐⭐⭐⭐',
+        description,
         components,
         reasons: this.explain(profile, resolved, components, evidence?.reasons ?? []),
       };

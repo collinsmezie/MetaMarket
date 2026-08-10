@@ -93,14 +93,28 @@ export class OutboundDeliverySweeper {
     // A conversation whose oldest pending message just failed must not have its later messages
     // delivered ahead of it. Ordering is the reason the queue exists at all for a chat product.
     const blocked = new Set<string>();
+    const lastSentTextPerConversation = new Map<string, string>();
 
     for (const message of claimed) {
       if (blocked.has(message.conversationId)) continue;
 
+      // Deduplicate consecutive identical text messages for the same conversation to prevent double delivery
+      const lastText = lastSentTextPerConversation.get(message.conversationId);
+      const currentText = message.response.text?.trim() ?? '';
+      if (lastText !== undefined && lastText === currentText && currentText.length > 0) {
+        await this.queue.markSent(message.id, { at: this.clock.now() });
+        counts.sent += 1;
+        continue;
+      }
+
       const outcome = await this.deliver(message);
 
       counts[outcome] += 1;
-      if (outcome !== 'sent') blocked.add(message.conversationId);
+      if (outcome !== 'sent') {
+        blocked.add(message.conversationId);
+      } else {
+        lastSentTextPerConversation.set(message.conversationId, currentText);
+      }
     }
 
     this.logger.stage({
