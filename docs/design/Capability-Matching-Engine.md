@@ -1317,90 +1317,148 @@ The search modes in §20 do not introduce a separate pipeline. They only determi
 
 ---
 
-# 28. Domain-Aligned Expansion Matching (DAEM)
+---
+
+# 28. Domain-Aligned Expansion Matching (DAEM) via 3-Layer Hybrid Knowledge Graph
 
 ## 28.1 Overview & Problem Statement
-In informal commerce ecosystems (e.g., Nigerian open-air markets), merchants who operate within a specific commercial domain (such as Automotive Spare Parts, Bookstores & Stationery, Building Materials, Beauty & Cosmetics, or Consumer Electronics) frequently stock fast-moving accessories, consumables, and complementary items. For example:
-- An **Automotive Spare Parts Dealer** stocks mechanical components as well as fast-moving car accessories (steering wheel covers, wiper blades, floor mats, dash polish).
-- A **Bookstore / Educational Supplier** stocks textbooks as well as stationery, mathematical sets, art brushes, and office desk items.
-- A **Building Materials Merchant** stocks cement/blocks as well as fasteners, paintbrushes, and hand tools.
+In informal market ecosystems (e.g., Nigerian open-air commercial hubs in Lagos, Warri, Aba, and Kano), an informal merchant's inventory is a **Venn diagram of overlapping product lines**. A merchant operates across multiple categories based on local demand and commercial focus:
+- An **Automotive Spare Parts Merchant** stocks mechanical components (brakes, batteries) as well as fast-moving car accessories (steering wheel covers, wiper blades, floor mats, dash polish).
+- A **Pharmacy / Chemist** stocks pharmaceuticals as well as baby wipes, soaps, sanitary pads, and cosmetics.
+- A **Provision Store** stocks packaged food as well as AA batteries, lightbulbs, and school notebooks.
 
-Strict primary capability matching (`capabilityMatch > 0`) prevents false-positive matches across unrelated commercial domains (e.g., suppressing a tailoring shop from surfacing for automotive repair). However, absolute zero-expansion filtering introduces severe false negatives for **domain-aligned merchants** who naturally carry overlapping inventories within their commercial domain but have not yet explicitly declared every individual SKU during initial onboarding.
+Strict primary capability matching (`capabilityMatch > 0` at SKU/Brick level) prevents false-positive matches across unrelated domains (e.g., suppressing a tailoring shop from surfacing for auto repair). However, zero-expansion filtering introduces severe false negatives for **domain-aligned merchants** who naturally carry overlapping inventory within their commercial domain but have not yet declared every single SKU during initial onboarding.
 
-Domain-Aligned Expansion Matching (DAEM) bridges this gap across all business domains.
+DAEM solves this by superimposing a **3-Layer Hybrid Knowledge Graph** over the platform's PostgreSQL database (`taxonomy_nodes`, `pgvector` HNSW index, and `vendor_capabilities`).
 
----
-
-## 28.2 Architectural Principles of DAEM
-
-1. **Commercial Domain Preservation**: Every GS1 GPC Segment/Brick and Vendor Archetype belongs to a high-level Commercial Domain (e.g., `AUTOMOTIVE`, `STATIONERY_BOOKS`, `BUILDING_MATERIALS`, `CLOTHING_FASHION`, `BEAUTY_PERSONAL_CARE`, `ELECTRONICS_COMPUTING`).
-2. **Domain-Bound Candidate Expansion**: When a buyer requests a product for which zero direct primary capability matches (`capabilityMatch > 0`) currently exist in the active vendor pool, the CME evaluates candidate vendors using **Domain-Aligned Expansion Matching (`expansionMatch > 0`)**.
-3. **Cross-Domain Suppression**: Candidates with `expansionMatch > 0` whose Commercial Domain differs from the Target Demand Domain (e.g., a `CLOTHING_FASHION` vendor matching an `AUTOMOTIVE` query) are strictly suppressed (`score = 0`).
-4. **Contextual Buyer Presentation**: Domain-aligned expanded vendors are presented to buyers with domain-contextualized messaging (e.g., *"AutoZone Ventures in Warri specializes in automotive spare parts and accessories"*).
-5. **Interactive Self-Learning Loop**: Fanning out a lead to a domain-aligned expanded vendor creates an interactive discovery opportunity. When the vendor responds over WhatsApp with Option 1 (*"Yes, I have it"*) or Option 3 (*"I can get it"*), the `EvidenceProcessor` automatically promotes the product capability to a `DIRECT` verified inventory belief (confidence: 0.95) in Vendor DNA. Option 5 (*"Not my line of business"*) prunes the expansion branch.
+For full technical specifications, see the unified TDR: [`docs/design/Domain-Aligned-Expansion-Matching-TDR.md`](Domain-Aligned-Expansion-Matching-TDR.md).
 
 ---
 
-## 28.3 Commercial Domain Classification Schema
+## 28.2 GS1 GPC 4-Level Taxonomy Tree Architecture
 
-Universal mapping of GS1 GPC segments and business archetypes into commercial domains:
+The GS1 GPC taxonomy (which is fully loaded in our PostgreSQL database `taxonomy_nodes` table) defines a 4-level hierarchy:
 
-| Commercial Domain | GS1 GPC Segments | Representative Business Archetypes | Inventory Expansion Affinities |
-| :--- | :--- | :--- | :--- |
-| `AUTOMOTIVE` | Vehicle, Automotive Accessories & Maintenance | Automotive Spare Parts Dealer, Car Accessories Shop, Auto Mechanic | Steering wheel covers, wiper blades, car polish, seat covers, dash mats, tire pressure gauges |
-| `STATIONERY_BOOKS` | Office Supplies, Textual/Printed Materials, Educational | Bookstore, Stationery Supplier, Printing & Publishing Shop | Mathematical sets, art brushes, drawing pads, desk organizers, file folders, calculators |
-| `BUILDING_MATERIALS` | Building Products, Hardware, Plumbing, Electrical | Building Materials Merchant, Hardware Store, Plumbing Vendor | Fasteners, tape measures, paintbrushes, sealants, hand tools, safety gloves |
-| `BEAUTY_PERSONAL_CARE` | Personal Care, Cosmetics, Grooming | Cosmetics Shop, Beauty Supply Store, Pharmacy | Hair accessories, makeup organizers, body lotions, perfume atomizers, grooming kits |
-| `ELECTRONICS_COMPUTING` | Computing, Consumer Electronics, Communications | Computer Accessories Shop, Electronics Store, Phone Vendor | USB cables, screen protectors, phone stands, power banks, cleaning kits |
+```text
+Level 1: Segment (Broad Commercial Domain - e.g., 77000000 "Vehicle")
+   │
+   └── Level 2: Family (Product Category Group - e.g., 77010000 "Automotive Accessories & Maintenance")
+          │
+          └── Level 3: Class (Specific Subcategory - e.g., 10002860 "Interior Accessories")
+                 │
+                 └── Level 4: Brick (Concrete Product Item - e.g., 10002863 "Steering Wheel Covers")
+```
+
+During vendor onboarding (`VendorOnboardingWorkflow`), statements (e.g., *"I sell auto spare parts"*) are processed by CDE to assign relevant **GPC Segment(s)**, **Family/Families**, and **Class(es)** to the vendor's capability DNA history.
 
 ---
 
-## 28.4 Two-Tier Candidate Scoring & Ranking Function
+## 28.3 Three-Tier Search & GPC Tree Ascendancy Model
 
-The CME Ranking Engine computes vendor score using a two-tier scoring function:
+When a customer search query arrives, Demand Resolution resolves the item to its canonical **GS1 Brick (Level 4)**. Candidate matching then ascends the GPC tree across three deterministic tiers:
 
-$$\text{Final Score} = \begin{cases} 
-0 & \text{if } \text{Domain}(V) \neq \text{Domain}(D) \text{ and } \text{capabilityMatch} = 0 \\
-\mathbf{W_{\text{capability}}} \cdot \text{capabilityMatch} + \mathbf{W_{\text{expansion}}} \cdot \text{expansionMatch} + \mathbf{W_{\text{evidence}}} \cdot \text{evidenceScore} + \text{Proximity} & \text{if } \text{capabilityMatch} > 0 \\
-\mathbf{W_{\text{daem}}} \cdot \text{expansionMatch} + \mathbf{W_{\text{affinity}}} \cdot \text{domainAffinity} + \mathbf{W_{\text{evidence}}} \cdot \text{evidenceScore} + \text{Proximity} & \text{if } \text{capabilityMatch} = 0 \text{ and } \text{Domain}(V) = \text{Domain}(D)
+```mermaid
+flowchart TD
+    A[Inbound Search Query] --> B[Resolve Item to GS1 Brick - Level 4]
+    B --> C[Tier 1 Search: Match Direct Brick Capabilities]
+    C --> D{Candidates Found?}
+    
+    D -- Yes: Direct Brick Stockist --> E[Rank Tier 1 Candidates: Multiplier = 1.00]
+    D -- No / Low Candidates --> F[Tier 2 Search: Ascend to Class Level 3 & Family Level 2]
+    
+    F --> G{Candidates in Same Class / Family?}
+    G -- Yes: Class / Family Vendor --> H[Rank Tier 2 Candidates: Multiplier = 0.50 - 0.75]
+    G -- No / Low Candidates --> I[Tier 3 Search: Ascend to Segment Level 1]
+    
+    I --> J{Candidates in Same Segment?}
+    J -- Yes: Segment Merchant --> K[Rank Tier 3 Candidates: Multiplier = 0.25]
+    J -- No Segment Match --> L[Suppress Candidate: Multiplier = 0.00]
+```
+
+### Search Tier Specifications
+
+| Search Tier | GPC Tree Level | Match Condition | Relevance Multiplier | Example (Search: *"Steering Cover"*) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Tier 1 (Direct Brick Match)** | **Level 4 (Brick)** | Vendor has direct capability belief for exact Brick (`10002863`). | **$1.00$** | Vendor who explicitly declared *Steering Wheel Covers*. |
+| **Tier 2a (Class Expansion)** | **Level 3 (Class)** | Vendor operates in parent Class (`10002860` - *Interior Accessories*). | **$0.75$** | Car accessories shop stocking interior car accessories. |
+| **Tier 2b (Family Expansion)** | **Level 2 (Family)** | Vendor operates in parent Family (`77010000` - *Automotive Accessories & Maintenance*). | **$0.50$** | General auto spare parts dealer. |
+| **Tier 3 (Segment Expansion)** | **Level 1 (Segment)** | Vendor operates in parent Segment (`77000000` - *Vehicle*). | **$0.25$** | General vehicle/mechanic business. |
+| **Cross-Segment Suppression** | **Different Segment** | Vendor's GPC Segment does not intersect with Product Segment ($\text{Segment}(V) \cap \text{Segment}(D) = \emptyset$). | **$0.00$** | Tailoring shop (Segment `Clothing`) for auto query. |
+
+---
+
+## 28.4 Candidate Scoring & Ranking Function
+
+The candidate scoring function computes vendor rank score based on GPC tree ascendancy:
+
+$$\text{Final Score}(V) = \begin{cases} 
+0 & \text{if } \text{Segment}(V) \cap \text{Segment}(D) = \emptyset \quad \text{(Cross-Segment Suppression)} \\
+1.00 \cdot W_{\text{cap}} + 0.20 \cdot S_{\text{evid}} + P_{\text{prox}} + A_{\text{avail}} & \text{if } \text{Tier 1: Direct Brick Match (Level 4)} \\
+0.75 \cdot W_{\text{cap}} + 0.20 \cdot S_{\text{evid}} + P_{\text{prox}} + A_{\text{avail}} & \text{if } \text{Tier 2a: Class Match (Level 3)} \\
+0.50 \cdot W_{\text{cap}} + 0.20 \cdot S_{\text{evid}} + P_{\text{prox}} + A_{\text{avail}} & \text{if } \text{Tier 2b: Family Match (Level 2)} \\
+0.25 \cdot W_{\text{cap}} + 0.20 \cdot S_{\text{evid}} + P_{\text{prox}} + A_{\text{avail}} & \text{if } \text{Tier 3: Segment Match (Level 1)}
 \end{cases}$$
 
-### Scoring Weight Configuration
-- **Tier 1 (Direct Inventory Stockist)**: `capabilityMatch` weight = `0.45` (Ranked #1).
-- **Tier 2 (Domain-Aligned Expansion)**: `daem` weight = `0.25`, `domainAffinity` weight = `0.20` (Surfaced when Tier 1 candidate pool is empty or low).
-
 ---
 
-## 28.5 Self-Learning Lifecycle & Evidence Pipeline
+## 28.5 Self-Learning Inventory Promotion Lifecycle
+
+Hierarchical GPC expansion turns every lead fan-out into an autonomous inventory discovery pipeline:
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Buyer
-    participant CME as Capability Matching Engine
-    participant Dist as Request Distribution Service
-    actor Vendor as Domain-Aligned Merchant (e.g. AutoZone)
-    participant Evid as Evidence Processor
-    participant DNA as Vendor DNA
+    participant CME as CME (application/matching)
+    participant Dist as Request Distribution (application/fulfilment)
+    actor Vendor as Tier-2 Family Merchant (e.g. AutoZone)
+    participant Evid as Evidence Processor (application/evidence)
+    participant DNA as Vendor DNA (application/capability)
 
-    Buyer->>CME: "I need steering cover in Warri"
-    CME->>CME: Tier-1 (Direct): 0 candidates
-    CME->>CME: Tier-2 (DAEM): AutoZone (Domain = AUTOMOTIVE) -> Score > 0.65
-    CME->>Buyer: "Checking sellers. AutoZone Ventures specializes in auto parts & accessories."
-    CME->>Dist: Fan-out Lead Request to AutoZone WhatsApp
+    Buyer->>CME: "I need steering cover in Warri" (Brick 10002863)
+    CME->>CME: Tier 1 (Brick): 0 candidates
+    CME->>CME: Tier 2 (Family 77010000): AutoZone -> Score = 0.68
+    CME->>Buyer: "We're checking sellers. AutoZone Ventures specializes in automotive parts & accessories."
+    CME->>Dist: Publish Lead Request to AutoZone WhatsApp
     Dist->>Vendor: WhatsApp Push: "Customer looking for Steering Wheel Covers. 1. Yes, I have it"
     Vendor->>Dist: Taps "1. Yes, I have it"
-    Dist->>Evid: Emit `request.accepted` event
-    Evid->>DNA: Record evidence & promote "Steering Wheel Covers" to DIRECT (0.95)
+    Dist->>Evid: Emit `request.accepted` event (eventId, vendorId, brickId)
+    Evid->>DNA: Record evidence & promote "Steering Wheel Covers" to DIRECT Brick capability (0.95)
     Evid->>Buyer: Reveal AutoZone contact details
-    Note over DNA: AutoZone is now a Tier-1 Direct Stockist for Steering Wheel Covers across all future queries
+    Note over DNA: AutoZone is now permanently a Tier 1 Direct Brick Stockist for Steering Wheel Covers
 ```
 
 ---
 
 ## 28.6 Summary of DAEM Guarantees
 
-1. **Zero Irrelevant False Positives**: Tailors, restaurants, and unrelated services are mathematically filtered out of automotive or stationery queries (`score = 0`).
-2. **High Recall for Informal Markets**: Merchants with domain-aligned inventory affinities are surfaced instead of returning blank 0-vendor fallbacks.
-3. **Autonomous Learning**: Every vendor lead acceptance converts inferred expansion signals into verified `DIRECT` capability DNA.
+1. **100% Cross-Segment Protection**: Tailors, restaurants, and unrelated services are mathematically filtered out (`score = 0`) because their GPC Segments (Level 1) do not intersect with the search demand.
+2. **Multi-Level Relevance Degradation**: Direct Brick stockists outrank Class subcategory stockists, who outrank Family category dealers, who outrank Segment generalists.
+3. **Autonomous Learning**: Every vendor lead acceptance converts inferred Class/Family expansion signals into verified `DIRECT` Brick capability DNA.
+
+---
+
+## 28.7 Failure Scenarios & Architectural Mitigations (`CONTRIBUTING §2.6, §4.1, §4.4, §13`)
+
+1. **Cross-Segment Hybrid Merchants ("The Provision Store / Pharmacy Defect"):**
+   - *Failure:* Informal merchants (e.g., Chemists, Provision Stores) sell items across separate GS1 Segments (e.g., Chemist selling Baby Wipes under `Personal Care`). Single-segment traversal suppresses nearby hybrid merchants (`score = 0`).
+   - *Mitigation (`CONTRIBUTING §4.1, §4.4`):* CDE's `BusinessUnderstandingService` maps hybrid archetypes (`Pharmacy/Chemist`, `Provision Store`) to multi-segment capability belief vectors during onboarding, attaching co-occurring GS1 Segment nodes to Vendor DNA.
+
+2. **Mission-Based Multi-Category Queries ("The Vibe / Event Search Defect"):**
+   - *Failure:* Intent queries (e.g., *"I want to bake a birthday cake"*) require items across multiple GS1 Segments (Flour under `Food`, Pans under `Kitchenware`, Mixers under `Appliances`). Resolving to a single Brick locks search inside one Segment.
+   - *Mitigation (`CONTRIBUTING §3.6, §4.1`):* CME Stage 3 (`Semantic Expansion — Mission Graph`) resolves intent queries into an array of distinct canonical Bricks across multiple Segments *before* running candidate retrieval.
+
+3. **Over-Generalization at Tier 3 (Segment Level 1 Noise):**
+   - *Failure:* Segment Level 1 (`Vehicle` `77000000`) contains car accessories, trucks, and marine boats. Tier 3 search for car wipers risks surfacing marine boat dealers.
+   - *Mitigation (`CONTRIBUTING §4.4`):* Tier 3 multiplier is capped at $0.25$ with geographic proximity decay ($P_{\text{prox}}$) and archetype penalties, ensuring Tier 3 candidates surface only when Tier 1 and Tier 2 are empty.
+
+4. **Local West African Trade Mismatches vs. Formal GS1:**
+   - *Failure:* Nigerian market bundling (e.g., "Gas & Stove Shop" stocking Kerosene Stoves, Gas Cylinders, and Matches) spans 3 separate GS1 Segments.
+   - *Mitigation (`CONTRIBUTING §4.3, §4.4`):* CME Stage 8.3 (`Inventory Affinity Graph`) maintains localized co-occurrence weights between GS1 Bricks commonly bundled in West African markets.
+
+5. **Vague Initial Vendor Onboarding (Cold-Start Defect):**
+   - *Failure:* Vendor onboarded with a 1-word statement (*"I sell goods"*), yielding zero GPC nodes in Vendor DNA.
+   - *Mitigation (`CONTRIBUTING §13`):* `VendorOnboardingWorkflow` evaluates statement information density. If $\text{Density} < 0.40$, it initiates an interactive clarification turn.
+
+
 

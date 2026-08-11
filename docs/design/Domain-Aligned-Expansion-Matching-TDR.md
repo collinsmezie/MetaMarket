@@ -1,106 +1,111 @@
-# Technical Design Requirements (TDR): Domain-Aligned Expansion Matching (DAEM)
+# Technical Design Requirements (TDR): Domain-Aligned Expansion Matching (DAEM) via 3-Layer Hybrid Knowledge Graph
 
-**Document Status:** Mandatory Specification  
+**Document Status:** Mandatory Architectural Specification (Single Source of Truth)  
 **Governing Standard:** [`CONTRIBUTING.md`](../CONTRIBUTING.md) (§3 Hexagonal Layering, §4 Domain-Driven Design, §5 Event-Driven Design, §8 Responsibility, §15 Testing)  
-**Bounded Context:** Capability Matching Engine (`CME` — `application/matching`)  
-**Target Code Location:** `src/domain/models/commercial-domain.ts` & `src/application/matching/capability-matching.service.ts`
+**Bounded Context:** Capability Matching Engine (`CME` — `application/matching`) & Capability Discovery Engine (`CDE` — `application/capability`)  
+**Target Code Location:** `src/domain/models/hybrid-knowledge-graph.ts`, `src/application/matching/capability-matching.service.ts`
 
 ---
 
 ## 1. Executive Overview & Business Rationale
 
-In informal market ecosystems (e.g., Nigerian open-air commercial hubs in Lagos, Warri, Aba, and Kano), informal merchants operate within **Commercial Domains** rather than hyper-narrow SKU silos:
-- An **Automotive Spare Parts Dealer** stocks mechanical replacement parts (brakes, batteries, filters) as well as fast-moving car accessories (steering wheel covers, wiper blades, car polish, floor mats).
-- A **Bookstore / Educational Supplier** stocks textbooks as well as stationery, mathematical sets, art brushes, and office desk accessories.
-- A **Building Materials Merchant** stocks cement, pipes, and blocks as well as fasteners, paintbrushes, sealants, and hand tools.
+In informal commerce ecosystems (e.g., Nigerian open-air hubs in Lagos, Warri, Aba, and Kano), an informal merchant's inventory is a **Venn diagram of overlapping product lines**:
+- **Buyers think in human missions and purposes** (e.g., *"I want to bake a cake"*, *"School resumption items"*, *"Car maintenance"*), rather than rigid barcode categories.
+- **Merchants stock cross-segment inventory clusters** based on local demand:
+  - An **Automotive Spare Parts Dealer** stocks mechanical replacement parts as well as fast-moving car accessories (steering wheel covers, wiper blades, dash polish).
+  - A **Chemist / Pharmacy** stocks pharmaceuticals as well as baby wipes, soaps, sanitary pads, and cosmetics.
+  - A **Provision Store** stocks packaged food as well as AA batteries, lightbulbs, and school notebooks.
 
-### The Trade-off
-1. **Unconstrained Expansion Defect:** Permitting broad expansion signals without domain restrictions causes irrelevant cross-domain matches (e.g., a tailoring shop surfacing for automotive repair because both share a broad *Maintenance/Repair* GS1 node).
-2. **Zero-Expansion Defect:** Completely requiring `capabilityMatch > 0` causes false negatives for domain-aligned merchants who naturally carry complementary inventory within their domain but have not yet declared every single SKU during initial onboarding.
+### The Objective: Domain-Aligned Expansion Matching (DAEM)
+- **Zero-Expansion Defect:** Requiring direct item claims (`capabilityMatch > 0` at SKU/Brick level) causes false negatives for domain-aligned merchants who naturally carry complementary inventory but have not yet declared every individual SKU during initial onboarding.
+- **Unconstrained Expansion Defect:** Permitting broad expansion without boundaries causes irrelevant cross-domain matches (e.g., a tailoring shop surfacing for auto repair).
 
-### The Solution: Domain-Aligned Expansion Matching (DAEM)
-DAEM establishes **Domain Alignment** as a strict prerequisite for Tier-2 expansion candidate retrieval and scoring, achieving **100% suppression of cross-domain false matches** while maintaining **high recall for domain-aligned informal merchants**.
+**DAEM achieves high recall for informal markets while mathematically guaranteeing 100% suppression of cross-domain false matches.**
 
 ---
 
-## 2. Architecture & Seam Placement (`CONTRIBUTING §2.2, §3`)
+## 2. The 3-Layer Hybrid Knowledge Graph Architecture (HKGM)
 
-In accordance with [`CONTRIBUTING §3.1`](../CONTRIBUTING.md#31-dependencies-point-inward-always) and [`CONTRIBUTING §4.4`](../CONTRIBUTING.md#44-model-the-domain-do-not-anaemically-describe-it), DAEM logic is separated into pure domain value objects and application orchestration:
+To achieve DAEM without relying on rigid taxonomy silos, the system superimposes a **3-Layer Hybrid Knowledge Graph** over the platform's PostgreSQL database (`taxonomy_nodes`, `pgvector` embeddings, and `vendor_capabilities`).
+
+```mermaid
+graph TD
+    subgraph Layer 1: Human Intent & Purpose Layer (COICOP)
+        L1[Buyer Query: "I want to bake a birthday cake"]
+        L1 --> M1[Mission Node: Cake Baking]
+        M1 --> M1A[Flour / Ingredients]
+        M1 --> M1B[Cake Pan / Bakeware]
+        M1 --> M1C[Electric Mixer / Appliance]
+    end
+
+    subgraph Layer 2: Merchant Archetype & Affinity Layer (West African Trade Clusters)
+        M1A --> A1[Provision Store / Bakery Supplies Archetype]
+        M1B --> A2[Kitchenware & Household Merchant Archetype]
+        M1C --> A3[Electronics & Home Appliance Merchant Archetype]
+    end
+
+    subgraph Layer 3: Canonical Taxonomy & Vector Backbone (GS1 GPC + pgvector)
+        A1 --> G1[GS1 Brick 10000165: Flour / Baking Mixes]
+        A2 --> G2[GS1 Brick 10002102: Bakeware / Cake Pans]
+        A3 --> G3[GS1 Brick 10002044: Food Mixers / Blenders]
+    end
+```
+
+### Layer Specifications
+
+| Layer | System | Ubiquitous Language Term | Responsibility (`CONTRIBUTING §4.1, §4.3`) |
+| :--- | :--- | :--- | :--- |
+| **Layer 1: Human Intent (COICOP)** | UN COICOP Purpose Mapping | `MissionNode`, `IntentTarget` | Translates natural language buyer needs into multi-product target arrays. |
+| **Layer 2: Merchant Archetype & Affinity** | West African trade bundling graph | `MerchantArchetype`, `AffinityVector` | Maps informal business statements (*"I run a chemist shop"*) to co-occurring capability beliefs. |
+| **Layer 3: Canonical Backbone** | 4-Level GS1 GPC tree + `pgvector` HNSW index | `CanonicalGpcNode`, `VectorEmbedding` | Performs fast vector similarity search and exact database node resolution in PostgreSQL. |
+
+---
+
+## 3. Architecture & Seam Placement (`CONTRIBUTING §2.2, §3`)
+
+In strict accordance with [`CONTRIBUTING §3.1`](../CONTRIBUTING.md#31-dependencies-point-inward-always) and [`CONTRIBUTING §4.4`](../CONTRIBUTING.md#44-model-the-domain-do-not-anaemically-describe-it), pure domain model value objects are separated from application orchestration:
 
 ```
-  adapters/inbound  ──►  application/matching  ──►  domain/models/commercial-domain.model  ◄──  adapters/outbound
-   (WhatsApp/Webhook)      (CapabilityMatchingService)   (Domain Classification & Predicates)       (Prisma/PostgreSQL)
+  adapters/inbound  ──►  application/matching  ──►  domain/models/hybrid-knowledge-graph.model  ◄──  adapters/outbound
+   (WhatsApp/Webhook)      (CapabilityMatchingService)     (Pure Graph Predicates & Scoring)          (Prisma/pgvector)
 ```
 
 ### Seam Map
-- **`src/domain/models/commercial-domain.model.ts`**: Pure domain value objects (`CommercialDomain`, `CommercialDomainRef`) and total, deterministic predicates (`areDomainsAligned`, `classifyGS1Segment`, `classifyArchetype`). Zero framework dependencies (`CONTRIBUTING §3.1`).
-- **`src/application/matching/capability-matching.service.ts`**: Orchestrates candidate retrieval, scoring, tiering, and explainable reason generation (`CONTRIBUTING §4.1`).
-- **`src/application/evidence/evidence-interpretation.ts`**: Registers DAEM evidence event signals for automatic inventory promotion (`CONTRIBUTING §5.7`).
+- **`src/domain/models/hybrid-knowledge-graph.ts`**: Pure domain value objects (`MissionNode`, `MerchantArchetype`, `GraphMatchResult`) and deterministic predicates (`evaluateGraphMatch`). Zero framework or database dependencies (`CONTRIBUTING §3.1`).
+- **`src/application/matching/capability-matching.service.ts`**: Orchestration service that executes multi-layer graph expansion, candidate retrieval, ranking, and explainable reason generation (`CONTRIBUTING §4.1`).
+- **`src/application/capability/capability-discovery.service.ts`**: CDE service that registers multi-segment archetype affinity beliefs during vendor onboarding (`CONTRIBUTING §4.1`).
 
 ---
 
-## 3. Universal Commercial Domain Classification Schema (`CONTRIBUTING §4.3`)
+## 4. Multi-Layer Retrieval & Scoring Algorithm (`CONTRIBUTING §4.4`)
 
-Every GS1 GPC Segment (Levels 1–2) and Vendor Business Archetype maps deterministically to one of six universal **Commercial Domains**:
+Candidate scoring evaluates path traversals across all 3 layers:
 
-```typescript
-export type CommercialDomain =
-  | 'AUTOMOTIVE'
-  | 'STATIONERY_BOOKS'
-  | 'BUILDING_MATERIALS'
-  | 'BEAUTY_PERSONAL_CARE'
-  | 'ELECTRONICS_COMPUTING'
-  | 'CLOTHING_FASHION'
-  | 'FOOD_GROCERY'
-  | 'GENERAL_MERCHANDISE';
-```
+$$\text{Final Score}(V) = \mathbf{W_{\text{L3}}} \cdot S_{\text{canonical}} + \mathbf{W_{\text{L2}}} \cdot S_{\text{archetypeAffinity}} + \mathbf{W_{\text{L1}}} \cdot S_{\text{missionMatch}} + \mathbf{W_{\text{evid}}} \cdot S_{\text{evidence}} + P_{\text{prox}}$$
 
-### Canonical Domain Mapping Table
+### Layer Scoring Weights
 
-| Commercial Domain | GS1 GPC Segments (Level 1–2) | Representative Vendor Archetypes | Inventory Expansion Affinities |
-| :--- | :--- | :--- | :--- |
-| `AUTOMOTIVE` | `Vehicle` (77000000), `Automotive Accessories and Maintenance` (77010000) | `automotive spare parts dealer`, `car accessories shop`, `auto mechanic` | Steering wheel covers, wiper blades, car polish, seat covers, dash mats, tire gauges |
-| `STATIONERY_BOOKS` | `Office Supplies` (80000000), `Textual/Printed Materials` (82000000), `Educational` | `bookstore`, `stationery supplier`, `school supplies vendor`, `printing shop` | Mathematical sets, art brushes, drawing pads, desk organizers, file folders, calculators |
-| `BUILDING_MATERIALS` | `Building Products` (78000000), `Hardware` (79000000), `Plumbing`, `Electrical` | `building materials merchant`, `hardware store`, `plumbing vendor`, `electrical supplier` | Fasteners, tape measures, paintbrushes, sealants, hand tools, safety gloves |
-| `BEAUTY_PERSONAL_CARE` | `Personal Care` (53000000), `Cosmetics` (54000000), `Grooming` | `cosmetics shop`, `beauty supply store`, `pharmacy`, `hairstyling vendor` | Hair accessories, makeup organizers, body lotions, perfume atomizers, grooming kits |
-| `ELECTRONICS_COMPUTING`| `Computing` (81000000), `Consumer Electronics` (84000000), `Communications` | `computer accessories shop`, `electronics store`, `phone accessories vendor` | USB cables, screen protectors, phone stands, power banks, cleaning kits |
-| `CLOTHING_FASHION` | `Clothing` (83000000), `Footwear`, `Fashion Accessories` | `tailoring and fashion design service`, `boutique`, `shoe vendor` | Sewing threads, fashion buttons, belts, fabric care, jewelry displays |
+$$\mathbf{W_{\text{L3}}} = 0.45, \quad \mathbf{W_{\text{L2}}} = 0.25, \quad \mathbf{W_{\text{L1}}} = 0.15, \quad \mathbf{W_{\text{evid}}} = 0.15$$
+
+1. **Tier 1 (Canonical Direct Match — Layer 3):** Vendor holds exact GS1 Brick capability ($S_{\text{canonical}} = 1.0$).
+2. **Tier 2 (Archetype Affinity Match — Layer 2):** Vendor's Archetype vector covers the requested GPC Family/Class ($S_{\text{archetypeAffinity}} = 0.75$).
+3. **Tier 3 (Mission Match — Layer 1):** Vendor operates within the broader Human Purpose domain ($S_{\text{missionMatch}} = 0.50$).
+4. **Cross-Domain Protection:** If vendor's Archetype vector has zero edge connection to the Target Mission in Layer 2 ($S_{\text{archetypeAffinity}} = 0$), candidate score is forced to `0.0`.
 
 ---
 
-## 4. Two-Tier Candidate Retrieval & Ranking Specification (`CONTRIBUTING §4.4, §8.3`)
+## 5. Dynamic Archetype & Affinity Management (Zero Manual Maintenance)
 
-### 4.1 Two-Tier Candidate Retrieval Strategy
+**NO static, hardcoded dictionary or manual lookup table is maintained by developers (`CONTRIBUTING §4.4, §5.8`).**
 
-```mermaid
-flowchart TD
-    A[Inbound Customer Search Request] --> B[Demand Understanding & Resolution]
-    B --> C[Retrieve Candidates via Primary & Expanded Capabilities]
-    C --> D{Candidates Found?}
-    
-    D -- Tier-1: Direct Match Exists --> E[Rank Candidates by Capability Coverage]
-    D -- Tier-1 Empty / Zero Match --> F[Evaluate DAEM Tier-2 Expansion]
-    
-    F --> G{Vendor Domain == Request Domain?}
-    G -- No: Cross-Domain (e.g. Tailor for Auto) --> H[Suppress Candidate: Score = 0]
-    G -- Yes: Domain Aligned (e.g. Auto Spare Parts for Wipers) --> I[Assign Tier-2 DAEM Score & Surface]
-```
+Layer 2 Archetype Affinities are **100% autonomous, dynamic, and database-persisted**:
 
-### 4.2 Candidate Scoring Function
-
-The candidate scoring function in `CapabilityMatchingService.ts` executes pure domain scoring (`CONTRIBUTING §4.4`):
-
-$$\text{Final Score}(V) = \begin{cases} 
-0 & \text{if } \text{Domain}(V) \neq \text{Domain}(D) \text{ and } C_{\text{capability}} = 0 \\
-0.45 \cdot C_{\text{capability}} + 0.15 \cdot C_{\text{expansion}} + 0.20 \cdot S_{\text{evidence}} + 0.10 \cdot P_{\text{prox}} + 0.10 \cdot A_{\text{avail}} & \text{if } C_{\text{capability}} > 0 \quad \text{(Tier 1: Direct Stockist)} \\
-0.25 \cdot C_{\text{expansion}} + 0.20 \cdot S_{\text{domainAffinity}} + 0.20 \cdot S_{\text{evidence}} + 0.15 \cdot P_{\text{prox}} + 0.20 \cdot A_{\text{avail}} & \text{if } C_{\text{capability}} = 0 \text{ and } \text{Domain}(V) = \text{Domain}(D) \quad \text{(Tier 2: DAEM)}
-\end{cases}$$
+1. **Dynamic Onboarding Inference (CDE):** When a vendor completes onboarding via WhatsApp, `BusinessUnderstandingService` (CDE — `application/capability`) performs LLM extraction on their statement, inferring their archetype (`pharmacy_chemist`, `provision_store`, `auto_spare_parts`) and persisting multi-segment belief vectors in PostgreSQL (`vendor_capabilities`).
+2. **Evidence-Driven Affinity Evolution (Evidence Processor):** When a vendor responds over WhatsApp to a fanned-out lead with **Option 1 ("Yes, I have it")**, `EvidenceProcessor` emits a `request.accepted` event (`CONTRIBUTING §5.1`) and dynamically strengthens that affinity edge in PostgreSQL. **Option 5 ("Not my line of business")** prunes the edge.
 
 ---
 
-## 5. Self-Learning Inventory Promotion Lifecycle (`CONTRIBUTING §5.1, §5.7`)
-
-DAEM turns every lead fan-out into an autonomous inventory discovery pipeline:
+## 6. Self-Learning Evidence Integration Lifecycle (`CONTRIBUTING §5.1, §5.7`)
 
 ```mermaid
 sequenceDiagram
@@ -108,65 +113,98 @@ sequenceDiagram
     actor Buyer
     participant CME as CME (application/matching)
     participant Dist as Request Distribution (application/fulfilment)
-    actor Vendor as Tier-2 Domain Merchant (e.g. AutoZone)
+    actor Vendor as Archetype-Expanded Merchant (e.g. Provision Store)
     participant Evid as Evidence Processor (application/evidence)
     participant DNA as Vendor DNA (application/capability)
 
-    Buyer->>CME: "I need steering cover in Warri"
-    CME->>CME: Evaluate Tier-2 DAEM (AutoZone: Domain = AUTOMOTIVE) -> Score = 0.72
-    CME->>Buyer: "We're checking sellers. AutoZone Ventures specializes in auto parts & accessories."
-    CME->>Dist: Publish Lead Request to AutoZone WhatsApp
-    Dist->>Vendor: WhatsApp Push: "Customer looking for Steering Wheel Covers. 1. Yes, I have it"
+    Buyer->>CME: "I need AA batteries in Warri"
+    CME->>CME: Evaluate Layer 2 Archetype (Provision Store -> Electrical Affinity = 0.75)
+    CME->>Buyer: "Checking sellers. Mobinco Provisions stocks household goods and batteries."
+    CME->>Dist: Publish Lead Request to Mobinco WhatsApp
+    Dist->>Vendor: WhatsApp Push: "Customer looking for AA Batteries. 1. Yes, I have it"
     Vendor->>Dist: Taps "1. Yes, I have it"
-    Dist->>Evid: Emit `request.accepted` event (eventId, vendorId, capabilityId)
-    Evid->>DNA: Record evidence & promote capability to DIRECT (confidence: 0.95)
-    Evid->>Buyer: Reveal AutoZone contact details
-    Note over DNA: AutoZone is now permanently a Tier-1 Direct Stockist for Steering Wheel Covers
+    Dist->>Evid: Emit `request.accepted` event (eventId, vendorId, brickId)
+    Evid->>DNA: Record evidence & promote "AA Batteries" to DIRECT Layer 3 Brick capability (0.95)
+    Evid->>Buyer: Reveal Mobinco contact details
+    Note over DNA: Mobinco is now permanently a Tier 1 Direct Stockist for AA Batteries
 ```
-
-### Evidence Integration Registration (`CONTRIBUTING §5.7`)
-When a Tier-2 DAEM vendor accepts a lead (`request.accepted`), `EvidenceProcessor` processes the event and refreshes Vendor DNA:
-- **`request.accepted`**: Promotes capability to `DIRECT` (strength: `0.95`, positive: `true`).
-- **`vendor.rejected` / Option 5 ("Not my line of business")**: Records negative evidence (strength: `0.90`, positive: `false`), pruning the expansion branch for that vendor.
 
 ---
 
-## 6. Implementation Code Contracts (`CONTRIBUTING §3.6, §4.6`)
+## 7. Resolution of Real-World Failure Scenarios
 
-### 6.1 Domain Model Value Object (`src/domain/models/commercial-domain.ts`)
+| Failure Scenario | Pure Taxonomy Defect | HKGM Resolution | HKGM Layer |
+| :--- | :--- | :--- | :--- |
+| **1. Hybrid Merchants** | Chemists/Provisions locked out of non-primary queries | Archetype Affinity vector flags co-occurring Segments ($0.75$) | **Layer 2 (Archetype Vector)** |
+| **2. Mission Queries** | "Bake a cake" locked inside single flour Brick | Intent Node decomposes query into multi-domain target Bricks | **Layer 1 (COICOP Mission Node)** |
+| **3. Segment Noise** | Boat dealers surface for car wiper queries | Archetype Edge filtering suppresses boat dealers ($0.0$) | **Layer 2 (Edge Filtering)** |
+| **4. Local Bundling** | Gas stove, regulators, matches in separate Segments | Archetype cluster binds local trade bundling into 1 node | **Layer 2 (Local Trade Graph)** |
+| **5. Cold-Start** | Vague 1-word onboarding statement locks vendor out | `pgvector` HNSW retrieval + Instant Lead Acceptance Promotion | **Layer 3 (Vector + Evidence)** |
+
+---
+
+## 8. Pure Domain Code Contracts (`CONTRIBUTING §3.6, §4.6`)
+
+### 8.1 Domain Model Value Objects (`src/domain/models/hybrid-knowledge-graph.ts`)
 
 ```typescript
 /**
- * Canonical Commercial Domains in MetaMarket.
+ * Canonical Types for 3-Layer Hybrid Knowledge Graph.
  * Grounded in CONTRIBUTING §4.3 (Ubiquitous Language) & §4.6 (Value Objects).
  */
-export type CommercialDomain =
-  | 'AUTOMOTIVE'
-  | 'STATIONERY_BOOKS'
-  | 'BUILDING_MATERIALS'
-  | 'BEAUTY_PERSONAL_CARE'
-  | 'ELECTRONICS_COMPUTING'
-  | 'CLOTHING_FASHION'
-  | 'FOOD_GROCERY'
-  | 'GENERAL_MERCHANDISE';
+export interface MissionNode {
+  readonly id: string;
+  readonly name: string;
+  readonly targetBricks: readonly string[]; // Array of GS1 Brick IDs across Segments
+}
+
+export interface MerchantArchetype {
+  readonly archetypeId: string;
+  readonly primarySegment: string;
+  readonly affinitySegments: readonly string[];
+}
+
+export interface GraphMatchResult {
+  readonly score: number;
+  readonly tier: 'TIER_1_CANONICAL' | 'TIER_2_ARCHETYPE' | 'TIER_3_MISSION' | 'CROSS_DOMAIN';
+  readonly isMatch: boolean;
+}
 
 /**
- * Pure domain predicate to evaluate commercial domain alignment.
- * Grounded in CONTRIBUTING §4.4 (Model the domain, pure functions).
+ * Pure domain predicate evaluating Hybrid Knowledge Graph match score.
+ * Grounded in CONTRIBUTING §4.4 (Model the domain, pure deterministic functions).
  */
-export function isDomainAligned(vendorDomain: CommercialDomain, requestDomain: CommercialDomain): boolean {
-  if (vendorDomain === requestDomain) return true;
-  if (vendorDomain === 'GENERAL_MERCHANDISE' || requestDomain === 'GENERAL_MERCHANDISE') return true;
-  return false;
+export function evaluateGraphMatch(
+  vendorCapabilities: readonly string[],
+  vendorArchetype: MerchantArchetype | null,
+  targetBrickId: string,
+  targetSegmentId: string
+): GraphMatchResult {
+  // Layer 3: Direct Canonical Match
+  if (vendorCapabilities.includes(targetBrickId)) {
+    return { score: 1.0, tier: 'TIER_1_CANONICAL', isMatch: true };
+  }
+
+  // Layer 2: Archetype Affinity Match
+  if (
+    vendorArchetype &&
+    (vendorArchetype.primarySegment === targetSegmentId ||
+      vendorArchetype.affinitySegments.includes(targetSegmentId))
+  ) {
+    return { score: 0.75, tier: 'TIER_2_ARCHETYPE', isMatch: true };
+  }
+
+  // Cross-Domain Suppression
+  return { score: 0.0, tier: 'CROSS_DOMAIN', isMatch: false };
 }
 ```
 
 ---
 
-## 7. Quality Gate & Testing Requirements (`CONTRIBUTING §15, §16`)
+## 9. Quality Gate & Testing Requirements (`CONTRIBUTING §15, §16`)
 
-Every PR implementing DAEM must satisfy the quality gate (`npm run typecheck`, `npm test`):
+Every PR implementing DAEM via HKGM must pass the quality gate (`npm run typecheck`, `npm test`):
 
-1. **Unit Test — Cross-Domain Suppression:** Verify that a candidate with `capabilityMatch = 0` and `vendorDomain = 'CLOTHING_FASHION'` receives `score = 0` for an `AUTOMOTIVE` query.
-2. **Unit Test — Domain-Aligned Expansion:** Verify that an `AUTOMOTIVE` candidate with `capabilityMatch = 0` and `expansionMatch > 0` receives a non-zero Tier-2 rank score and surfaces when Tier-1 is empty.
-3. **Integration Test — Inventory Promotion:** Verify that a Tier-2 vendor accepting a lead generates a `request.accepted` event that updates their `vendor_capabilities` table to `DIRECT` (confidence $\ge 0.95$).
+1. **Unit Test — Cross-Domain Suppression:** Verify that a tailoring vendor archetype (`tailoring_fashion`) receives `score = 0.0` for an `AUTOMOTIVE` query.
+2. **Unit Test — Archetype Affinity Match:** Verify that a Chemist vendor (`pharmacy_chemist`) receives a non-zero Layer 2 score ($0.75$) for a Baby Wipes (`Personal Care` `53000000`) query.
+3. **Integration Test — Evidence Inventory Promotion:** Verify that a Layer 2 candidate accepting a lead dispatches a `request.accepted` event that promotes the capability to a `DIRECT` Layer 3 Brick capability (confidence $\ge 0.95$).
