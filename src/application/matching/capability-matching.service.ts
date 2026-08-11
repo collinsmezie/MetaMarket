@@ -386,36 +386,29 @@ export class CapabilityMatchingService {
       if (rawDescription !== null) {
         let cleaned = rawDescription.trim();
 
-        // Standardize leading prefixes and strip repeated business names
-        cleaned = cleaned
-          .replace(/^capabilities:\s*/i, '')
-          .replace(/^sells:\s*/i, '')
-          .replace(/^services:\s*/i, '')
-          .replace(new RegExp(`^${businessName}\\s+(specializes in|sells)\\s*`, 'i'), '')
-          .replace(new RegExp(`^${shortName}\\s+(specializes in|sells)\\s*`, 'i'), '')
-          .trim();
-
-        // Parse list items separated by comma, period or semicolon
-        const rawItems = cleaned
-          .split(/,|\.|;/)
-          .map((item) =>
-            item
-              .replace(/\s*-\s*Replacement Parts\/Accessories/i, '')
-              .replace(/\s*-\s*Other/i, '')
-              .replace(/\s*\(Automotive\)/i, '')
-              .trim(),
-          )
-          .filter((item) => item.length > 0 && !/^(capabilities|sells|services|brands):/i.test(item));
-
-        // Format a concise 2-3 line summary prioritizing top 3 core items and first name
-        if (rawItems.length > 3) {
-          const top3 = rawItems.slice(0, 3).map((item) => item.toLowerCase());
-          description = `${shortName} specializes in ${top3.join(', ')}, and related supplies.`;
-        } else if (rawItems.length > 0) {
-          description = `${shortName} specializes in ${rawItems.map((item) => item.toLowerCase()).join(', ')}.`;
-        } else {
-          description = `${shortName} offers products and services for this request.`;
+        // Standardize full business name to short name prefix while keeping the full capability overview
+        if (new RegExp(`^${businessName}`, 'i').test(cleaned)) {
+          cleaned = cleaned.replace(new RegExp(`^${businessName}`, 'i'), shortName);
+        } else if (!new RegExp(`^${shortName}`, 'i').test(cleaned)) {
+          cleaned = cleaned
+            .replace(/^capabilities:\s*/i, '')
+            .replace(/^sells:\s*/i, '')
+            .replace(/^services:\s*/i, '')
+            .trim();
+          cleaned = `${shortName} specializes in ${cleaned.toLowerCase()}`;
         }
+
+        // Clean up internal technical suffixes if present
+        cleaned = cleaned
+          .replace(/\s*-\s*Replacement Parts\/Accessories/gi, '')
+          .replace(/\s*-\s*Other/gi, '')
+          .replace(/\s*\(Automotive\)/gi, '');
+
+        if (!cleaned.endsWith('.')) {
+          cleaned += '.';
+        }
+
+        description = cleaned;
       }
 
       return {

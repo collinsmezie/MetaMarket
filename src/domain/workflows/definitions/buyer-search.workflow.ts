@@ -156,7 +156,7 @@ function renderVendors(vendors: readonly RankedVendorView[], resolvedProduct: st
 
       const phoneLine = formattedPhone ? `Chat ${shortName} - ${formattedPhone}` : `Chat ${shortName}`;
 
-      return `*${businessName}*\n${locationStr}\n${stars}\n${description}\n${phoneLine}`;
+      return `*${businessName}*\n${locationStr}\n${stars}\n${description}\n\n${phoneLine}`;
     })
     .join('\n\n');
 
