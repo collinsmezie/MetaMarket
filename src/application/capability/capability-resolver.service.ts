@@ -93,34 +93,34 @@ export class CapabilityResolver {
    * candidate list and may only pick from it, so it cannot invent a code even if it wants to —
    * and any code it returns that is not in the list is discarded below.
    */
-  async resolveProducts(terms: readonly string[]): Promise<readonly ResolvedCapability[]> {
+  async resolveProducts(
+    terms: readonly string[],
+    options?: { archetype?: string; statement?: string },
+  ): Promise<readonly ResolvedCapability[]> {
     const meaningful = [...new Set(terms.map((term) => term.trim()).filter((term) => term.length > 1))];
     if (meaningful.length === 0) return [];
 
     const startedAt = Date.now();
     const resolved = new Map<string, ResolvedCapability>();
 
-    // Terms are resolved concurrently. Each one costs a retrieval plus a ranking call, and a
-    // broad statement expands to a dozen terms — sequentially that is roughly two minutes of
-    // silence before the vendor's next question, which is not a usable WhatsApp experience.
-    const perTerm = await Promise.all(
-      meaningful.map(async (term) => {
-        const candidates = await this.retrieveCandidates(term);
+    const perTerm: (readonly ResolvedCapability[])[] = [];
+    for (const term of meaningful) {
+      const candidates = await this.retrieveCandidates(term, options);
 
-        if (candidates.length === 0) {
-          this.logger.stage({
-            component: COMPONENT,
-            stage: `${STAGE}:Products`,
-            input: { term },
-            action: 'No GPC candidate cleared the similarity floor; leaving the term unresolved',
-            output: { resolved: 0 },
-          });
-          return [];
-        }
+      if (candidates.length === 0) {
+        this.logger.stage({
+          component: COMPONENT,
+          stage: `${STAGE}:Products`,
+          input: { term },
+          action: 'No GPC candidate cleared the similarity floor; leaving the term unresolved',
+          output: { resolved: 0 },
+        });
+        continue;
+      }
 
-        return this.rankCandidates(term, candidates);
-      }),
-    );
+      const selections = await this.rankCandidates(term, candidates, options);
+      perTerm.push(selections);
+    }
 
     for (const selection of perTerm.flat()) {
       const existing = resolved.get(selection.capability.id);
@@ -152,9 +152,19 @@ export class CapabilityResolver {
 
   private async retrieveCandidates(
     term: string,
+    options?: { archetype?: string; statement?: string },
   ): Promise<readonly { code: string; title: string; definition: string }[]> {
     try {
-      const embedding = await this.embeddings.embed(term);
+      // Contextualized Query Embedding: Embed the term alongside the merchant's trade archetype
+      // or statement context. This forces semantic vector similarity to search within the
+      // merchant's trade domain, suppressing polysemous cross-domain collisions at retrieval time.
+      const queryText = options?.archetype
+        ? `${options.archetype}: ${term}`
+        : options?.statement
+          ? `${options.statement} (term: ${term})`
+          : term;
+
+      const embedding = await this.embeddings.embed(queryText);
 
       const matches = await this.taxonomy.search({
         embedding,
@@ -186,8 +196,17 @@ export class CapabilityResolver {
   private async rankCandidates(
     term: string,
     candidates: readonly { code: string; title: string; definition: string }[],
+    options?: { archetype?: string; statement?: string },
   ): Promise<readonly ResolvedCapability[]> {
     const byCode = new Map(candidates.map((candidate) => [candidate.code, candidate]));
+
+    const contextLines: string[] = [];
+    if (options?.archetype) {
+      contextLines.push(`VENDOR ARCHETYPE: ${options.archetype}`);
+    }
+    if (options?.statement) {
+      contextLines.push(`VENDOR STATEMENT: ${options.statement}`);
+    }
 
     try {
       const result = await this.llm.complete(
@@ -201,6 +220,7 @@ export class CapabilityResolver {
             {
               role: 'user',
               content: [
+                ...contextLines,
                 `VENDOR TERM: ${term}`,
                 '',
                 'CANDIDATES:',
@@ -398,20 +418,15 @@ export class CapabilityResolver {
 
 const RANKING_PROMPT = `You select which product classification codes match a term a market seller used.
 
-You are given the seller's term and a numbered list of candidate codes retrieved from the GS1
-Global Product Classification. Choose the candidates that genuinely describe what the seller
-supplies.
+You are given the seller's business archetype (if provided), the seller's term, and a numbered list of candidate codes retrieved from the GS1 Global Product Classification. Choose candidates that genuinely describe what the seller supplies.
 
 Rules:
 - Return ONLY codes from the supplied candidate list. Never invent or modify a code.
-- STRICT DOMAIN RELEVANCE: Reject any candidate that belongs to an unrelated macro domain or segment. For example, if the seller term relates to automotive spare parts, reject candidates from Computing, Video Games, Apparel, or Furniture.
-- Return an empty list when none of the candidates genuinely fit. A wrong classification is
-  worse than none, because buyers will be sent to the wrong shops.
-- Prefer the plain article over a qualified variant: for "hammer", a general hammers category
-  beats "hammer drills".
+- GENERAL COMMERCIAL DOMAIN COHERENCE: Evaluate candidate categories against VENDOR ARCHETYPE and VENDOR STATEMENT. Reject any candidate category that belongs to an unrelated industry macro-domain (e.g. reject toys/games for a construction/building materials vendor, reject construction/masonry materials for a pharmacy, reject vehicle parts for a bookstore, reject electrical generation for tire sellers).
+- Return an empty list when none of the candidates genuinely fit. A wrong classification is worse than none, because buyers will be sent to the wrong shops.
+- Prefer the plain article over a qualified variant: for "hammer", a general hammers category beats "hammer drills".
 - Sellers stock ranges, so several candidates may be correct. Order them best first.
-- Confidence reflects how sure you are the seller supplies that category, not how similar the
-  words look.`;
+- Confidence reflects how sure you are the seller supplies that category, not how similar the words look.`;
 
 const SERVICE_PROMPT = `You infer the commercial capabilities implied by a service a person provides, for a marketplace in informal African markets.
 

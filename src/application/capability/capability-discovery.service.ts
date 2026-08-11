@@ -109,7 +109,10 @@ export class CapabilityDiscoveryService {
     const serviceDescription = understood.services.map((service) => service.term).join('; ');
 
     const [resolvedProducts, resolvedServices] = await Promise.all([
-      this.resolver.resolveProducts(productTerms),
+      this.resolver.resolveProducts(productTerms, {
+        archetype: understood.businessArchetype,
+        statement: params.statement,
+      }),
       this.resolver.resolveServices(serviceDescription),
     ]);
 

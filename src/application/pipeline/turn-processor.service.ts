@@ -217,6 +217,16 @@ export class TurnProcessor {
       failed: outcome.failed,
     });
 
+    const durationMs = this.clock.now().getTime() - now.getTime();
+    this.logger.stage({
+      component: COMPONENT,
+      stage: STAGE,
+      input: { conversationId: conversation.id, messageId: message.id },
+      action: `Completed turn processing in ${durationMs}ms (${(durationMs / 1000).toFixed(2)}s)`,
+      output: { workflowId: outcome.instance.id, status: outcome.instance.status },
+      durationMs,
+    });
+
     return { response, workflowId: outcome.instance.id };
   }
 

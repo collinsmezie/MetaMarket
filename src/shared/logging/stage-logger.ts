@@ -175,7 +175,7 @@ export class StageLogger implements StageLoggerPort {
   private header(component: string, stage: string, correlationId?: string, durationMs?: number): string {
     const parts = [`[${new Date().toISOString()}]`, `[${component}]`, `[${stage}]`];
     if (correlationId !== undefined) parts.push(`(${correlationId})`);
-    if (durationMs !== undefined) parts.push(`${durationMs}ms`);
+    if (durationMs !== undefined) parts.push(`${durationMs}ms (${(durationMs / 1000).toFixed(2)}s)`);
     return parts.join(' ');
   }
 

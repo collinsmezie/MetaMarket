@@ -1,289 +1,562 @@
-# MetaMarket Seller Data Records — Mobinco Bookshop & AutoZone Ventures
+# MetaMarket Seller Data Records — Clean Non-WhatsApp Live CDE Test
 
-Full database records for the two active sellers on the main `metamarket` DB (localhost:5434).
+Full database records for 10 distinct vendors onboarded via the non-WhatsApp CDE pipeline context.
 
-- **Snapshot taken:** 2026-08-11 ~19:00 (after latest activity at 17:10)
-- **Source:** direct `psql` queries against `postgresql://metamarket:metamarket@localhost:5434/metamarket`
-- **Schema:** Prisma (`prisma/schema.prisma`)
-
----
-
-## ⚠️ CRITICAL — DB reset / re-onboarding note
-
-The AutoZone Ventures record has been **re-created**. Sequence of events:
-
-1. **2026-08-10 ~18:49** — AutoZone first onboarded as vendor `32282e43-1085-4ac8-9c5f-349a9fa954e2` in conversation `057e2358-8a30-453c-a0ed-a977d234567d` (onboarding text: *"I want to Sell" → "Auto parts"*).
-2. Over **Aug 10–11** that first AutoZone accrued a full history: 34 capabilities, responded to the "brake pads" request (score 0.420, ~1.47M ms), wallet 2000→1900.
-3. **2026-08-11 16:54–17:04** — that old AutoZone was **deleted and re-onboarded from scratch**: the new conversation `43f98cd3-5415-4d0a-83b8-de6b8478864a` starts at 16:54:59, and `seller.onboarded` fires at **17:04:36** under new vendor `d4a41eb5-24c0-466b-b50b-8c941a4d999e`.
-4. Event tables (`marketplace_events`, `outbox_events`) **retain** the old AutoZone history (86 events for the old conversation); aggregate tables (`vendors`, `conversations`, `workflow_instances`, `credit_wallets`) only contain the new record.
-
-Mobinco Bookshop (vendor `9a0efd77-803d-40eb-b6d7-87362d134521`) has **survived** both resets; its IDs are stable since 2026-08-10 18:41.
-
-The two vendors are mutual buyers/sellers: each user also submits buyer requests, and the other vendor fulfills them (see cross-request section below).
+- **Snapshot taken:** 2026-08-11T23:37:37.978Z
+- **Pipeline:** Non-WhatsApp CDE Direct Onboarding → BusinessUnderstanding → Contextualized Retrieval → CDE Capability DNA
+- **Total Vendors:** 10
 
 ---
 
-# 1. Mobinco Bookshop
+## 1. Lagos General Household Provisions (2348011110001)
 
 | Field | Value |
 |---|---|
-| business_name | Mobinco Bookshop |
-| vendor id | `9a0efd77-803d-40eb-b6d7-87362d134521` |
-| user id (WhatsApp) | `+2349127834513` |
-| conversation id | `692b0d5c-2744-454b-9ac5-ad9a68becaaa` |
+| business_name | Lagos General Household Provisions |
+| vendor_id | `a1c5c750-3e00-46e4-8e18-b173c74982ce` |
+| user_id | `2348011110001` |
 | status | active |
-| city / state | Warri / Delta (Nigeria) |
-| location_confidence | 1.000 |
-| latitude / longitude | NULL / NULL |
-| created_at | 2026-08-10 18:41:17.582 |
-| updated_at | 2026-08-11 09:57:47.279 |
+| city / state | Ikeja / Lagos |
+| conversation_summary | general household goods shop Sells: household provisions, groceries, domestic supplies. |
+| total_capabilities | 63 |
+| wallet_balance | 2000 credits |
+| created_at | 2026-08-11T23:32:35.682Z |
 
-## 1.1 Onboarding timeline (conversation 692b0d5c)
+### 1.1 Capability DNA (`vendor_capabilities`) — 63 Total
 
-| time (UTC) | direction | content |
-|---|---|---|
-| 18:41:05 | workflow | Triage started → Classify |
-| 18:41:17 | workflow | Triage completed: "user wants to list your business" |
-| 18:41:17 | workflow | VendorOnboarding started → AskCapability |
-| 18:41:24 | evidence | statement "I want to Sell" → density `very_low`, no capabilities |
-| 18:42:09 | evidence | statement "I have a bookshop" → density `medium` → archetype `bookshop` (Printed Books 0.95, Books Variety Packs 0.9, Exercise Books 0.9, Stationery chain) |
-| 18:43:02 | wallet | `wallet.created` → wallet `0dcb4370-c720-4c6a-b824-bc24e2c1ad37` |
-| 18:43:02 | wallet | `wallet.onboarding_credited` +2000 → balance 2000 (grant ref `onboarding:9a0efd77-...`) |
-| 18:41:xx | workflow | VendorOnboarding completed: "sells 'I have a bookshop', in Warri, Delta, trading as Mobinco Bookshop. Profile created and searchable." |
-| 18:44:xx | outbound | "All set, Mobinco Bookshop…" + 🎁 grant message sent |
-
-## 1.2 Wallet (credit_wallets `0dcb4370-…`, user +2349127834513, NGN)
-
-Current balance: **1500 credits** = 2000 onboarding grant − 5 × 100 request responses.
-
-| time (UTC) | type | credits | reason | ref |
+| Capability Name | Capability ID | Confidence | Type | Log Odds |
 |---|---|---|---|---|
-| 2026-08-10 18:43:02 | credit | +2000 | onboarding_grant | `onboarding:9a0efd77-...` |
-| 2026-08-10 18:45:43 | debit | −100 | responded_to_customer_request (wedding cards) | `response:e053df2f...` |
-| 2026-08-11 08:58:01 | debit | −100 | responded_to_customer_request (educational toys) | `response:9200cbc4...` |
-| 2026-08-11 09:21:19 | debit | −100 | responded_to_customer_request (frames) | `response:4e35e0cc...` |
-| 2026-08-11 09:35:05 | debit | −100 | responded_to_customer_request (photo album) | `response:7c218aaf...` |
-| 2026-08-11 09:57:45 | debit | −100 | responded_to_customer_request (executive pens) | `response:1ad68646...` |
-
-## 1.3 Capability DNA (vendor_capabilities) — 30 total (7 direct, 23 inferred)
-
-Direct (evidence-backed), by confidence:
-
-| capability | id | confidence | evidence_count |
-|---|---|---|---|
-| executive pens | 10001235 | 0.906 | 1 (accepted) |
-| photo album | 10001495 | 0.906 | 1 (accepted) |
-| frames | 10002246 | 0.906 | 1 (accepted) |
-| educational toys | 10005159 | 0.906 | 1 (accepted) |
-| Printed Books/Compositions | 10000926 | 0.658 | 1 (statement) |
-| Books Variety Packs | 10004107 | 0.630 | 1 (statement) |
-| Exercise Books | 10005893 | 0.630 | 1 (statement) |
-
-Top inferred (taxonomy roll-ups of the above): Stationery/Office Machinery 0.891, Writing/Design Implements 0.844, Photography 0.844, Pictures/Mirrors/Frames 0.844, Developmental/Educational Toys 0.844, Books 0.515, plus 17 deeper ancestors (down to ~0.24).
-
-## 1.4 Statement evidence (capability_evidence)
-
-| source | original_text | density | supports |
-|---|---|---|---|
-| onboarding_statement | I want to Sell | very_low | [] (needs clarification) |
-| onboarding_statement | I have a bookshop | medium | bookshop archetype: 16 capability links (Printed Books 0.95, Books Variety Packs 0.9, Exercise Books 0.9, Stationery chain 0.675…) |
-| request_accepted | Accepted request for educational toys | high | 10005159 → Toys/Games chain |
-| request_accepted | Accepted request for frames | high | 10002246 → Furnishings chain |
-| request_accepted | Accepted request for photo album | high | 10001495 → Photography chain |
-| request_accepted | Accepted request for executive pens | high | 10001235 → Writing Implements chain |
-
-## 1.5 Behavioural evidence (evidence_records / evidence_aggregates)
-
-Aggregate: vendor 5 delivered / 5 responded / 5 accepted; evidence_score 0.481; avg response 30.6 s (sum 153,000 ms).
-
-| request | request_id | rank | score | responded_at | response_time_ms |
-|---|---|---|---|---|---|
-| wedding cards | e053df2f-4e2c-4688-89d4-793243169178 | 0 | 0.154 | 18:45:43 | 18,398 |
-| educational toys | 9200cbc4-3572-4e32-ad50-4e06d061b627 | 0 | 0.141 | 08:58:01 | 31,508 |
-| frames | 4e35e0cc-4f02-43d6-b113-4da6aa145edf | 0 | 0.139 | 09:21:19 | 40,309 |
-| photo album | 7c218aaf-d9f0-4772-b2bf-c4f54c2c1202 | 0 | 0.137 | 09:35:05 | 24,154 |
-| executive pens | 1ad68646-639c-43b8-ab3c-875276904611 | 0 | 0.201 | 09:57:45 | 39,430 |
-
-All 5 deliveries: immediate=false, status=accepted, revealed_to_customer=true, credit_deducted=true.
-
-## 1.6 Workflows (conversation 692b0d5c) — 9 total
-
-| id | type | current_state | status | summary |
-|---|---|---|---|---|
-| dd377737-… | Triage | Complete | completed | user wants to list your business |
-| f66092f7-… | VendorOnboarding | Complete | completed | sells "I have a bookshop", Warri/Delta, Mobinco Bookshop |
-| 91d85060-… | BuyerSearch | Complete | completed | "steering cover" (18:50) |
-| ff1d5088-… | BuyerSearch | WaitingForVendorResponses | suspended | "I need brake pads" (19:01) — delivered 0, awaiting 1 |
-| 2f12040d-… | BuyerSearch | Complete | completed | "car steering cover" (08:30) |
-| 68bffe4d-… | BuyerSearch | WaitingForVendorResponses | suspended | "I need wiper for my car" (08:50) |
-| 20804305-… | BuyerSearch | WaitingForVendorResponses | suspended | "I need dashboard cover" (08:54) |
-| 33cdcd39-… | BuyerSearch | WaitingForVendorResponses | suspended | "I need wheel cover" (09:22) |
-| bfb136a4-… | BuyerSearch | WaitingForVendorResponses | **active** | "I need steering cover" (17:09) — delivered 0, awaiting 1 |
-
-## 1.7 Outbound messages — 28 all `sent` (no failures)
+| Oils Edible - Vegetable or Plant (Shelf Stable) | `10000040` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Baking/Cooking Supplies (Perishable) | `10000069` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Household Paints | `10003874` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Oils Edible - Vegetable or Plant (Perishable) | `10006958` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Laundry Detergents | `10000424` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Soups - Prepared (Shelf Stable) | `10000262` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Hand Dish - Detergent | `10008145` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Runner Beans | `10005979` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Broad Beans | `10005980` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Milk (Frozen) | `10000027` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Detergent Boosters/Laundry Bleaches | `10000743` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Household/Office Boxes/Baskets | `10002187` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Household/Office Cupboards/Display Cabinets | `10005199` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Non Alcoholic Beverages Variety Packs - Not Ready to Drink | `10000593` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Household Vacuum Cleaners | `10002028` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Grain Based Products / Meals - Not Ready to Eat - Savoury (Shelf Stable) | `10000297` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Milk (Perishable) | `10000025` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Beverages Variety Packs | `10000623` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Sugar/Sugar Substitutes (Shelf Stable) | `10000043` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Other Sauces Dipping/Condiments/Savoury Toppings/Savoury Spreads/Marinades (Shelf Stable) | `10000280` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Baking/Cooking Mixes/Supplies Variety Packs | `10000595` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Non Alcoholic Beverages Variety Packs - Ready to Drink | `10000594` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Sugars/Sugar Substitute Products Variety Packs | `10000603` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Milk (Shelf Stable) | `10000026` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Small Domestic Appliances - Other | `10006894` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Grains/Cereal - Ready to Eat - (Shelf Stable) | `10000319` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| French/Wax Beans | `10005976` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Dish Care | `47102100` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Sugars/Sugar Substitute Products | `50161500` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Milk/Milk Substitutes | `50131700` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Non Alcoholic Beverages - Not Ready to Drink | `50202400` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Laundry | `47101700` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Painting | `83010400` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Baking/Cooking Mixes/Supplies | `50181700` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Small Domestic Appliances - Other | `72020700` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Beverages Variety Packs | `50202500` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Prepared Soups | `50191500` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Beans (With Pods) | `50261400` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Oils Edible | `50151500` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Grains/Flour | `50221000` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Sauces/Spreads/Dips/Condiments | `50171800` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Non Alcoholic Beverages - Ready to Drink | `50202300` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Grain Based Products / Meals | `50193200` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Cleaning Appliances | `72020400` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Household/Office Storage/Display Furniture/Screens | `75010100` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Cereal/Grain/Pulse Products | `50220000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Small Domestic Appliances | `72020000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Bread/Bakery Products | `50180000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Building Products | `83010000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Cleaning Products | `47100000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Milk/Butter/Cream/Yogurts/Cheese/Eggs/Substitutes | `50130000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Oils/Fats Edible | `50150000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Confectionery/Sugar Sweetening Products | `50160000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Seasonings/Preservatives/Extracts | `50170000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Household/Office Furniture | `75010000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Beverages | `50200000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Prepared/Preserved Foods | `50190000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Vegetables (Non Leaf) - Unprepared/Unprocessed (Fresh) | `50260000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Food/Beverage | `50000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
+| Building Products | `83000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
+| Home Appliances | `72000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
+| Household/Office Furniture/Furnishings | `75000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
+| Cleaning/Hygiene Products | `47000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
 
 ---
 
-# 2. AutoZone Ventures (current record)
+## 2. Kano Agricultural Inputs & Machinery (2348011110002)
 
 | Field | Value |
 |---|---|
-| business_name | AutoZone Ventures |
-| vendor id | `d4a41eb5-24c0-466b-b50b-8c941a4d999e` |
-| user id (WhatsApp) | `+27640812552` |
-| conversation id | `43f98cd3-5415-4d0a-83b8-de6b8478864a` |
+| business_name | Kano Agricultural Inputs & Machinery |
+| vendor_id | `57067b92-9b39-46fc-981c-0dcc76ce403d` |
+| user_id | `2348011110002` |
 | status | active |
-| city / state | Warri / Delta (Nigeria) |
-| location_confidence | 1.000 |
-| latitude / longitude | NULL / NULL |
-| created_at | 2026-08-11 17:02:36.284 |
-| updated_at | 2026-08-11 17:10:31.594 |
+| city / state | Kano / Kano |
+| conversation_summary | agricultural supplies dealer Sells: farm inputs, crop protection products, farming machinery. |
+| total_capabilities | 32 |
+| wallet_balance | 2000 credits |
+| created_at | 2026-08-11T23:33:10.426Z |
 
-## 2.1 Onboarding timeline (conversation 43f98cd3)
+### 2.1 Capability DNA (`vendor_capabilities`) — 32 Total
 
-| time (UTC) | direction | content |
-|---|---|---|
-| 16:54:59 | user | "Hi" (cold open) |
-| 16:55:05 | workflow | Triage `aaa0e684` started → Classify; question sent (buy/sell) |
-| 16:55:05 | outbound | **FAILED** (connect timeout to graph.facebook.com, 2 attempts) |
-| 17:01:58 | user | "Hi" again |
-| 17:02:01 | outbound | re-sent buy/sell triage — sent ok |
-| 17:02:15 | user | button_reply **"I want to Sell"** (`mm|aaa0e684-…|sell`) |
-| 17:02:17 | workflow | Triage → Complete; VendorOnboarding `48be01eb` started → AskCapability |
-| 17:02:41 | evidence | statement "I want to Sell" → density `very_low` |
-| 17:02:43 | outbound | "What do you sell or what service do you provide?" |
-| 17:03:05 | user | **"I sell auto parts"** |
-| 17:03:38 | evidence | statement → density `medium` → archetype `auto parts dealer` (27 capability links) |
-| 17:03:40 | outbound | "Which city and state is your business located in?" |
-| 17:03:50 | user | "Warri" |
-| 17:03:56 | outbound | "That's Warri in Delta State, right?" |
-| 17:04:00 | user | "Yes" |
-| 17:04:07 | outbound | "Lastly, what's your business name?" |
-| 17:04:31 | user | "AutoZone Ventures" |
-| 17:04:36 | events | `seller.onboarded` + `wallet.created` + onboarding grant +2000 + `workflow.completed` "sells 'I sell auto parts', Warri, Delta, trading as AutoZone Ventures. Profile created and searchable." |
-| 17:04:37 | outbound | "All set, AutoZone Ventures… You're listed in Warri, Delta State…" |
-| 17:04:47 | outbound | 🎁 grant message (2000 credits) |
-| 17:09:45 | event | `request.delivered` for "steering cover" (rank 0, score 0.172, immediate=false) |
-| 17:09:47 | outbound | "New Customer Request… 'Steering Wheel Covers'" + accept/decline buttons |
-| 17:10:28 | user | button_reply **"Yes, I have it"** (`mm|vendor-response|accept_have|7baf8ab3-…`) |
-| 17:10:29 | events | `wallet.debited` −100 (balance 1900), `request.accepted` (responseTime 45 s), evidence written |
-| 17:10:32 | outbound | "🎉 You're in — your profile has been sent to the customer… Balance: 1900 Credits" |
-| 17:10:46 | user | "Okay" |
-| 17:10:50 | workflow | Triage `e015ca02` started → Classify → AwaitDetail (buying or selling?) — **active** |
-
-## 2.2 Wallet (credit_wallets `1a6a8883-321a-4216-a426-0b14bb00154d`, user +27640812552, NGN)
-
-Current balance: **1900 credits** = 2000 onboarding grant − 100 request response.
-
-| time (UTC) | type | credits | reason | ref |
+| Capability Name | Capability ID | Confidence | Type | Log Odds |
 |---|---|---|---|---|
-| 2026-08-11 17:04:36 | credit | +2000 | onboarding_grant | `onboarding:d4a41eb5-...` |
-| 2026-08-11 17:10:29 | debit | −100 | responded_to_customer_request (steering cover) | `response:7baf8ab3...:d4a41eb5-...` |
-
-## 2.3 Capability DNA (vendor_capabilities) — 30 total (1 direct, 29 inferred)
-
-Full table (ordered by confidence; `inferred` = f means evidence-backed, t means taxonomy-inferred):
-
-| capability_id | capability_name | log_odds | confidence | evidence_count | inferred |
-|---|---|---|---|---|---|
-| 10002863 | steering cover | 2.2654 | 0.9060 | 1 | f |
-| 77011800 | Automotive Interior Accessories - Steering | 1.6854 | 0.8436 | 1 | t |
-| 77010000 | Automotive Accessories and Maintenance | 1.6100 | 0.8334 | 2 | t |
-| 77000000 | Vehicle | 0.7739 | 0.6844 | 2 | t |
-| 10005130 | Cargo Management - Replacement Parts/Accessories | −0.3486 | 0.4137 | 1 | t |
-| 10006384 | Brake Pads/Lining | −0.3486 | 0.4137 | 1 | t |
-| 10003760 | Safety Replacement Parts/Accessories (Automotive) | −0.3486 | 0.4137 | 1 | t |
-| 10005267 | Lubricating Oils/Fluids | −0.3486 | 0.4137 | 1 | t |
-| 10000546 | Batteries | −0.3486 | 0.4137 | 1 | t |
-| 10003011 | Wiper Blades | −0.3486 | 0.4137 | 1 | t |
-| 10003022 | Filters - Air (Automotive) | −0.3486 | 0.4137 | 1 | t |
-| 10005129 | Anti-theft Products Replacement Parts/Accessories | −0.3486 | 0.4137 | 1 | t |
-| 10003012 | Wiper Blade Refills | −0.3486 | 0.4137 | 1 | t |
-| 10003762 | Filters - Fluid (Automotive) | −0.3486 | 0.4137 | 1 | t |
-| 10003142 | Wiper Arms (Automotive) | −0.3486 | 0.4137 | 1 | t |
-| 10005232 | Batteries (Automotive) | −0.3486 | 0.4137 | 1 | t |
-| 10003029 | Filters Other (Automotive) | −0.3486 | 0.4137 | 1 | t |
-| 77010300 | Automotive Cargo Management | −0.6951 | 0.3329 | 1 | t |
-| 77013600 | Automotive Wipers/Wiper Parts | −0.6951 | 0.3329 | 1 | t |
-| 77013800 | Automotive Filters | −0.6951 | 0.3329 | 1 | t |
-| 77013500 | Automotive Anti-theft Products | −0.6951 | 0.3329 | 1 | t |
-| 77015000 | Automotive Batteries | −0.6951 | 0.3329 | 1 | t |
-| 77015300 | Automotive Brakes | −0.6951 | 0.3329 | 1 | t |
-| 77011300 | Automotive Safety | −0.6951 | 0.3329 | 1 | t |
-| 88010100 | Lubricating Products | −0.6951 | 0.3329 | 1 | t |
-| 78021100 | Batteries/Chargers | −0.6951 | 0.3329 | 1 | t |
-| 78020000 | Electrical Connection/Distribution | −0.9550 | 0.2779 | 1 | t |
-| 88010000 | Lubricants/Protective Compounds | −0.9550 | 0.2779 | 1 | t |
-| 78000000 | Electrical Supplies | −1.1499 | 0.2405 | 1 | t |
-| 88000000 | Lubricants | −1.1499 | 0.2405 | 1 | t |
-
-Note: the single direct capability (steering cover, 0.906) was confirmed by the `request_accepted` at 17:10:29; the 27 statement-inferred capabilities all originated from the "I sell auto parts" statement at 17:03:38 (uniform log_odds −0.3486 → 0.4137, ancestors 0.33→0.24).
-
-## 2.4 Statement evidence (capability_evidence)
-
-| source | original_text | density | supports |
-|---|---|---|---|
-| onboarding_statement | I want to Sell | very_low | [] |
-| onboarding_statement | I sell auto parts | medium | `auto parts dealer` archetype: 27 links (Brake Pads/Lining 0.55, Safety 0.55, Lubricating Oils 0.55, Batteries 0.55, Wiper Blades 0.55, Filters 0.55, Anti-theft 0.55, plus ancestor roll-ups 0.413–0.232) |
-| request_accepted | Accepted request for steering cover | high | 10002863 → Automotive Interior Accessories – Steering chain (0.95→0.71→0.53→0.40) |
-
-## 2.5 Behavioural evidence (evidence_records / evidence_aggregates)
-
-Aggregate: vendor 1 delivered / 1 responded / 1 accepted; evidence_score 0.485 (confidence 0.05); response 45,000 ms.
-
-Request: **steering cover** (`7baf8ab3-e8ab-47ff-b7b9-30226a4b822d`, placed by Mobinco user +2349127834513)
-- delivery: rank 0, score 0.172, immediate=false, delivered 17:09:45, status accepted, revealed_to_customer=true, credit_deducted=true
-- responded: 17:10:29, response_time_ms = 44,673
-- evidence_records: 9 rows (delivered/responded/accepted × vendor/capability/product, all weight 1)
-
-## 2.6 Workflows (conversation 43f98cd3) — 3 total
-
-| id | type | current_state | status | summary |
-|---|---|---|---|---|
-| aaa0e684-c72f-4dce-95c1-d2f443014137 | Triage | Complete | completed | user wants to list your business |
-| 48be01eb-7528-464c-9696-e446e022a376 | VendorOnboarding | Complete | completed | sells "I sell auto parts", Warri/Delta, AutoZone Ventures |
-| e015ca02-906f-416e-8007-2eb8ee707e88 | Triage | AwaitDetail | **active** | intent unclear from "Okay"; asked buying or selling |
-
-Transitions (`48be01eb`): AskCapability → AwaitCapability (cont.) → AwaitLocation (answer) → ConfirmState (answer) → AwaitBusinessName (clarification) → CreateProfile (answer) → Complete (answer). All trigger `continuation`/`answer`/`clarification`, none `engine_failure`.
-
-## 2.7 Inbound messages — 9 (all text/button_reply), outbound messages — 11 (10 sent, 1 failed at 16:55:05)
-
-Outbound flow: triage question (1 fail + 1 sent), capability ask, location ask, state confirm, business name ask, "All set", grant message, steering-cover request, "You're in", triage re-ask. All sent via WhatsApp Graph API with provider wamid.xxx IDs.
-
-## 2.8 Marketplace events (vendor d4a41eb5) — 5
-
-| event | request | product | notes |
-|---|---|---|---|
-| seller.onboarded | – | – | 10 top caps @ 0.414 |
-| request.delivered | 7baf8ab3 | steering cover | immediate=false, capability 10002863 |
-| vendor.notified | 7baf8ab3 | – | delivery `14aa13f9-…`, "Steering Wheel Covers" |
-| vendor.credit.deducted | 7baf8ab3 | – | −100, capability 10002863 |
-| request.accepted | 7baf8ab3 | steering cover | responseTime 45 |
+| Sprinklers/Misters (Powered) | `10003271` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Agricultural Machinery | `10008456` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Insecticides/Pesticides/Rodenticides | `10000435` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Seeds - Other | `10003291` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Plant/Soil Fertilizer/Food | `10003234` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Weed-Killer/ Herbicide | `10003227` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Irrigation Systems | `10003264` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Agricultural Machinery - Replacement Parts/Accessories | `10008457` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Seed Protection/ Mordants | `10006734` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Fungicides | `10004109` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Irrigation Timers/Controllers | `10003276` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Applicators/Feeders (Powered) | `10003869` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Plant Chemicals or Natural Agents/Treatments Other | `10003240` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Green Manure Seeds | `10007946` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Insect/Pest/Allergen Control Other | `10000754` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Cultivators/Tillers/Rotary Hoes (Powered) | `10003373` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Grass Seeds | `10007943` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Harrows | `10003386` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Plant Chemicals or Natural Agents/Treatments | `13010200` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Agricultural Machinery | `77070100` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Pest/Plant Control Products | `13010100` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Seeds | `93070100` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Lawn/Garden Watering Equipment | `81010400` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Lawn/Garden Equipment and Tools | `81011200` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Agricultural Machinery | `77070000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Pest/Plant Control Products | `13010000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Lawn/Garden Supplies | `81010000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Seeds/Spores | `93070000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Horticulture Plants | `93000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
+| Pest/Plant Control Products | `13000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
+| Vehicle | `77000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
+| Lawn/Garden Supplies | `81000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
 
 ---
 
-# 3. Cross-request relationships
+## 3. Ibadan Motor Spare Parts Depot (2348011110003)
 
-The two sellers act as buyers toward each other:
+| Field | Value |
+|---|---|
+| business_name | Ibadan Motor Spare Parts Depot |
+| vendor_id | `dcdccb80-becb-4bd0-a328-4aa39dcc2ce5` |
+| user_id | `2348011110003` |
+| status | active |
+| city / state | Ibadan / Oyo |
+| conversation_summary | motor spare parts dealer Sells: vehicle spare parts. |
+| total_capabilities | 26 |
+| wallet_balance | 2000 credits |
+| created_at | 2026-08-11T23:33:38.700Z |
 
-| request | by (user) | fulfilled by | credits |
-|---|---|---|---|
-| I need wedding cards | AutoZone (+27640812552) | Mobinco | 100 |
-| I need educational toys | AutoZone | Mobinco | 100 |
-| I need frames for putting certificate | AutoZone | Mobinco | 100 |
-| I'm looking for photo album | AutoZone | Mobinco | 100 |
-| I need executive pens | AutoZone | Mobinco | 100 |
-| I need brake pads | Mobinco (+2349127834513) | AutoZone (old record) | 100 |
-| I need steering cover | Mobinco | AutoZone (current) | 100 |
+### 3.1 Capability DNA (`vendor_capabilities`) — 26 Total
 
-Open/unfulfilled requests (all `open`, workflows suspended or active):
-steering cover (17:09, active), wiper, dashboard cover, wheel cover, educational toys, frames, photo album, executive pens, wedding cards, brake pads.
+| Capability Name | Capability ID | Confidence | Type | Log Odds |
+|---|---|---|---|---|
+| Wiper Components Other | `10003150` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Transmission Filters (Automotive) | `10003024` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Spare Tyre Covers | `10002905` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Filters - Fluid (Automotive) | `10003762` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Safety Replacement Parts/Accessories (Automotive) | `10003760` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Wiper Blades | `10003011` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Batteries (Automotive) | `10005232` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Lubricating Oils/Fluids | `10005267` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Filters - Air (Automotive) | `10003022` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Brake Pads/Lining | `10006384` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Automotive Electrical - Replacement Parts/Accessories | `10005131` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Battery Accessories (Automotive) | `10005233` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Other Parts for Brake Systems | `10006388` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Wiper Components Variety Packs | `10003151` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Automotive Electrical | `77014300` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Automotive Exterior Accessories - Coverings/Protection | `77012500` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Automotive Brakes | `77015300` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Automotive Filters | `77013800` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Lubricating Products | `88010100` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Automotive Batteries | `77015000` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Automotive Wipers/Wiper Parts | `77013600` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Automotive Safety | `77011300` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Automotive Accessories and Maintenance | `77010000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Lubricants/Protective Compounds | `88010000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Vehicle | `77000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
+| Lubricants | `88000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
 
 ---
 
-# 4. Environment state (at snapshot)
+## 4. Abuja Commercial Stationery & Print (2348011110004)
 
-- Main DB: `metamarket` @ localhost:5434 — 2 vendors, 2 conversations, 30+30 capabilities, 252 marketplace_events, 252 outbox_events (all published), 10 customer_requests (all open), 12 workflow_instances, 28 transitions, 6 request_deliveries, 31 inbound_messages, 39 outbound_messages.
-- Redis queues (`bull:media-processing`, etc.) empty; `outbound_messages` has only `sent`/`failed` rows (no pending) — the sweeper has drained everything.
-- Outbound WhatsApp delivery intermittently fails with `Graph API / fetch: Connect Timeout` to `graph.facebook.com:443` (1 failed outbound in this conversation).
-- Prisma Studio was running at http://localhost:5556 (may be stale).
+| Field | Value |
+|---|---|
+| business_name | Abuja Commercial Stationery & Print |
+| vendor_id | `3834f55a-b660-417c-9fb3-5037ddeef601` |
+| user_id | `2348011110004` |
+| status | active |
+| city / state | Wuse / Abuja |
+| conversation_summary | office supplies and equipment dealer Sells: commercial office stationery, printing paper, office machinery. |
+| total_capabilities | 29 |
+| wallet_balance | 2000 credits |
+| created_at | 2026-08-11T23:34:02.368Z |
+
+### 4.1 Capability DNA (`vendor_capabilities`) — 29 Total
+
+| Capability Name | Capability ID | Confidence | Type | Log Odds |
+|---|---|---|---|---|
+| Office Machinery Other | `10001248` | 81.8% (0.818) | Direct Statement | 1.5054 |
+| Stationery/Office Machinery - Other | `10006898` | 81.8% (0.818) | Direct Statement | 1.5054 |
+| Office Machinery | `62060300` | 66.7% (0.667) | Taxonomy Inferred | 0.6954 |
+| Stationery/Office Machinery - Other | `62061200` | 66.7% (0.667) | Taxonomy Inferred | 0.6954 |
+| Pens | `10001235` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Digital Pens | `10005686` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Stationery Paper/Card/Film Other | `10005120` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Stationery Fasteners | `10001289` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Multifunctional Devices | `10005229` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Stationery Item Storage/Desk Accessories | `10001320` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Paper Shredders (Non Powered) | `10001309` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Stationery Staplers (Powered) | `10001300` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Paper Shredders (Powered) | `10005119` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Paper/Card - Unprinted | `10001304` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Photocopiers | `10001252` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Exercise Books | `10005893` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Stationery Staplers (Non Powered) | `10001299` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Printers | `10001158` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Stationery/Office Machinery | `62060000` | 52.2% (0.522) | Taxonomy Inferred | 0.0879 |
+| Stationery Cutters/Trimmers | `62060800` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Computer/Video Game Control/Input Devices | `65010600` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Computer/Video Game Peripherals | `65010700` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Stationery Adhesives/Binders/Fasteners | `62060700` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Writing/Design Implements/Aids | `62060100` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Stationery Paper/Card/Film | `62061100` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Stationery Storage/Filing | `62060900` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Stationery/Office Machinery/Occasion Supplies | `62000000` | 40.9% (0.409) | Taxonomy Inferred | -0.3677 |
+| Computers/Video Games | `65010000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Computing | `65000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
+
+---
+
+## 5. Port Harcourt Industrial Safety Gear (2348011110005)
+
+| Field | Value |
+|---|---|
+| business_name | Port Harcourt Industrial Safety Gear |
+| vendor_id | `473dc96d-d8b5-4b80-adee-abe6d64e6c2f` |
+| user_id | `2348011110005` |
+| status | active |
+| city / state | Port Harcourt / Rivers |
+| conversation_summary | industrial safety and protective equipment distributor Sells: industrial safety gear, personal protective equipment, workshop apparel. |
+| total_capabilities | 23 |
+| wallet_balance | 2000 credits |
+| created_at | 2026-08-11T23:34:29.382Z |
+
+### 5.1 Capability DNA (`vendor_capabilities`) — 23 Total
+
+| Capability Name | Capability ID | Confidence | Type | Log Odds |
+|---|---|---|---|---|
+| Protective Wear Accessories | `10003704` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Safety/Protective Occupational Shoes | `10001082` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Hearing Protection - Powered | `10005107` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Gloves | `10005894` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Helmets - Non Powered | `10005110` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Protective Full Body Wear | `10001394` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Face Shields/Guards | `10005112` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Protective Lower Body Wear | `10001397` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Protective Personal Aids Other | `10005116` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Safety Glasses/Goggles | `10003586` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Hearing Protection - Non Powered | `10005108` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Environmental Respiratory Protection - Non Powered | `10005106` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Environmental Respiratory Protection - Powered | `10005105` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Safety/Protective/Occupational Boots | `10001080` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Hard Hats/Caps | `10005111` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Protective Upper Body Wear | `10001398` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Protective Handwear | `10001395` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Protective Wear | `67050100` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Safety/Protective Footwear | `63010500` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Footwear | `63010000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Protective Wear | `67050000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Clothing | `67000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
+| Footwear | `63000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
+
+---
+
+## 6. Warri Building & Hardware Supplies (2348011110006)
+
+| Field | Value |
+|---|---|
+| business_name | Warri Building & Hardware Supplies |
+| vendor_id | `0e022e8f-7299-48c0-8156-08547d52a0e2` |
+| user_id | `2348011110006` |
+| status | active |
+| city / state | Warri / Delta |
+| conversation_summary | building materials dealer Sells: cement, roofing sheets, iron rods. |
+| total_capabilities | 36 |
+| wallet_balance | 2000 credits |
+| created_at | 2026-08-11T23:35:03.980Z |
+
+### 6.1 Capability DNA (`vendor_capabilities`) — 36 Total
+
+| Capability Name | Capability ID | Confidence | Type | Log Odds |
+|---|---|---|---|---|
+| Cement | `10002526` | 90.6% (0.906) | Direct Statement | 2.2654 |
+| Mortar/Cement/Plaster/Grout Additives | `10008045` | 90.6% (0.906) | Direct Statement | 2.2654 |
+| Sand - Cement | `10008064` | 90.6% (0.906) | Direct Statement | 2.2654 |
+| Asphalt/Concrete/Masonry | `83010600` | 83.2% (0.832) | Taxonomy Inferred | 1.5999 |
+| Special Purpose Paints | `10002462` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Poles/Pilings/Rods | `10005424` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Roll Roofing | `10002684` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Flooring - Ceramic/Porcelain Tiles | `10002443` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Tiles - Outdoor Ground | `10006786` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Tubing | `10003173` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Concrete Bonding Agents | `10003899` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Wall Coverings - Tiles | `10002431` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Household Paints | `10003874` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Iron (Formed) | `10008160` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Construction Compound | `10008000` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Nails/Pins (Fixings/Fasteners) | `10003182` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Brick/Block | `10002525` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Pipes/Tubing - Water, Gas, Central heating | `10004054` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Roofing Panels/Slabs | `10002686` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Building Products | `83010000` | 68.3% (0.683) | Taxonomy Inferred | 0.7663 |
+| Roofing | `83011700` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Fixings/Fasteners Hardware | `83011900` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Sealants/Fillers/Adhesives/Defect Agents | `83012100` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Raw Material (Formed) | `98020100` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Painting | `83010400` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Wall/Ceiling/Flooring Coverings | `83010100` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Lawn/Garden Tiles | `81011900` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Lumber/Wood Panel/Gypsum | `83010800` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Water/Gas Supply/Central Heating | `79010800` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Building Products | `83000000` | 53.5% (0.535) | Taxonomy Inferred | 0.1411 |
+| Formed Raw Material | `98020000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Lawn/Garden Supplies | `81010000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Plumbing/Heating/Ventilation/Air Conditioning | `79010000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Lawn/Garden Supplies | `81000000` | 34.3% (0.343) | Taxonomy Inferred | -0.6487 |
+| Plumbing/Heating/Ventilation/Air Conditioning | `79000000` | 34.3% (0.343) | Taxonomy Inferred | -0.6487 |
+| Raw Materials (Non Food) | `98000000` | 34.3% (0.343) | Taxonomy Inferred | -0.6487 |
+
+---
+
+## 7. Enugu Solar & Electrical Store (2348011110007)
+
+| Field | Value |
+|---|---|
+| business_name | Enugu Solar & Electrical Store |
+| vendor_id | `a0898bcc-9101-4d55-8609-a9a75b93201a` |
+| user_id | `2348011110007` |
+| status | active |
+| city / state | Enugu / Enugu |
+| conversation_summary | solar and electrical equipment dealer Sells: solar panels, inverter batteries, copper cables. |
+| total_capabilities | 20 |
+| wallet_balance | 2000 credits |
+| created_at | 2026-08-11T23:35:32.012Z |
+
+### 7.1 Capability DNA (`vendor_capabilities`) — 20 Total
+
+| Capability Name | Capability ID | Confidence | Type | Log Odds |
+|---|---|---|---|---|
+| Circuit Breakers | `10005576` | 90.6% (0.906) | Direct Statement | 2.2654 |
+| Batteries | `10000546` | 90.6% (0.906) | Direct Statement | 2.2654 |
+| Solar Panels | `10008389` | 90.6% (0.906) | Direct Statement | 2.2654 |
+| Electrical Distribution | `78020600` | 85.1% (0.851) | Taxonomy Inferred | 1.7403 |
+| Electrical Generation | `78021200` | 85.1% (0.851) | Taxonomy Inferred | 1.7403 |
+| Batteries/Chargers | `78021100` | 83.2% (0.832) | Taxonomy Inferred | 1.5999 |
+| Electrical Connection/Distribution | `78020000` | 70.5% (0.705) | Taxonomy Inferred | 0.8716 |
+| Inverters | `10008390` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Satellite Installation Cables | `10005759` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Electrical Wires | `10005541` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Cable Conduit Fittings | `10005660` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Cable/Wire Conduit/Ducting/Raceways | `10005647` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Electrical Generation Accessories/Fittings | `10008395` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Charge/Voltage Regulators | `10008391` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Solar Power Stations | `10005875` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Electrical Supplies | `78000000` | 55.5% (0.555) | Taxonomy Inferred | 0.2200 |
+| Electrical Wiring | `78040400` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Electrical Cables | `78040300` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Cabling/Wiring Management/Control | `78040100` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Electrical Cabling/Wiring | `78040000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+
+---
+
+## 8. Onitsha Healthcare & Medical Supplies (2348011110008)
+
+| Field | Value |
+|---|---|
+| business_name | Onitsha Healthcare & Medical Supplies |
+| vendor_id | `25290d7e-8246-4f18-8602-35b2a4d1667c` |
+| user_id | `2348011110008` |
+| status | active |
+| city / state | Onitsha / Anambra |
+| conversation_summary | medical and healthcare supplies dealer Sells: medical equipment, pharmaceutical drugs, first aid supplies. |
+| total_capabilities | 33 |
+| wallet_balance | 2000 credits |
+| created_at | 2026-08-11T23:35:54.022Z |
+
+### 8.1 Capability DNA (`vendor_capabilities`) — 33 Total
+
+| Capability Name | Capability ID | Confidence | Type | Log Odds |
+|---|---|---|---|---|
+| Pharmaceutical Drugs | `10005845` | 90.6% (0.906) | Direct Statement | 2.2654 |
+| Pharmaceutical Drugs | `51160100` | 83.2% (0.832) | Taxonomy Inferred | 1.5999 |
+| Medical Devices | `10005844` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| First Aid - Accessories | `10000449` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| First Aid - Dressings/Bandages/Plaster | `10000448` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Healthcare Variety Packs | `10000673` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Home Diagnostic Products - Accessories | `10000454` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Gloves | `10005894` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Enteral Feeding Equipment Other | `10000902` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Diagnostic Tests Other | `10000844` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| First Aid Other | `10000908` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Drug Administration | `10000456` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Medicine Cabinets | `10008499` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| First Aid Variety Packs | `10000684` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Drug Administration - Accessories | `10000457` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Pharmaceutical Drugs | `51160000` | 68.3% (0.683) | Taxonomy Inferred | 0.7663 |
+| Diagnostic Tests | `51131600` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Healthcare Variety Packs | `51140100` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Enteral Feeding Equipment | `51103200` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Household/Office Storage/Display Furniture/Screens | `75010100` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Drug Administration | `51101600` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Protective Wear | `67050100` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| First Aid | `51101700` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Medical Devices | `51150100` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Healthcare | `51000000` | 53.5% (0.535) | Taxonomy Inferred | 0.1411 |
+| Health Treatments/Aids | `51100000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Medical Devices | `51150000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Healthcare Variety Packs | `51140000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Home Diagnostics | `51130000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Household/Office Furniture | `75010000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Protective Wear | `67050000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Household/Office Furniture/Furnishings | `75000000` | 34.3% (0.343) | Taxonomy Inferred | -0.6487 |
+| Clothing | `67000000` | 34.3% (0.343) | Taxonomy Inferred | -0.6487 |
+
+---
+
+## 9. Kaduna Footwear & Luggage Emporium (2348011110009)
+
+| Field | Value |
+|---|---|
+| business_name | Kaduna Footwear & Luggage Emporium |
+| vendor_id | `4fc0d103-2ecc-427d-a964-2b320c0ef636` |
+| user_id | `2348011110009` |
+| status | active |
+| city / state | Kaduna / Kaduna |
+| conversation_summary | fashion and accessories retailer Sells: footwear, leather goods, travel luggage. |
+| total_capabilities | 29 |
+| wallet_balance | 2000 credits |
+| created_at | 2026-08-11T23:36:25.225Z |
+
+### 9.1 Capability DNA (`vendor_capabilities`) — 29 Total
+
+| Capability Name | Capability ID | Confidence | Type | Log Odds |
+|---|---|---|---|---|
+| Athletic Footwear - Specialist | `10001071` | 81.8% (0.818) | Direct Statement | 1.5054 |
+| Athletic Footwear - General Purpose | `10001070` | 81.8% (0.818) | Direct Statement | 1.5054 |
+| Athletic Footwear | `63010100` | 66.7% (0.667) | Taxonomy Inferred | 0.6954 |
+| Clothing Accessories Variety Packs | `10001354` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Briefcases | `10001095` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Shoes - General Purpose | `10001077` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Wallets/Purses/Travel Document Holders | `10001103` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Personal Bags/Luggage/Umbrellas Other | `10001390` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Sportswear - Lower Body Wear | `10001343` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Personal Bags | `10001096` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Luggage/Suitcases/Garment Carriers | `10001099` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Jackets/Blazers/Cardigans/Waistcoats | `10001350` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Belts/Braces/Cummerbunds | `10001326` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Shirts/Blouses/Polo Shirts/T-shirts | `10001352` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Trousers/Shorts | `10001335` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Sportswear - Belts | `10004114` | 56.1% (0.561) | Taxonomy Inferred | 0.2454 |
+| Footwear | `63010000` | 52.2% (0.522) | Taxonomy Inferred | 0.0879 |
+| General Purpose Footwear | `63010300` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Personal Carriers/Accessories | `64010200` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Upper Body Wear/Tops | `67010800` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Clothing Accessories | `67010100` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Lower Body Wear/Bottoms | `67010300` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Activewear | `67030100` | 43.8% (0.438) | Taxonomy Inferred | -0.2496 |
+| Footwear | `63000000` | 40.9% (0.409) | Taxonomy Inferred | -0.3677 |
+| Personal Accessories | `64010000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Activewear | `67030000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Clothing | `67010000` | 35.0% (0.350) | Taxonomy Inferred | -0.6209 |
+| Personal Accessories | `64000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
+| Clothing | `67000000` | 28.9% (0.289) | Taxonomy Inferred | -0.8993 |
+
+---
+
+## 10. Benin Multi-Trade Hardware & Electricals (2348011110010)
+
+| Field | Value |
+|---|---|
+| business_name | Benin Multi-Trade Hardware & Electricals |
+| vendor_id | `55a5011b-28e8-4e47-b2b1-d9182fa1edc8` |
+| user_id | `2348011110010` |
+| status | active |
+| city / state | Benin City / Edo |
+| conversation_summary | building materials and electrical supplies store Sells: generator spare parts, LED bulbs, 2.5mm copper wire. |
+| total_capabilities | 52 |
+| wallet_balance | 2000 credits |
+| created_at | 2026-08-11T23:36:58.678Z |
+
+### 10.1 Capability DNA (`vendor_capabilities`) — 52 Total
+
+| Capability Name | Capability ID | Confidence | Type | Log Odds |
+|---|---|---|---|---|
+| Switches | `10005586` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Vacuum Breakers | `10005864` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Wall Plates (Electrical) | `10005505` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Ropes/Chains/Cables (Fixings/Fasteners) | `10003167` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Special Purpose Paints | `10002462` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Glass Block (Grid Systems) | `10003925` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Roofing Other | `10002692` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Light Sockets | `10005633` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Tiles - Outdoor Ground | `10006786` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Sand - Cement | `10008064` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Cable Conduit Fittings | `10005660` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Flooring - Ceramic/Porcelain Tiles | `10002443` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Wall Coverings - Tiles | `10002431` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Household Paints | `10003874` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Circuit Breakers | `10005576` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Sockets/Receptacles/Outlets | `10005567` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Cable/Wire Conduit/Ducting/Raceways | `10005647` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Nails/Pins (Fixings/Fasteners) | `10003182` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Brick/Block | `10002525` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Cement | `10002526` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Roofing Panels/Slabs | `10002686` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Electrical Wires | `10005541` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Light Bulbs/Tubes/Light-Emitting Diodes | `10000552` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Electrical Generation Accessories/Fittings | `10008395` | 69.8% (0.698) | Taxonomy Inferred | 0.8394 |
+| Asphalt/Concrete/Masonry | `83010600` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Fixings/Fasteners Hardware | `83011900` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Lawn/Garden Tiles | `81011900` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Wall/Ceiling/Flooring Coverings | `83010100` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Painting | `83010400` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Electrical Connection | `78020500` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Electrical Distribution | `78020600` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Cabling/Wiring Management/Control | `78040100` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Backflow Prevention Devices | `79011000` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Lighting Control Components | `14010200` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Glass | `83011300` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| General Electrical Hardware | `78060100` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Electrical Generation | `78021200` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Lamps/Light Bulbs/Lighting | `14010100` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Electrical Wiring | `78040400` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Roofing | `83011700` | 54.9% (0.549) | Taxonomy Inferred | 0.1959 |
+| Building Products | `83010000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Lawn/Garden Supplies | `81010000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| General Electrical Hardware | `78060000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Plumbing/Heating/Ventilation/Air Conditioning | `79010000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Electrical Connection/Distribution | `78020000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Lighting | `14010000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Electrical Cabling/Wiring | `78040000` | 42.9% (0.429) | Taxonomy Inferred | -0.2867 |
+| Electrical Supplies | `78000000` | 34.3% (0.343) | Taxonomy Inferred | -0.6487 |
+| Building Products | `83000000` | 34.3% (0.343) | Taxonomy Inferred | -0.6487 |
+| Lawn/Garden Supplies | `81000000` | 34.3% (0.343) | Taxonomy Inferred | -0.6487 |
+| Plumbing/Heating/Ventilation/Air Conditioning | `79000000` | 34.3% (0.343) | Taxonomy Inferred | -0.6487 |
+| Lighting | `14000000` | 34.3% (0.343) | Taxonomy Inferred | -0.6487 |
+
+---
