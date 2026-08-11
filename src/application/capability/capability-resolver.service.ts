@@ -404,6 +404,7 @@ supplies.
 
 Rules:
 - Return ONLY codes from the supplied candidate list. Never invent or modify a code.
+- STRICT DOMAIN RELEVANCE: Reject any candidate that belongs to an unrelated macro domain or segment. For example, if the seller term relates to automotive spare parts, reject candidates from Computing, Video Games, Apparel, or Furniture.
 - Return an empty list when none of the candidates genuinely fit. A wrong classification is
   worse than none, because buyers will be sent to the wrong shops.
 - Prefer the plain article over a qualified variant: for "hammer", a general hammers category

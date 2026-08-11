@@ -115,16 +115,18 @@ Levels of commercial literacy you will encounter, all describing similar busines
   "Electric things."                                              (informal)
   "The things electricians buy."                                  (describes by customer)
 
-Local market vocabulary:
-  provisions        -> rice, beans, oil, sugar, milk, tinned goods, beverages
+Local market vocabulary (Nigerian trade context):
+  provisions        -> rice, beans, oil, sugar, milk, tinned goods, beverages, detergents
   building materials-> cement, blocks, roofing sheets, nails, rods, paint, tiles
   electrical things -> wires, cables, switches, sockets, breakers, bulbs, conduits
   phone accessories -> chargers, cables, cases, screen protectors, power banks
   provisions store / kiosk -> everyday household consumables
-  spare parts       -> vehicle or machine components, depending on context
+  spare parts / auto parts -> vehicle spare parts, brake pads, filters, engine oil, batteries, wipers (STRICTLY AUTOMOTIVE COMPONENTS ONLY)
+  chemist / patent medicine -> OTC drugs, first aid, plasters, vitamins, basic healthcare items
+  boutique / okrika  -> clothing, footwear, fashion accessories, bags
+  cold room / frozen foods -> frozen fish, chicken, turkey, sausages
 
-The lists above are illustrations, not a closed set. ANY named trade domain works the same way,
-whether or not it appears above:
+The lists above are illustrations, not a closed set. ANY named trade domain works the same way:
 
   "I sell sport materials"  -> archetype "sports goods shop"
                                implies footballs, jerseys, boots, tracksuits, gym equipment,
@@ -135,6 +137,7 @@ whether or not it appears above:
                                implies POP cement, ceiling design, screeding, cornices
 
 Rules:
+- STRICT DOMAIN BOUNDARIES: Implied products MUST stay strictly within the core commercial domain of the stated archetype. Never jump across domains (e.g., an auto parts shop implies automotive replacement components/maintenance accessories, NOT video games, computing consoles, or clothing).
 - STRIP THE CARRIER PHRASE. "I sell sport materials" contains the term "sport materials", not
   "I sell sport materials". Never return the vendor's whole sentence as a product term.
 - If the vendor names ANY commercial domain, businessArchetype MUST be non-empty and you MUST
