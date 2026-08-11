@@ -91,7 +91,7 @@ export interface RankedVendor {
 }
 
 /**
- * The independent signals combined into a final score (CME §13).
+ * The independent signals combined into a final score (CME §13, DAEM TDR §4).
  *
  * Kept separate rather than pre-blended so a ranking can be explained, audited and re-weighted
  * without re-running retrieval — and so a future Learning-to-Rank model has features to learn on
@@ -110,34 +110,55 @@ export interface RankingComponents {
   readonly proximity: number;
   /** Whether the vendor is currently accepting requests. */
   readonly availability: number;
+  /**
+   * Layer 2 HKGM signal: the vendor's archetype covers the target Segment
+   * (DAEM TDR §4, Tier 2). Defaults to 0 when no archetype data exists.
+   */
+  readonly archetypeAffinityMatch?: number;
+  /**
+   * Layer 1 HKGM signal: the vendor operates within the broader mission
+   * domain (DAEM TDR §4, Tier 3). Defaults to 0 when no mission applies.
+   */
+  readonly missionMatch?: number;
 }
 
 /**
- * Ranking weights (CME §13, "Weights are configurable").
+ * Ranking weights (CME §13, DAEM TDR §4 — "Weights are configurable").
  *
  * Capability dominates because a vendor who cannot supply the item is useless however reliable
  * they are. Evidence is second and rising — it is the signal that improves as the marketplace
  * runs, and CME §12 is explicit that "marketplace evidence always overrides AI assumptions" when
  * the two disagree. Expansion is deliberately small: it exists to surface non-obvious vendors,
  * not to outvote a specialist.
+ *
+ * The HKGM signals (archetypeAffinity, missionMatch) are additive boosts drawn from a small
+ * reserve, nudging archetype-covered vendors above cold-start unknowns without displacing
+ * direct capability matches.
  */
 export const DEFAULT_RANKING_WEIGHTS = {
-  capabilityMatch: 0.4,
-  expansionMatch: 0.1,
-  evidenceScore: 0.3,
-  proximity: 0.15,
+  capabilityMatch: 0.35,
+  expansionMatch: 0.08,
+  evidenceScore: 0.27,
+  proximity: 0.12,
   availability: 0.05,
+  /** Layer 2 HKGM: archetype affinity coverage (DAEM TDR §4, W_L2). */
+  archetypeAffinity: 0.08,
+  /** Layer 1 HKGM: mission / human intent coverage (DAEM TDR §4, W_L1). */
+  missionMatch: 0.05,
 } as const;
 
 export type RankingWeights = typeof DEFAULT_RANKING_WEIGHTS;
 
 /**
- * Blends the component signals into a final score.
+ * Blends the component signals into a final score (CME §13, DAEM TDR §4).
  *
  * Evidence is faded in by its own confidence rather than trusted flat: an unproven vendor's
  * neutral 0.5 should neither help nor hurt them, so its weight is redistributed to capability
  * match. Without this, cold-start vendors would be permanently mid-table regardless of how well
  * they match the request.
+ *
+ * HKGM archetype and mission signals are additive: they strengthen the ranking of vendors whose
+ * archetype covers the target domain, without penalising vendors that lack archetype data.
  */
 export function combineRanking(
   components: RankingComponents,
@@ -148,15 +169,26 @@ export function combineRanking(
 
   const capabilityWeight = weights.capabilityMatch + reclaimed;
 
+  const archetypeAffinity = components.archetypeAffinityMatch ?? 0;
+  const missionMatchValue = components.missionMatch ?? 0;
+
   const total =
-    capabilityWeight + weights.expansionMatch + evidenceWeight + weights.proximity + weights.availability;
+    capabilityWeight +
+    weights.expansionMatch +
+    evidenceWeight +
+    weights.proximity +
+    weights.availability +
+    weights.archetypeAffinity +
+    weights.missionMatch;
 
   const weighted =
     components.capabilityMatch * capabilityWeight +
     components.expansionMatch * weights.expansionMatch +
     components.evidenceScore * evidenceWeight +
     components.proximity * weights.proximity +
-    components.availability * weights.availability;
+    components.availability * weights.availability +
+    archetypeAffinity * weights.archetypeAffinity +
+    missionMatchValue * weights.missionMatch;
 
   return total === 0 ? 0 : Math.min(1, Math.max(0, weighted / total));
 }

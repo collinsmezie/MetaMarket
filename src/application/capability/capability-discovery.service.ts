@@ -388,17 +388,20 @@ export class CapabilityDiscoveryService {
     declaredServices: readonly string[];
     brands: readonly string[];
   }): string {
-    const top = params.beliefs
-      .filter((belief) => belief.confidence >= 0.3)
-      .slice(0, 12)
+    // Only take top 3 high-confidence direct beliefs (confidence >= 0.7) to keep DNA summaries clean
+    const highConfidenceBeliefs = params.beliefs
+      .filter((belief) => !belief.inferred && belief.confidence >= 0.7)
+      .slice(0, 3)
       .map((belief) => belief.capability.name);
 
     const parts = [
       params.archetype.length > 0 ? params.archetype : null,
-      top.length > 0 ? `Capabilities: ${top.join(', ')}.` : null,
-      params.declaredProducts.length > 0 ? `Sells: ${params.declaredProducts.join(', ')}.` : null,
-      params.declaredServices.length > 0 ? `Services: ${params.declaredServices.join(', ')}.` : null,
-      params.brands.length > 0 ? `Brands: ${params.brands.join(', ')}.` : null,
+      params.declaredProducts.length > 0 ? `Sells: ${params.declaredProducts.slice(0, 3).join(', ')}.` : null,
+      highConfidenceBeliefs.length > 0 && params.declaredProducts.length === 0
+        ? `Capabilities: ${highConfidenceBeliefs.join(', ')}.`
+        : null,
+      params.declaredServices.length > 0 ? `Services: ${params.declaredServices.slice(0, 3).join(', ')}.` : null,
+      params.brands.length > 0 ? `Brands: ${params.brands.slice(0, 3).join(', ')}.` : null,
     ].filter((part): part is string => part !== null);
 
     return parts.join(' ');

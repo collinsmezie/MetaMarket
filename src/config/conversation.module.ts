@@ -8,6 +8,7 @@ import { MediaProcessingService } from '../application/media/media-processing.se
 import { TaxonomySeeder } from '../application/taxonomy/taxonomy-seeder.service';
 import { BusinessUnderstandingService } from '../application/capability/business-understanding.service';
 import { CapabilityDiscoveryService } from '../application/capability/capability-discovery.service';
+import { CapabilityPromotionSubscriber } from '../application/capability/capability-promotion.subscriber';
 import { CapabilityResolver } from '../application/capability/capability-resolver.service';
 import { OnboardingExtractionService } from '../application/capability/onboarding-extraction.service';
 import { VendorOnboardingService } from '../application/capability/vendor-onboarding.service';
@@ -70,6 +71,7 @@ import { AppConfigService } from './app-config.service';
     BusinessUnderstandingService,
     CapabilityResolver,
     CapabilityDiscoveryService,
+    CapabilityPromotionSubscriber,
     OnboardingExtractionService,
     VendorOnboardingService,
     EvidenceProcessor,

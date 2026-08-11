@@ -8,8 +8,17 @@ import type {
   SemanticExpansion,
 } from '../../domain/models/demand';
 import { combineRanking, needsClarification, proximityScore } from '../../domain/models/demand';
+import {
+  evaluateGraphMatch,
+  type GraphMatchResult,
+  type MerchantArchetype,
+} from '../../domain/models/hybrid-knowledge-graph';
 import type { VendorProfile } from '../../domain/models/vendor';
 import { STAGE_LOGGER, type StageLoggerPort } from '../../domain/ports/outbound/stage-logger.port';
+import {
+  TAXONOMY_REPOSITORY,
+  type TaxonomyRepositoryPort,
+} from '../../domain/ports/outbound/taxonomy-repository.port';
 import {
   VENDOR_REPOSITORY,
   type VendorRepositoryPort,
@@ -44,17 +53,17 @@ export interface MatchRequest {
 
 export type MatchResult =
   | {
-    readonly outcome: 'ranked';
-    readonly resolved: ResolvedDemand;
-    readonly vendors: readonly RankedVendor[];
-  }
+      readonly outcome: 'ranked';
+      readonly resolved: ResolvedDemand;
+      readonly vendors: readonly RankedVendor[];
+    }
   /** Ambiguity would materially change the vendor set; no retrieval performed (CME Test 2). */
   | {
-    readonly outcome: 'clarification_needed';
-    readonly demand: DemandObject;
-    readonly question: string;
-    readonly options: readonly string[];
-  }
+      readonly outcome: 'clarification_needed';
+      readonly demand: DemandObject;
+      readonly question: string;
+      readonly options: readonly string[];
+    }
   | { readonly outcome: 'no_capability'; readonly demand: DemandObject };
 
 /**
@@ -71,11 +80,12 @@ export type MatchResult =
 export class CapabilityMatchingService {
   constructor(
     @Inject(VENDOR_REPOSITORY) private readonly vendors: VendorRepositoryPort,
+    @Inject(TAXONOMY_REPOSITORY) private readonly taxonomy: TaxonomyRepositoryPort,
     @Inject(STAGE_LOGGER) private readonly logger: StageLoggerPort,
     private readonly understanding: DemandUnderstandingService,
     private readonly resolver: CapabilityResolver,
     private readonly evidence: EvidenceQueryService,
-  ) { }
+  ) {}
 
   async match(request: MatchRequest): Promise<MatchResult> {
     const startedAt = Date.now();
@@ -214,13 +224,39 @@ export class CapabilityMatchingService {
    * Retrieves a broad candidate set (CME §11: "This stage intentionally retrieves a broad
    * candidate set. No ranking occurs here.").
    */
+  /**
+   * Retrieves a broad candidate set (CME §11: "This stage intentionally retrieves a broad
+   * candidate set. No ranking occurs here.").
+   *
+   * Extends retrieval across exact brick codes and ancestor taxonomy nodes (family/segment)
+   * to ensure DAEM Layer 2 Archetype Expansion candidates enter the scoring pool.
+   */
   private async retrieveCandidates(resolved: ResolvedDemand): Promise<Map<string, VendorProfile>> {
-    const all = [...resolved.primaryCapabilities, ...resolved.expandedCapabilities];
+    const primaryCaps = resolved.primaryCapabilities;
+    const expandedCaps = resolved.expandedCapabilities;
+
+    const targetCapabilityIds = new Set<string>();
+    for (const cap of primaryCaps) {
+      targetCapabilityIds.add(cap.id);
+      try {
+        const node = await this.taxonomy.findByCode(cap.id);
+        if (node?.familyCode) targetCapabilityIds.add(node.familyCode);
+        if (node?.segmentCode) targetCapabilityIds.add(node.segmentCode);
+      } catch {
+        // Taxonomy lookup fallback: retain primary capability id.
+      }
+    }
+
+    for (const cap of expandedCaps) {
+      targetCapabilityIds.add(cap.id);
+    }
+
+    const capIdsArray = Array.from(targetCapabilityIds);
 
     const batches = await Promise.all(
-      all.map((capability) =>
+      capIdsArray.map((capabilityId) =>
         this.vendors.findByCapability({
-          capabilityId: capability.id,
+          capabilityId,
           minConfidence: MIN_CANDIDATE_CONFIDENCE,
           limit: CANDIDATES_PER_CAPABILITY,
         }),
@@ -237,10 +273,33 @@ export class CapabilityMatchingService {
       }
     }
 
+    this.logger.stage({
+      component: COMPONENT,
+      stage: 'CandidateVendorRetrieval',
+      action: 'Retrieved candidate vendor profiles matching primary, expanded, and archetype segment capabilities',
+      input: { primaryCapabilities: primaryCaps.map((c) => c.name), queriedCapabilityIds: capIdsArray },
+      output: {
+        candidateCount: candidates.size,
+        candidates: Array.from(candidates.values()).map((p) => ({
+          vendorId: p.vendor.id,
+          businessName: p.vendor.businessName,
+          declaredProducts: p.dna.declaredProducts,
+        })),
+      },
+    });
+
     return candidates;
   }
 
-  /** Scores and orders the candidates, attaching an explanation to each (CME §13, §14). */
+  /**
+   * Scores and orders the candidates, attaching an explanation to each
+   * (CME §13, §14, DAEM TDR §4).
+   *
+   * Integrates the 3-Layer HKGM graph evaluation: each vendor is evaluated against the primary
+   * target capability's GPC Segment through `evaluateGraphMatch`. The resulting Layer 2/Layer 1
+   * signals are fed into the ranking components alongside the existing capability and evidence
+   * scores.
+   */
   private async rank(params: {
     resolved: ResolvedDemand;
     candidates: readonly VendorProfile[];
@@ -259,11 +318,42 @@ export class CapabilityMatchingService {
       subject: evidenceSubject.id,
     });
 
+    // ── HKGM Layer 3→2→1: Resolve the target Segment for graph matching ─────────────
+    // The graph match evaluates whether a vendor's archetype covers the target Segment.
+    // Resolved once per ranking pass, not per vendor (CONTRIBUTING §8.3).
+    const targetSegmentId = await this.resolveSegment(evidenceSubject.id);
+
+    const graphEvaluations: Record<string, unknown>[] = [];
+
     const ranked = candidates.map((profile) => {
       const capabilityMatch = this.coverage(profile, resolved.primaryCapabilities);
       const expansionMatch = this.coverage(profile, resolved.expandedCapabilities);
 
       const evidence = evidenceScores.get(profile.vendor.id);
+
+      // ── HKGM graph evaluation (DAEM TDR §4) ────────────────────────────────────
+      const archetype = this.inferArchetype(profile);
+      const graphResult =
+        targetSegmentId !== null
+          ? evaluateGraphMatch(
+              profile.dna.beliefs.filter((b) => b.confidence >= 0.3).map((b) => b.capability.id),
+              archetype,
+              evidenceSubject.id,
+              targetSegmentId,
+            )
+          : null;
+
+      if (graphResult !== null) {
+        graphEvaluations.push({
+          vendorId: profile.vendor.id,
+          businessName: profile.vendor.businessName,
+          tier: graphResult.tier,
+          graphScore: graphResult.score,
+          isMatch: graphResult.isMatch,
+          archetypePrimarySegment: archetype?.primarySegment ?? null,
+          targetSegmentId,
+        });
+      }
 
       const components: RankingComponents = {
         capabilityMatch,
@@ -272,31 +362,60 @@ export class CapabilityMatchingService {
         evidenceConfidence: evidence?.confidence ?? 0,
         proximity: this.proximityFor(profile, params.customerCity),
         availability: profile.vendor.status === 'active' ? 1 : 0,
+        // HKGM signals: archetype affinity and mission match (DAEM TDR §4).
+        archetypeAffinityMatch: graphResult?.tier === 'TIER_2_ARCHETYPE' ? graphResult.score : 0,
+        missionMatch: graphResult?.tier === 'TIER_3_MISSION' ? graphResult.score : 0,
       };
 
       const businessName = profile.vendor.businessName;
+      const shortName = businessName.split(' ')[0];
       const conversationSummary = profile.vendor.conversationSummary?.trim() ?? '';
       const dnaSummary = profile.dna.summary.trim();
       const declaredProducts = profile.dna.declaredProducts;
 
-      let rawDescription =
+      const rawDescription =
         conversationSummary.length > 0
           ? conversationSummary
           : dnaSummary.length > 0
             ? dnaSummary
             : declaredProducts.length > 0
-              ? `${businessName} sells ${declaredProducts.join(', ')}`
+              ? `${shortName} sells ${declaredProducts.join(', ')}`
               : null;
 
       let description: string | null = null;
       if (rawDescription !== null) {
         let cleaned = rawDescription.trim();
-        if (/^sells:\s*/i.test(cleaned)) {
-          cleaned = `${businessName} sells ${cleaned.replace(/^sells:\s*/i, '').replace(/\.$/, '')}`;
-        } else if (/^capabilities:\s*/i.test(cleaned)) {
-          cleaned = `${businessName} specializes in ${cleaned.replace(/^capabilities:\s*/i, '').replace(/\.$/, '')}`;
+
+        // Standardize leading prefixes and strip repeated business names
+        cleaned = cleaned
+          .replace(/^capabilities:\s*/i, '')
+          .replace(/^sells:\s*/i, '')
+          .replace(/^services:\s*/i, '')
+          .replace(new RegExp(`^${businessName}\\s+(specializes in|sells)\\s*`, 'i'), '')
+          .replace(new RegExp(`^${shortName}\\s+(specializes in|sells)\\s*`, 'i'), '')
+          .trim();
+
+        // Parse list items separated by comma, period or semicolon
+        const rawItems = cleaned
+          .split(/,|\.|;/)
+          .map((item) =>
+            item
+              .replace(/\s*-\s*Replacement Parts\/Accessories/i, '')
+              .replace(/\s*-\s*Other/i, '')
+              .replace(/\s*\(Automotive\)/i, '')
+              .trim(),
+          )
+          .filter((item) => item.length > 0 && !/^(capabilities|sells|services|brands):/i.test(item));
+
+        // Format a concise 2-3 line summary prioritizing top 3 core items and first name
+        if (rawItems.length > 3) {
+          const top3 = rawItems.slice(0, 3).map((item) => item.toLowerCase());
+          description = `${shortName} specializes in ${top3.join(', ')}, and related supplies.`;
+        } else if (rawItems.length > 0) {
+          description = `${shortName} specializes in ${rawItems.map((item) => item.toLowerCase()).join(', ')}.`;
+        } else {
+          description = `${shortName} offers products and services for this request.`;
         }
-        description = cleaned;
       }
 
       return {
@@ -309,11 +428,87 @@ export class CapabilityMatchingService {
         rating: '⭐⭐⭐⭐⭐',
         description,
         components,
-        reasons: this.explain(profile, resolved, components, evidence?.reasons ?? []),
+        reasons: this.explain(profile, resolved, components, evidence?.reasons ?? [], graphResult),
       };
     });
 
+    this.logger.stage({
+      component: COMPONENT,
+      stage: 'HkgmGraphEvaluation',
+      action: 'Evaluated 3-layer HKGM graph matching, archetype affinity and cross-domain suppression',
+      input: { targetCapability: evidenceSubject.name, targetSegmentId, candidateCount: candidates.length },
+      output: { evaluations: graphEvaluations },
+    });
+
     return ranked.sort((a, b) => b.score - a.score).slice(0, params.limit);
+  }
+
+  /**
+   * Resolves a GPC Brick code to its owning Segment code.
+   *
+   * Used by the HKGM graph evaluation to determine the target Segment for
+   * cross-domain suppression (DAEM TDR §4). Returns null gracefully when
+   * the taxonomy lookup fails — graph matching degrades, retrieval still works.
+   */
+  private async resolveSegment(brickCode: string): Promise<string | null> {
+    try {
+      const node = await this.taxonomy.findByCode(brickCode);
+      return node?.segmentCode ?? null;
+    } catch (error) {
+      this.logger.stageFailed({
+        component: COMPONENT,
+        stage: 'HkgmSegmentResolution',
+        input: { brickCode },
+        action: 'Could not resolve the target Segment; HKGM graph matching will be skipped this turn',
+        error,
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Infers a vendor's MerchantArchetype from their Capability DNA.
+   *
+   * This is the dynamic, autonomous archetype inference the DAEM TDR §5
+   * requires: "NO static, hardcoded dictionary or manual lookup table is
+   * maintained by developers." The archetype is derived entirely from the
+   * vendor's existing beliefs — their primary segment is the segment of
+   * their strongest capability, and affinity segments are the segments of
+   * their other confident capabilities.
+   *
+   * Returns null when the DNA is too thin to infer a meaningful archetype.
+   */
+  private inferArchetype(profile: VendorProfile): MerchantArchetype | null {
+    const confidentBeliefs = profile.dna.beliefs.filter((b) => b.confidence >= 0.3);
+    if (confidentBeliefs.length === 0) return null;
+
+    // Group capabilities by their segment prefix (first 8 digits of GPC code).
+    // GPC codes follow the pattern: Segment (8 digits) → Family → Class → Brick.
+    const segmentCounts = new Map<string, number>();
+
+    for (const belief of confidentBeliefs) {
+      if (belief.capability.domain !== 'product') continue;
+
+      // GPC brick codes embed their segment: the first characters up to the segment level.
+      // For a brick like "10003500", the segment is typically available from taxonomy.
+      // Since we cannot call the taxonomy per-vendor (that would be N queries), we use
+      // the segment prefix heuristic: GPC segments are 8 digits at level 1.
+      const segmentPrefix = belief.capability.id.substring(0, 2) + '000000';
+      segmentCounts.set(segmentPrefix, (segmentCounts.get(segmentPrefix) ?? 0) + belief.confidence);
+    }
+
+    if (segmentCounts.size === 0) return null;
+
+    // Primary segment is the one with the highest cumulative confidence.
+    const sorted = [...segmentCounts.entries()].sort((a, b) => b[1] - a[1]);
+    const primarySegment = sorted[0][0];
+    const affinitySegments = sorted.slice(1).map(([segment]) => segment);
+
+    return {
+      archetypeId: `inferred:${profile.vendor.id}`,
+      primarySegment,
+      affinitySegments,
+    };
   }
 
   /**
@@ -348,12 +543,19 @@ export class CapabilityMatchingService {
     return vendorCity.toLowerCase() === customerCity.toLowerCase() ? proximityScore(0) : proximityScore(null);
   }
 
-  /** Builds the explanation the TDR requires for every ranked vendor (CME §14). */
+  /**
+   * Builds the explanation the TDR requires for every ranked vendor
+   * (CME §14, DAEM TDR §4).
+   *
+   * Now includes HKGM-specific explanations when a vendor was surfaced through
+   * archetype affinity (Layer 2) or mission matching (Layer 1).
+   */
   private explain(
     profile: VendorProfile,
     resolved: ResolvedDemand,
     components: RankingComponents,
     evidenceReasons: readonly string[],
+    graphResult?: GraphMatchResult | null,
   ): readonly string[] {
     const reasons: string[] = [];
 
@@ -369,6 +571,12 @@ export class CapabilityMatchingService {
           ? `Likely supplies ${best.capability.name}.`
           : `Confirmed ${best.capability.name} capability.`,
       );
+    } else if (graphResult?.tier === 'TIER_2_ARCHETYPE') {
+      // HKGM Layer 2: the vendor's archetype covers this domain (DAEM TDR §7, Scenario 1).
+      reasons.push('This type of business typically stocks this item.');
+    } else if (graphResult?.tier === 'TIER_3_MISSION') {
+      // HKGM Layer 1: surfaced through mission decomposition (DAEM TDR §7, Scenario 2).
+      reasons.push('Carries items related to what you are trying to do.');
     } else if (components.expansionMatch > 0) {
       // The overlapping-inventory case: worth saying out loud, because the vendor is not an
       // obvious match and the customer deserves to know why they were surfaced.
