@@ -121,7 +121,7 @@ Local market vocabulary (Nigerian trade context):
   electrical things -> wires, cables, switches, sockets, breakers, bulbs, conduits
   phone accessories -> chargers, cables, cases, screen protectors, power banks
   provisions store / kiosk -> everyday household consumables
-  spare parts / auto parts -> vehicle spare parts, brake pads, filters, engine oil, batteries, wipers (STRICTLY AUTOMOTIVE COMPONENTS ONLY)
+  spare parts / auto parts -> vehicle spare parts, brake pads, filters, engine oil, automotive batteries, wipers (STRICTLY AUTOMOTIVE COMPONENTS ONLY)
   chemist / patent medicine -> OTC drugs, first aid, plasters, vitamins, basic healthcare items
   boutique / okrika  -> clothing, footwear, fashion accessories, bags
   cold room / frozen foods -> frozen fish, chicken, turkey, sausages

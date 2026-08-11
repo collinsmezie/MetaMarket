@@ -472,7 +472,7 @@ export class CapabilityMatchingService {
    * Returns null when the DNA is too thin to infer a meaningful archetype.
    */
   private inferArchetype(profile: VendorProfile): MerchantArchetype | null {
-    const confidentBeliefs = profile.dna.beliefs.filter((b) => b.confidence >= 0.3);
+    const confidentBeliefs = profile.dna.beliefs.filter((b) => b.confidence >= 0.5);
     if (confidentBeliefs.length === 0) return null;
 
     // Group capabilities by their segment prefix (first 8 digits of GPC code).

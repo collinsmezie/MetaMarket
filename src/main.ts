@@ -1,4 +1,4 @@
-import { lookup, resolve4, setDefaultResultOrder, setServers } from 'node:dns';
+import { setDefaultResultOrder, setServers } from 'node:dns';
 import { setDefaultAutoSelectFamily } from 'node:net';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
@@ -15,28 +15,6 @@ try {
 }
 setDefaultResultOrder('ipv4first');
 setDefaultAutoSelectFamily(false);
-
-const originalLookup = lookup;
-// Override dns.lookup so Node's internal undici fetch uses reliable DNS resolution
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(lookup as any) = function (hostname: string, options: any, callback: any) {
-  if (typeof options === 'function') {
-    callback = options;
-    options = {};
-  }
-  resolve4(hostname, (err, addresses) => {
-    if (!err && addresses && addresses.length > 0) {
-      if (typeof options === 'object' && options?.all) {
-        return callback(
-          null,
-          addresses.map((a) => ({ address: a, family: 4 })),
-        );
-      }
-      return callback(null, addresses[0], 4);
-    }
-    return originalLookup(hostname, options, callback);
-  });
-};
 
 /**
  * Application bootstrap.
