@@ -133,8 +133,11 @@ async function exportSellerRecords() {
   lines.push('---');
   lines.push('');
 
+  const statementByPhone = new Map(VENDORS.map((v) => [v.phone, { statement: v.statement, category: v.categoryType }]));
+
   vendors.forEach((v, index) => {
     const num = index + 1;
+    const info = statementByPhone.get(v.userId);
     lines.push(`## ${num}. ${v.businessName} (${v.userId})`);
     lines.push('');
     lines.push('| Field | Value |');
@@ -144,6 +147,8 @@ async function exportSellerRecords() {
     lines.push(`| user_id | \`${v.userId}\` |`);
     lines.push(`| status | ${v.status} |`);
     lines.push(`| city / state | ${v.city} / ${v.state} |`);
+    lines.push(`| original_input_statement | "${info?.statement ?? ''}" |`);
+    lines.push(`| scenario_category | ${info?.category ?? ''} |`);
     lines.push(`| conversation_summary | ${v.conversationSummary} |`);
     lines.push(`| total_capabilities | ${v.capabilities.length} |`);
     lines.push(`| wallet_balance | 2000 credits |`);

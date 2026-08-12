@@ -32,7 +32,7 @@ describe('CapabilityResolver (Generalized Domain Resolution)', () => {
 
     mockEmbeddings = {
       embed: jest.fn().mockResolvedValue([0.1, 0.2, 0.3]),
-    };
+    } as unknown as jest.Mocked<EmbeddingProviderPort>;
 
     mockLlm = {
       complete: jest.fn().mockResolvedValue({
@@ -48,7 +48,8 @@ describe('CapabilityResolver (Generalized Domain Resolution)', () => {
     mockLogger = {
       stage: jest.fn(),
       stageFailed: jest.fn(),
-    };
+      withCorrelation: jest.fn().mockReturnThis(),
+    } as unknown as jest.Mocked<StageLoggerPort>;
 
     resolver = new CapabilityResolver(
       mockTaxonomy,
