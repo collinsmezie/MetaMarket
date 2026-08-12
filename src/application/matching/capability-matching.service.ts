@@ -373,36 +373,38 @@ export class CapabilityMatchingService {
       const dnaSummary = profile.dna.summary.trim();
       const declaredProducts = profile.dna.declaredProducts;
 
-      const rawDescription =
-        conversationSummary.length > 0
-          ? conversationSummary
-          : dnaSummary.length > 0
-            ? dnaSummary
-            : declaredProducts.length > 0
-              ? `${shortName} sells ${declaredProducts.join(', ')}`
-              : null;
+      // Extract vendor archetype from conversationSummary or dnaSummary (portion before technical lists)
+      const summarySource = conversationSummary.length > 0 ? conversationSummary : dnaSummary;
+      let archetypeText = summarySource
+        ? summarySource.split(/\s+(?:Sells|Capabilities|Services|Brands):/i)[0].trim()
+        : '';
+
+      if (!archetypeText && declaredProducts.length > 0) {
+        archetypeText = declaredProducts.join(', ');
+      }
 
       let description: string | null = null;
-      if (rawDescription !== null) {
-        let cleaned = rawDescription.trim();
-
-        // Standardize full business name to short name prefix while keeping the full capability overview
-        if (new RegExp(`^${businessName}`, 'i').test(cleaned)) {
-          cleaned = cleaned.replace(new RegExp(`^${businessName}`, 'i'), shortName);
-        } else if (!new RegExp(`^${shortName}`, 'i').test(cleaned)) {
-          cleaned = cleaned
-            .replace(/^capabilities:\s*/i, '')
-            .replace(/^sells:\s*/i, '')
-            .replace(/^services:\s*/i, '')
-            .trim();
-          cleaned = `${shortName} specializes in ${cleaned.toLowerCase()}`;
-        }
-
-        // Clean up internal technical suffixes if present
-        cleaned = cleaned
+      if (archetypeText.length > 0) {
+        let cleaned = archetypeText
+          .replace(/\.+$/, '')
           .replace(/\s*-\s*Replacement Parts\/Accessories/gi, '')
           .replace(/\s*-\s*Other/gi, '')
-          .replace(/\s*\(Automotive\)/gi, '');
+          .replace(/\s*\(Automotive\)/gi, '')
+          .trim();
+
+        const specPrefix = new RegExp(`^(?:${businessName}|${shortName})\\s+specializes\\s+in\\s+`, 'i');
+        const shortPrefix = new RegExp(`^(?:${businessName}|${shortName})\\s+`, 'i');
+
+        if (specPrefix.test(cleaned)) {
+          cleaned = `${shortName} specializes in ${cleaned.replace(specPrefix, '')}`;
+        } else if (shortPrefix.test(cleaned)) {
+          cleaned = `${shortName} specializes in ${cleaned.replace(shortPrefix, '')}`;
+        } else {
+          cleaned = cleaned
+            .replace(/^(?:specializes\s+in|sells|capabilities|services):\s*/i, '')
+            .trim();
+          cleaned = `${shortName} specializes in ${cleaned}`;
+        }
 
         if (!cleaned.endsWith('.')) {
           cleaned += '.';
