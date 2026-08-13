@@ -60,7 +60,7 @@ Meta's WhatsApp Cloud API automatically expires typing status indicators after *
 1. **Heartbeat Timer:** MCOS **MUST** maintain an active processing timer for turns whose execution exceeds 25 seconds (e.g., complex multi-vendor capability fan-out or deep RAG lookups).
 2. **Proactive Progress Notification:** If active processing reaches **25 seconds** without a completed response:
    * MCOS **MUST** dispatch an interim progress update message to the user before the 25s Meta TTL expires.
-   * *Required Copy Standard:* `"I am still working hard to find the absolute best options for your request! Thank you so much for your patience—I will have your results ready in just a moment."`
+   * *Required Copy Standard:* `"I'm still working on your request! Thank you so much for your patience—I'll have your results ready in a moment."`
 3. **Re-triggering Typing Status:** After sending the 25-second interim update message (which clears the initial typing indicator), MCOS **MUST** immediately issue a new typing indicator request if processing is continuing into a second phase, keeping the visual indicator active.
 4. **Lock TTL Bounding:** The heartbeat timer MUST operate strictly within the bounds of `CONVERSATION_LOCK_TTL_MS` (30 seconds) (`CONTRIBUTING §9.2`, `§9.6`) to prevent worker race conditions.
 
@@ -68,15 +68,11 @@ Meta's WhatsApp Cloud API automatically expires typing status indicators after *
 
 ## 4. Technical & Architectural Specification
 
-### 4.1 Domain Port Interface (`domain/ports/outbound/typing-indicator.port.ts`)
+### 4.1 Channel Notifier Port Extension (`domain/ports/outbound/channel-notifier.port.ts`)
 
-Following `CONTRIBUTING §3.5` and `§6.4`, a dedicated typing indicator capability contract will be established:
+Instead of creating a redundant standalone port and registry, the existing `ChannelNotifierPort` contract is extended with a best-effort `indicateTyping` method (`CONTRIBUTING §3.5`, `§6.3`, `§8.3`):
 
 ```typescript
-import type { Channel } from '../../models/channel';
-
-export const TYPING_INDICATOR_PORT = Symbol('TypingIndicatorPort');
-
 export interface TypingTarget {
   readonly channel: Channel;
   readonly address: string;
@@ -84,17 +80,15 @@ export interface TypingTarget {
   readonly messageId?: string;
 }
 
-export interface TypingIndicatorResult {
-  readonly success: boolean;
-  readonly error?: string;
-}
-
-export interface TypingIndicatorPort {
+export interface ChannelNotifierPort {
+  readonly channel: Channel;
+  send(target: DeliveryTarget, response: Response): Promise<DeliveryResult>;
+  
   /**
-   * Triggers a 'typing...' status on the target channel if supported.
-   * Must never throw; returns an outcome result.
+   * Optional best-effort signal to display 'typing...' status on supported channels.
+   * Default implementation for channels without typing support is a silent no-op.
    */
-  showTyping(target: TypingTarget): Promise<TypingIndicatorResult>;
+  indicateTyping?(target: TypingTarget): Promise<void>;
 }
 ```
 
@@ -157,7 +151,7 @@ Inside `TurnProcessor.process()`:
    * Existing workflow state machines (`Triage`, `VendorOnboarding`, `BuyerSearch`, `Recharge`) MUST NOT be altered or impacted.
    * `TurnProcessor` return signatures (`TurnOutcome`) remain unchanged.
 2. **Channel Neutrality:**
-   * Channels lacking typing indicator support (e.g. SMS, Voice, CLI) resolve `showTyping` as `{ success: true }` instantly without side-effects (`CONTRIBUTING §6.3`).
+   * Channels lacking typing indicator support (e.g. SMS, Voice, CLI) resolve `indicateTyping` as `{ success: true }` instantly without side-effects (`CONTRIBUTING §6.3`).
 3. **Observability & Logging (`CONTRIBUTING §12.5`):**
    * Typing indicator actions must log under `COMPONENT = 'MCOS'` and `STAGE = 'TurnProcessor:Typing'` using the mandatory format:
      * **Input:** `{ conversationId, channel, messageId }`
@@ -176,7 +170,7 @@ Before merging any implementation of this specification, the following verificat
   - Typing indicator is called upon starting an active turn.
   - 25s timeout triggers interim progress notification with empathetic copy.
   - Internal processing errors trigger the empathetic pleading error message and clear typing status.
-  - Non-supported channels handle `showTyping` gracefully.
+  - Non-supported channels handle `indicateTyping` gracefully.
 - [ ] **Fake Ports (§15.4):** `FakeTypingIndicatorAdapter` implemented for testing without real network calls.
 - [ ] **Quality Gate (§16):**
   - `npm run lint` clean
