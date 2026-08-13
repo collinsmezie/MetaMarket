@@ -1,4 +1,4 @@
-import { setDefaultResultOrder, setServers } from 'node:dns';
+import { setDefaultResultOrder } from 'node:dns';
 import { setDefaultAutoSelectFamily } from 'node:net';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
@@ -7,12 +7,7 @@ import * as express from 'express';
 import { AppModule } from './app.module';
 import { AppConfigService } from './config/app-config.service';
 
-// Enforce reliable DNS servers (8.8.8.8, 1.1.1.1) and IPv4 resolution across Nest and native fetch
-try {
-  setServers(['8.8.8.8', '1.1.1.1']);
-} catch {
-  // Ignore if setServers fails in constrained environments
-}
+// Enforce IPv4 resolution across Nest and native fetch to prevent IPv6 timeout hangs
 setDefaultResultOrder('ipv4first');
 setDefaultAutoSelectFamily(false);
 

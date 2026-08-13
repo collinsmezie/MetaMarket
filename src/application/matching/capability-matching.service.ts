@@ -413,13 +413,19 @@ export class CapabilityMatchingService {
         description = cleaned;
       }
 
+      // DAEM TDR §4: Cross-Domain Protection
+      // If a vendor has no direct capability match and its archetype has zero edge connection
+      // to the target segment (isMatch is false / tier is CROSS_DOMAIN), force final score to 0.0.
+      const isCrossDomainSuppressed = capabilityMatch === 0 && graphResult !== null && !graphResult.isMatch;
+      const finalScore = isCrossDomainSuppressed ? 0.0 : combineRanking(components);
+
       return {
         vendorId: profile.vendor.id,
         businessName: profile.vendor.businessName,
         phone: profile.vendor.userId,
         city: profile.vendor.location?.city ?? null,
         state: profile.vendor.location?.state ?? null,
-        score: combineRanking(components),
+        score: finalScore,
         rating: '⭐⭐⭐⭐⭐',
         description,
         components,
@@ -435,7 +441,10 @@ export class CapabilityMatchingService {
       output: { evaluations: graphEvaluations },
     });
 
-    return ranked.sort((a, b) => b.score - a.score).slice(0, params.limit);
+    return ranked
+      .filter((vendor) => vendor.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, params.limit);
   }
 
   /**
@@ -474,7 +483,12 @@ export class CapabilityMatchingService {
    * Returns null when the DNA is too thin to infer a meaningful archetype.
    */
   private inferArchetype(profile: VendorProfile): MerchantArchetype | null {
-    const confidentBeliefs = profile.dna.beliefs.filter((b) => b.confidence >= 0.5);
+    // Include direct beliefs or inferred beliefs with confidence >= 0.25 for archetype inference
+    // so broad vendors onboarded with informal statements (e.g. "I sell sports materials")
+    // have their archetype derived accurately without being wrongly assigned null/CROSS_DOMAIN.
+    const confidentBeliefs = profile.dna.beliefs.filter(
+      (b) => (!b.inferred && b.confidence >= 0.3) || b.confidence >= 0.25,
+    );
     if (confidentBeliefs.length === 0) return null;
 
     // Group capabilities by their segment prefix (first 8 digits of GPC code).
@@ -485,9 +499,6 @@ export class CapabilityMatchingService {
       if (belief.capability.domain !== 'product') continue;
 
       // GPC brick codes embed their segment: the first characters up to the segment level.
-      // For a brick like "10003500", the segment is typically available from taxonomy.
-      // Since we cannot call the taxonomy per-vendor (that would be N queries), we use
-      // the segment prefix heuristic: GPC segments are 8 digits at level 1.
       const segmentPrefix = belief.capability.id.substring(0, 2) + '000000';
       segmentCounts.set(segmentPrefix, (segmentCounts.get(segmentPrefix) ?? 0) + belief.confidence);
     }
