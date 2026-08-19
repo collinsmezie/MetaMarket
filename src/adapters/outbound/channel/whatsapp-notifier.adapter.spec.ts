@@ -188,3 +188,41 @@ describe('WhatsAppNotifier send deadline', () => {
     expect(calls.length).toBeGreaterThan(1);
   });
 });
+
+describe('WhatsAppNotifier indicateTyping', () => {
+  it('dispatches typing indicator payload to Meta Graph API', async () => {
+    const { notifier, calls } = build([{ status: 200 }]);
+
+    await notifier.indicateTyping({
+      channel: 'whatsapp',
+      address: '+2348012345678',
+      conversationId: 'conv_1',
+      messageId: 'wamid.inbound123',
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toEqual({
+      messaging_product: 'whatsapp',
+      status: 'read',
+      message_id: 'wamid.inbound123',
+      typing_indicator: {
+        type: 'text',
+      },
+    });
+  });
+
+  it('handles error response best-effort without throwing', async () => {
+    const { notifier, calls } = build([{ status: 500 }]);
+
+    await expect(
+      notifier.indicateTyping({
+        channel: 'whatsapp',
+        address: '+2348012345678',
+        conversationId: 'conv_1',
+        messageId: 'wamid.inbound123',
+      }),
+    ).resolves.not.toThrow();
+
+    expect(calls).toHaveLength(1);
+  });
+});

@@ -17,6 +17,13 @@ export interface DeliveryTarget {
   readonly conversationId: string;
 }
 
+export interface TypingTarget {
+  readonly channel: Channel;
+  readonly address: string;
+  readonly conversationId: string;
+  readonly messageId?: string;
+}
+
 export interface DeliveryResult {
   readonly delivered: boolean;
   /** Provider message id, retained for correlating later status callbacks. */
@@ -63,6 +70,12 @@ export interface ChannelNotifierPort {
    * already committed.
    */
   send(target: DeliveryTarget, response: Response): Promise<DeliveryResult>;
+
+  /**
+   * Optional best-effort signal to display 'typing...' status on supported channels.
+   * Default implementation for channels without typing support is a silent no-op.
+   */
+  indicateTyping?(target: TypingTarget): Promise<void>;
 }
 
 export const CHANNEL_NOTIFIER_REGISTRY = Symbol('ChannelNotifierRegistry');

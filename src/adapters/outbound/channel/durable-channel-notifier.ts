@@ -5,6 +5,7 @@ import type {
   ChannelNotifierPort,
   DeliveryResult,
   DeliveryTarget,
+  TypingTarget,
 } from '../../../domain/ports/outbound/channel-notifier.port';
 import type { OutboundMessageRepositoryPort } from '../../../domain/ports/outbound/outbound-message-repository.port';
 import type { StageLoggerPort } from '../../../domain/ports/outbound/stage-logger.port';
@@ -36,6 +37,12 @@ export class DurableChannelNotifier implements ChannelNotifierPort {
     private readonly ids: IdGeneratorPort,
   ) {
     this.channel = inner.channel;
+  }
+
+  async indicateTyping(target: TypingTarget): Promise<void> {
+    if (this.inner.indicateTyping !== undefined) {
+      await this.inner.indicateTyping(target);
+    }
   }
 
   async send(target: DeliveryTarget, response: Response): Promise<DeliveryResult> {

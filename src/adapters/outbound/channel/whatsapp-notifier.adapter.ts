@@ -7,6 +7,7 @@ import type {
   ChannelNotifierPort,
   DeliveryResult,
   DeliveryTarget,
+  TypingTarget,
 } from '../../../domain/ports/outbound/channel-notifier.port';
 import { STAGE_LOGGER, type StageLoggerPort } from '../../../domain/ports/outbound/stage-logger.port';
 
@@ -73,6 +74,50 @@ export class WhatsAppNotifier implements ChannelNotifierPort {
     this.accessToken = whatsapp.accessToken;
     this.phoneNumberId = whatsapp.phoneNumberId;
     this.graphVersion = whatsapp.graphApiVersion;
+  }
+
+  /**
+   * Best-effort signal to send WhatsApp typing_indicator to Meta Graph API.
+   * Never throws or impacts primary delivery flow (CONTRIBUTING §11.6).
+   */
+  async indicateTyping(target: TypingTarget): Promise<void> {
+    if (
+      this.accessToken === undefined ||
+      this.phoneNumberId === undefined ||
+      target.messageId === undefined
+    ) {
+      return;
+    }
+
+    const payload: Record<string, unknown> = {
+      messaging_product: 'whatsapp',
+      status: 'read',
+      message_id: target.messageId,
+      typing_indicator: {
+        type: 'text',
+      },
+    };
+
+    try {
+      const result = await this.attempt(payload, 5_000);
+      if (!result.ok) {
+        this.logger.stageFailed({
+          component: COMPONENT,
+          stage: `${STAGE}:TypingIndicator`,
+          input: { to: target.address, conversationId: target.conversationId },
+          action: 'Failed to send typing indicator payload to Graph API',
+          error: new Error(result.error),
+        });
+      }
+    } catch (error) {
+      this.logger.stageFailed({
+        component: COMPONENT,
+        stage: `${STAGE}:TypingIndicator`,
+        input: { to: target.address, conversationId: target.conversationId },
+        action: 'Uncaught failure while attempting typing indicator signal',
+        error: error instanceof Error ? error : new Error(String(error)),
+      });
+    }
   }
 
   async send(target: DeliveryTarget, response: Response): Promise<DeliveryResult> {

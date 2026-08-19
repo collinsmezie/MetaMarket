@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AppConfigService } from '../../config/app-config.service';
 import type { Artifact } from '../../domain/models/artifact';
 import type { Conversation } from '../../domain/models/conversation';
-import type { IncomingMessage } from '../../domain/models/incoming-message';
+import { PROVIDER_MESSAGE_ID_KEY, type IncomingMessage } from '../../domain/models/incoming-message';
 import type { Response } from '../../domain/models/response';
 import { fallbackWithReason } from '../../domain/models/response';
 import type { IntentResult } from '../../domain/models/understanding';
@@ -103,7 +103,7 @@ export class TurnProcessor {
     private readonly composer: ResponseComposer,
     private readonly vendorResponses: VendorResponseHandler,
     private readonly config: AppConfigService,
-  ) { }
+  ) {}
 
   async process(input: TurnInput): Promise<TurnOutcome> {
     const now = this.clock.now();
@@ -120,114 +120,214 @@ export class TurnProcessor {
       content: text,
     });
 
-    // A message the platform cannot read at all — media that produced no artifacts, or an
-    // unsupported part type. Say so rather than running a workflow on empty input.
-    if (text.trim().length === 0) {
-      return this.respondWithFallback(conversation, message, 'no_readable_content', null);
-    }
+    // REQ-TS-001: Trigger best-effort typing status signal when actively processing a request
+    await this.indicateTyping(conversation, message);
 
-    // A vendor answering a fanned-out request. Handled before anything else because the payload
-    // is decisive: it names the request and the answer, so continuity analysis and intent
-    // resolution could only add latency, cost, and a way for the turn to go wrong. No workflow
-    // is started, resumed or suspended — a vendor's "yes" is a marketplace action, not a
-    // conversational objective (Vendor Fan-Out TDR §10).
-    const vendorReply = await this.vendorResponses.tryHandle({
-      conversation,
-      interactivePayload: input.interactivePayload,
-      text,
-    });
+    // REQ-TS-003: 25-second heartbeat watchdog timer for long-running turns
+    const heartbeatTimer = setTimeout(async () => {
+      await this.handleProcessingHeartbeat(conversation, message);
+    }, 25_000);
 
-    if (vendorReply !== null) {
-      await this.send(conversation, vendorReply, null);
-      await this.context.touch(conversation.id, message.channel);
-      return { response: vendorReply, workflowId: null };
-    }
+    try {
+      // A message the platform cannot read at all — media that produced no artifacts, or an
+      // unsupported part type. Say so rather than running a workflow on empty input.
+      if (text.trim().length === 0) {
+        return await this.respondWithFallback(conversation, message, 'no_readable_content', null);
+      }
 
-    const relationship = await this.continuity.analyze({
-      conversation,
-      text,
-      interactivePayload: input.interactivePayload,
-      now,
-    });
+      // A vendor answering a fanned-out request. Handled before anything else because the payload
+      // is decisive: it names the request and the answer, so continuity analysis and intent
+      // resolution could only add latency, cost, and a way for the turn to go wrong. No workflow
+      // is started, resumed or suspended — a vendor's "yes" is a marketplace action, not a
+      // conversational objective (Vendor Fan-Out TDR §10).
+      const vendorReply = await this.vendorResponses.tryHandle({
+        conversation,
+        interactivePayload: input.interactivePayload,
+        text,
+      });
 
-    // Case A (continuing an existing workflow) skips intent and semantic resolution: the
-    // workflow already knows what it asked for, and re-classifying "Aba" out of context
-    // would produce nonsense (MCOS §14).
-    const needsUnderstanding = !isContinuing(relationship.relationship);
+      if (vendorReply !== null) {
+        await this.send(conversation, vendorReply, null);
+        await this.context.touch(conversation.id, message.channel);
+        return { response: vendorReply, workflowId: null };
+      }
 
-    // A tapped platform-level action already says what the user wants. Classifying "⚡ Recharge
-    // Now" with an LLM could only agree or be wrong, and this one routes to a money flow.
-    const systemAction = resolveSystemAction(input.interactivePayload);
+      const relationship = await this.continuity.analyze({
+        conversation,
+        text,
+        interactivePayload: input.interactivePayload,
+        now,
+      });
 
-    const intent =
-      systemAction !== null
-        ? intentForSystemAction(systemAction)
-        : needsUnderstanding
-          ? await this.intents.resolve({ conversation, text })
+      // Case A (continuing an existing workflow) skips intent and semantic resolution: the
+      // workflow already knows what it asked for, and re-classifying "Aba" out of context
+      // would produce nonsense (MCOS §14).
+      const needsUnderstanding = !isContinuing(relationship.relationship);
+
+      // A tapped platform-level action already says what the user wants. Classifying "⚡ Recharge
+      // Now" with an LLM could only agree or be wrong, and this one routes to a money flow.
+      const systemAction = resolveSystemAction(input.interactivePayload);
+
+      const intent =
+        systemAction !== null
+          ? intentForSystemAction(systemAction)
+          : needsUnderstanding
+            ? await this.intents.resolve({ conversation, text })
+            : null;
+
+      const semanticRequest =
+        intent !== null && this.shouldResolveSemantics(intent)
+          ? await this.semantics.resolve({ intent, text })
           : null;
 
-    const semanticRequest =
-      intent !== null && this.shouldResolveSemantics(intent)
-        ? await this.semantics.resolve({ intent, text })
-        : null;
+      const decision = await this.manager.route({
+        conversation,
+        relationship,
+        intent,
+        text,
+        interactivePayload: input.interactivePayload,
+        now,
+      });
 
-    const decision = await this.manager.route({
-      conversation,
-      relationship,
-      intent,
-      text,
-      interactivePayload: input.interactivePayload,
-      now,
+      const trigger: WorkflowTrigger = {
+        conversation,
+        recentHistory: conversation.history,
+        artifacts: input.artifacts,
+        text,
+        relationship,
+        intent,
+        semanticRequest,
+        interactivePayload: input.interactivePayload,
+        now,
+      };
+
+      const instance = await this.applyRouting(decision, conversation, trigger);
+
+      if (instance === null) {
+        const reason = decision.action === 'unroutable' ? decision.reason : 'routing_produced_no_workflow';
+        return await this.respondWithFallback(conversation, message, reason, null);
+      }
+
+      const first = await this.engine.execute(instance, trigger, this.services);
+
+      // A workflow that has worked out what the user actually wants steps aside for the one that
+      // serves it, within the same turn. Without this, a Triage instance resumed by a button tap
+      // answers on behalf of capabilities it does not implement.
+      const outcome = await this.applyHandoff(first, conversation, trigger);
+
+      const response = this.composer.compose(outcome.responses, { workflowId: outcome.instance.id });
+
+      await this.finalise({
+        conversation,
+        message,
+        instance: outcome.instance,
+        response,
+        events: [...first.events, ...(outcome === first ? [] : outcome.events)],
+        failed: outcome.failed,
+      });
+
+      const durationMs = this.clock.now().getTime() - now.getTime();
+      this.logger.stage({
+        component: COMPONENT,
+        stage: STAGE,
+        input: { conversationId: conversation.id, messageId: message.id },
+        action: `Completed turn processing in ${durationMs}ms (${(durationMs / 1000).toFixed(2)}s)`,
+        output: { workflowId: outcome.instance.id, status: outcome.instance.status },
+        durationMs,
+      });
+
+      return { response, workflowId: outcome.instance.id };
+    } catch (error) {
+      // REQ-TS-002: Catch internal errors gracefully and send empathetic pleading error message
+      return await this.handleInternalProcessingError(conversation, message, error);
+    } finally {
+      clearTimeout(heartbeatTimer);
+    }
+  }
+
+  /**
+   * Triggers a best-effort typing indicator signal to the active channel notifier (REQ-TS-001).
+   */
+  private async indicateTyping(conversation: Conversation, message: IncomingMessage): Promise<void> {
+    const channel = conversation.lastChannel;
+    if (!this.notifiers.supports(channel)) return;
+
+    const providerMessageId = (message.metadata?.[PROVIDER_MESSAGE_ID_KEY] ??
+      message.metadata?.providerMessageId ??
+      message.id) as string | undefined;
+
+    const notifier = this.notifiers.forChannel(channel);
+    if (notifier.indicateTyping !== undefined) {
+      try {
+        await notifier.indicateTyping({
+          channel,
+          address: conversation.userId,
+          conversationId: conversation.id,
+          messageId: providerMessageId,
+        });
+      } catch (error) {
+        this.logger.stageFailed({
+          component: COMPONENT,
+          stage: `${STAGE}:Typing`,
+          input: { conversationId: conversation.id, channel },
+          action: 'Failed to signal typing status indicator',
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
+      }
+    }
+  }
+
+  /**
+   * Dispatches interim progress update and refreshes typing indicator at 25s threshold (REQ-TS-003).
+   */
+  private async handleProcessingHeartbeat(
+    conversation: Conversation,
+    message: IncomingMessage,
+  ): Promise<void> {
+    this.logger.stage({
+      component: COMPONENT,
+      stage: `${STAGE}:Heartbeat`,
+      input: { conversationId: conversation.id, messageId: message.id },
+      action:
+        'Turn processing reached 25s threshold; sending interim progress update and re-triggering typing status',
+      output: { heartbeatSent: true },
     });
 
-    const trigger: WorkflowTrigger = {
-      conversation,
-      recentHistory: conversation.history,
-      artifacts: input.artifacts,
-      text,
-      relationship,
-      intent,
-      semanticRequest,
-      interactivePayload: input.interactivePayload,
-      now,
+    const heartbeatResponse: Response = {
+      text: "I'm still working on your request! Thank you for your patience—I'll have your results ready in a moment.",
+      metadata: { heartbeat: '25s_threshold_update' },
     };
 
-    const instance = await this.applyRouting(decision, conversation, trigger);
+    await this.send(conversation, heartbeatResponse, null);
+    await this.indicateTyping(conversation, message);
+  }
 
-    if (instance === null) {
-      const reason = decision.action === 'unroutable' ? decision.reason : 'routing_produced_no_workflow';
-      return this.respondWithFallback(conversation, message, reason, null);
-    }
-
-    const first = await this.engine.execute(instance, trigger, this.services);
-
-    // A workflow that has worked out what the user actually wants steps aside for the one that
-    // serves it, within the same turn. Without this, a Triage instance resumed by a button tap
-    // answers on behalf of capabilities it does not implement.
-    const outcome = await this.applyHandoff(first, conversation, trigger);
-
-    const response = this.composer.compose(outcome.responses, { workflowId: outcome.instance.id });
-
-    await this.finalise({
-      conversation,
-      message,
-      instance: outcome.instance,
-      response,
-      events: [...first.events, ...(outcome === first ? [] : outcome.events)],
-      failed: outcome.failed,
-    });
-
-    const durationMs = this.clock.now().getTime() - now.getTime();
-    this.logger.stage({
+  /**
+   * Catches internal errors during active processing, sends an empathetic error message (REQ-TS-002),
+   * which deactivates typing status and informs the user pleading for forgiveness.
+   */
+  private async handleInternalProcessingError(
+    conversation: Conversation,
+    message: IncomingMessage,
+    error: unknown,
+  ): Promise<TurnOutcome> {
+    this.logger.stageFailed({
       component: COMPONENT,
       stage: STAGE,
       input: { conversationId: conversation.id, messageId: message.id },
-      action: `Completed turn processing in ${durationMs}ms (${(durationMs / 1000).toFixed(2)}s)`,
-      output: { workflowId: outcome.instance.id, status: outcome.instance.status },
-      durationMs,
+      action:
+        'Internal processing error occurred during turn; sending empathetic error response to deactivate typing status',
+      error: error instanceof Error ? error : new Error(String(error)),
     });
 
-    return { response, workflowId: outcome.instance.id };
+    const errorResponse: Response = {
+      text: "I'm so sorry, I ran into an unexpected technical issue while processing your request. Please forgive me—could you please try sending your message again in a moment?",
+      metadata: { error: 'internal_processing_failure' },
+    };
+
+    await this.send(conversation, errorResponse, null);
+
+    return { response: errorResponse, workflowId: null };
   }
 
   /**
