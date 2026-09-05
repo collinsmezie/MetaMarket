@@ -22,7 +22,7 @@ interface EventSubjectFields {
 
 @Injectable()
 export class PrismaEvidenceRepository implements EvidenceRepositoryPort {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Stores a raw event, treating a duplicate id as a no-op.

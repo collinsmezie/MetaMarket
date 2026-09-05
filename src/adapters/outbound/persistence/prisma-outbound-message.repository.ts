@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type { Channel } from '../../../domain/models/channel';
-import { nextOutboundAttemptAt, type OutboundMessage, type OutboundMessageStatus } from '../../../domain/models/outbound-message';
+import {
+  nextOutboundAttemptAt,
+  type OutboundMessage,
+  type OutboundMessageStatus,
+} from '../../../domain/models/outbound-message';
 import type { Response } from '../../../domain/models/response';
 import type {
   EnqueuedOutboundMessage,

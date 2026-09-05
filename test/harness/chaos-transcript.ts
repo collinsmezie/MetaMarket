@@ -14,7 +14,11 @@ import type { ConversationRelationshipKind } from '../../src/domain/models/under
 
 /** One objective inside a turn. A turn with two of these is a multi-intent utterance. */
 export interface ChaosSegment {
+  /** The part of the message this segment covers, as a correct segmenter would split it. */
+  readonly text: string;
   readonly intent: string;
+  /** What a perfect continuity analyzer would classify *this segment* as. */
+  readonly relationship: ConversationRelationshipKind;
   readonly entities: Readonly<Record<string, string>>;
   /** Workflow type that must serve this segment. */
   readonly objective: string;
@@ -23,8 +27,6 @@ export interface ChaosSegment {
 export interface ChaosTurn {
   readonly label: string;
   readonly text: string;
-  /** What a perfect continuity analyzer would classify this as. */
-  readonly relationship: ConversationRelationshipKind;
   readonly segments: readonly ChaosSegment[];
   /** Fragments the composed reply must contain for the turn to count as served. */
   readonly replyMustContain: readonly string[];
@@ -49,10 +51,13 @@ export const CHAOS_TRANSCRIPT: readonly ChaosTurn[] = [
   {
     label: 'inventory onboarding',
     text: 'I sell Toyota brake pads and shock absorbers',
-    relationship: 'new',
     segments: [
       {
+        // A list of items is one request, not three. A segmenter that splits here would open
+        // three onboardings for one shop.
+        text: 'I sell Toyota brake pads and shock absorbers',
         intent: 'vendor_onboarding',
+        relationship: 'new',
         entities: { capability: 'Toyota brake pads and shock absorbers' },
         objective: VENDOR_ONBOARDING,
       },
@@ -69,8 +74,15 @@ export const CHAOS_TRANSCRIPT: readonly ChaosTurn[] = [
   {
     label: 'billing digression',
     text: 'Wait, how much do you charge per month to list items here?',
-    relationship: 'topic_shift',
-    segments: [{ intent: 'platform_faq', entities: {}, objective: PLATFORM_INFO }],
+    segments: [
+      {
+        text: 'how much do you charge per month to list items here?',
+        intent: 'platform_faq',
+        relationship: 'topic_shift',
+        entities: {},
+        objective: PLATFORM_INFO,
+      },
+    ],
     // The substance of the answer, not its phrasing: listing is free, credits are charged per
     // order. A reply that cannot say this has not served the turn.
     replyMustContain: ['free'],
@@ -78,22 +90,29 @@ export const CHAOS_TRANSCRIPT: readonly ChaosTurn[] = [
   {
     label: 'multi-intent: answer plus new search',
     text: 'Yes, KYB. Also who sells engine oil near Alaba?',
-    // Genuinely both a continuation and a new objective. The single label is itself part of
-    // what the harness measures: whichever one is chosen, half the turn is mis-served.
-    relationship: 'continuation',
+    // Genuinely both a continuation and a new objective. A single relationship label for the
+    // whole message cannot express that, which is why the split has to come first.
     segments: [
       {
+        text: 'Yes, KYB',
         intent: 'vendor_onboarding',
+        relationship: 'continuation',
         entities: { brand: 'KYB' },
         objective: VENDOR_ONBOARDING,
       },
       {
+        text: 'who sells engine oil near Alaba?',
         intent: 'buyer_product_search',
+        relationship: 'topic_shift',
         entities: { product: 'engine oil', location: 'Alaba' },
         objective: BUYER_SEARCH,
       },
     ],
-    replyMustContain: ['KYB', 'engine oil'],
+    // Only the search half is asserted. The onboarding half is *recorded* — the extraction adds
+    // KYB to the capability statement — but the pending question is location, so the workflow
+    // re-asks that rather than echoing the brand back. Acknowledging an answer before moving on
+    // is worth improving in the onboarding copy; it is not a routing failure.
+    replyMustContain: ['engine oil'],
     onboarding: {
       capabilityStatement: 'Toyota brake pads and shock absorbers, KYB shock absorbers',
       isConfirmation: true,

@@ -403,7 +403,9 @@ export class CapabilityDiscoveryService {
       highConfidenceBeliefs.length > 0 && params.declaredProducts.length === 0
         ? `Capabilities: ${highConfidenceBeliefs.join(', ')}.`
         : null,
-      params.declaredServices.length > 0 ? `Services: ${params.declaredServices.slice(0, 3).join(', ')}.` : null,
+      params.declaredServices.length > 0
+        ? `Services: ${params.declaredServices.slice(0, 3).join(', ')}.`
+        : null,
       params.brands.length > 0 ? `Brands: ${params.brands.slice(0, 3).join(', ')}.` : null,
     ].filter((part): part is string => part !== null);
 

@@ -214,9 +214,7 @@ const resolveDemand = {
     }
 
     const extractedProduct =
-      trigger.semanticRequest?.products[0]?.normalized ??
-      trigger.semanticRequest?.products[0]?.raw ??
-      null;
+      trigger.semanticRequest?.products[0]?.normalized ?? trigger.semanticRequest?.products[0]?.raw ?? null;
 
     if (result.outcome === 'no_capability') {
       const resolvedName = extractedProduct ?? 'your item';

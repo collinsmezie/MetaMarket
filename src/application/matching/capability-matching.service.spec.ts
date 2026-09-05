@@ -58,7 +58,8 @@ describe('CapabilityMatchingService Business Card Archetype Formatting', () => {
         businessName: 'Mobinco Bookshop',
         location: { city: 'Warri', state: 'Delta', country: 'Nigeria', confidence: 1 },
         status: 'active',
-        conversationSummary: 'books, stationery, educational materials, and related supplies Sells: notebooks, textbooks',
+        conversationSummary:
+          'books, stationery, educational materials, and related supplies Sells: notebooks, textbooks',
         onboardedAt: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),

@@ -4,10 +4,7 @@ import type { RankedVendor } from '../../domain/models/demand';
 import type { Vendor } from '../../domain/models/vendor';
 import { PrismaService } from '../../adapters/outbound/persistence/prisma.service';
 import { AppConfigService } from '../../config/app-config.service';
-import {
-  WALLET_DEBIT_REASONS,
-  responseDebitReference,
-} from '../../domain/models/credit';
+import { WALLET_DEBIT_REASONS, responseDebitReference } from '../../domain/models/credit';
 import {
   EVENT_PUBLISHER,
   type DomainEvent,

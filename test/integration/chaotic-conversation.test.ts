@@ -59,22 +59,42 @@ describe('Chaotic conversation replay', () => {
     }
   });
 
-  it('records the current gaps: an unanswerable digression and a dropped second objective', () => {
+  it('answers a digression and offers the way back to the parked objective', () => {
     for (const scorecard of scorecards) {
-      const [, digression, multiIntent] = scorecard.turns;
+      const digression = scorecard.turns[1];
 
-      // GAP-1: nothing claims a pricing intent, so routing is unroutable and the turn gets the
-      // fallback envelope instead of an answer.
-      expect(digression.objectivesDropped).toEqual(['PlatformInfo']);
-      expect(digression.reply).toContain('Welcome to MetaMarket');
+      expect(digression.objectivesServed).toContain('PlatformInfo');
+      expect(digression.replyMissing).toEqual([]);
+      // Parked, not abandoned, and the user is told how to return to it.
+      expect(digression.reply).toContain('carry on');
+    }
+  });
 
-      // GAP-2: one turn, one routing decision — the buyer search half is dropped entirely.
-      expect(multiIntent.objectivesDropped).toEqual(['BuyerSearch']);
+  it('serves both objectives in a multi-intent turn', () => {
+    for (const scorecard of scorecards) {
+      const multiIntent = scorecard.turns[2];
 
-      // GAP-3: the cause. `needsUnderstanding = !isContinuing(...)` means a continuation never
-      // reaches intent resolution, so the second objective is not merely mis-routed — it is
-      // never classified at all.
-      expect(multiIntent.llmOperations).not.toContain('intent_resolution');
+      expect(multiIntent.objectivesServed).toEqual(['VendorOnboarding', 'BuyerSearch']);
+      expect(multiIntent.replyMissing).toEqual([]);
+
+      // The mechanism, not just the outcome: the message is split, and each part gets its own
+      // continuity read. Asserting this stops a future change from producing the right answer
+      // by luck — say, by classifying the whole turn as a search.
+      expect(multiIntent.llmOperations).toContain('utterance_segmentation');
+      expect(
+        multiIntent.llmOperations.filter((operation) => operation === 'continuity_analysis'),
+      ).toHaveLength(2);
+    }
+  });
+
+  it('drops nothing across the transcript, at a bounded cost', () => {
+    for (const scorecard of scorecards) {
+      expect(scorecard.objectivesDropped).toEqual([]);
+
+      // Segmentation multiplies the per-turn work, so cost is a first-class result (TDR §7).
+      // The ceiling is here to catch a routing change that fans out without bound, not to
+      // pin an exact number.
+      expect(scorecard.llmCallCount).toBeLessThanOrEqual(20);
     }
   });
 });

@@ -159,3 +159,54 @@ export const semanticJsonSchema = {
   ],
   additionalProperties: false,
 } as const;
+
+// ── Utterance segmentation ───────────────────────────────────────────────────────────
+
+/**
+ * Splits one message into the objectives it carries.
+ *
+ * Separate from intent resolution on purpose: this stage decides *how many* things the user
+ * asked for, and only then does each part get classified. Merging the two would recreate the
+ * limitation it exists to remove — a single label for a message that carried two requests.
+ */
+export const segmentationSchema = z.object({
+  segments: z
+    .array(
+      z.object({
+        text: z.string().min(1),
+        /** Short label for logs and for the reply's ordering, not for routing. */
+        summary: z.string(),
+      }),
+    )
+    .min(1),
+  reasoning: z.string(),
+});
+
+export type SegmentationOutput = z.infer<typeof segmentationSchema>;
+
+export const segmentationJsonSchema = {
+  type: 'object',
+  properties: {
+    segments: {
+      type: 'array',
+      description:
+        'The message split into self-contained requests, in the order the user said them. One entry when the message carries a single request.',
+      items: {
+        type: 'object',
+        properties: {
+          text: {
+            type: 'string',
+            description:
+              "The user's own words for this part, rewritten only as far as needed to stand alone.",
+          },
+          summary: { type: 'string', description: 'Three or four words naming this request.' },
+        },
+        required: ['text', 'summary'],
+        additionalProperties: false,
+      },
+    },
+    reasoning: { type: 'string', description: 'One short sentence explaining the split.' },
+  },
+  required: ['segments', 'reasoning'],
+  additionalProperties: false,
+} as const;

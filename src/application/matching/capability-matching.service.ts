@@ -276,7 +276,8 @@ export class CapabilityMatchingService {
     this.logger.stage({
       component: COMPONENT,
       stage: 'CandidateVendorRetrieval',
-      action: 'Retrieved candidate vendor profiles matching primary, expanded, and archetype segment capabilities',
+      action:
+        'Retrieved candidate vendor profiles matching primary, expanded, and archetype segment capabilities',
       input: { primaryCapabilities: primaryCaps.map((c) => c.name), queriedCapabilityIds: capIdsArray },
       output: {
         candidateCount: candidates.size,
@@ -400,9 +401,7 @@ export class CapabilityMatchingService {
         } else if (shortPrefix.test(cleaned)) {
           cleaned = `${shortName} specializes in ${cleaned.replace(shortPrefix, '')}`;
         } else {
-          cleaned = cleaned
-            .replace(/^(?:specializes\s+in|sells|capabilities|services):\s*/i, '')
-            .trim();
+          cleaned = cleaned.replace(/^(?:specializes\s+in|sells|capabilities|services):\s*/i, '').trim();
           cleaned = `${shortName} specializes in ${cleaned}`;
         }
 

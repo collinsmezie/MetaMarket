@@ -101,9 +101,11 @@ class CapturingRegistry implements ChannelNotifierRegistryPort {
 /**
  * An LLM that answers each turn correctly, by construction.
  *
- * `intent_resolution` can only return one intent, because that is all the schema allows — the
- * oracle does not get to cheat around a limitation the platform has. When a turn carries two
- * segments, this returns the first and the harness records what became of the second.
+ * Segment-aware: once the platform splits a message, every later stage is asked about one part
+ * at a time, so the oracle answers about whichever part it was handed. It finds that by looking
+ * for a segment's text in the prompt — crude, but it keeps the fixtures readable and it cannot
+ * accidentally leak the answer for a *different* segment, which is the failure that would make
+ * the whole measurement meaningless.
  */
 class OracleLlm implements LlmService {
   turn: ChaosTurn | null = null;
@@ -113,7 +115,7 @@ class OracleLlm implements LlmService {
     this.operations.push(req.operation);
 
     return {
-      data: validate(this.payloadFor(req.operation)),
+      data: validate(this.payloadFor(req)),
       provider: 'openai',
       model: 'oracle',
       latencyMs: 1,
@@ -121,17 +123,44 @@ class OracleLlm implements LlmService {
     };
   }
 
-  private payloadFor(operation: string): unknown {
+  /** Everything the caller put in the prompt, for matching a segment against it. */
+  private promptOf(req: StructuredRequest): string {
+    return req.messages
+      .filter((message) => message.role === 'user')
+      .map((message) => message.content)
+      .join('\n')
+      .toLowerCase();
+  }
+
+  private payloadFor(req: StructuredRequest): unknown {
+    const operation = req.operation;
     const turn = this.turn;
     if (turn === null) throw new Error(`OracleLlm asked for "${operation}" with no turn set`);
 
-    const primary = turn.segments[0];
+    const prompt = this.promptOf(req);
+
+    // The segment this call is about. Longest match first, so "Yes, KYB" cannot win against a
+    // segment whose text merely contains it.
+    const primary =
+      [...turn.segments]
+        .sort((a, b) => b.text.length - a.text.length)
+        .find((segment) => prompt.includes(segment.text.toLowerCase())) ?? turn.segments[0];
+
     const search = turn.segments.find((segment) => segment.objective === BUYER_SEARCH);
 
     switch (operation) {
+      case 'utterance_segmentation':
+        return {
+          segments: turn.segments.map((segment) => ({
+            text: segment.text,
+            summary: segment.objective,
+          })),
+          reasoning: `oracle: ${turn.label}`,
+        };
+
       case 'continuity_analysis':
         return {
-          relationship: turn.relationship,
+          relationship: primary.relationship,
           confidence: 0.95,
           // Left empty deliberately: naming an id here would hand the platform the answer to
           // the discovery problem the harness is measuring.
@@ -332,9 +361,9 @@ export class ChaosHarness {
       .map((entry) => entry.response.text ?? '')
       .join('\n');
 
-    const instances = (
-      await this.prisma.workflowInstance.findMany({ orderBy: { createdAt: 'asc' } })
-    ).map((row) => ({ type: row.workflowType, status: row.status, state: row.currentState }));
+    const instances = (await this.prisma.workflowInstance.findMany({ orderBy: { createdAt: 'asc' } })).map(
+      (row) => ({ type: row.workflowType, status: row.status, state: row.currentState }),
+    );
 
     const objectivesExpected = turn.segments.map((segment) => segment.objective);
     const present = new Set(instances.map((instance) => instance.type));
@@ -423,7 +452,7 @@ export function formatScorecard(scorecard: Scorecard): string {
       `    served:  ${turn.objectivesServed.join(', ') || '(none)'}`,
       `    dropped: ${turn.objectivesDropped.join(', ') || '(none)'}`,
       `    missing reply fragments: ${turn.replyMissing.join(', ') || '(none)'}`,
-      `    reply:   ${turn.reply.replace(/\s+/g, ' ').slice(0, 140)}`,
+      `    reply:   ${turn.reply.replace(/\s+/g, ' ').slice(0, 320)}`,
       `    llm: ${turn.llmOperations.join(' → ') || '(none)'}`,
       `    workflows: ${turn.instances.map((i) => `${i.type}:${i.status}@${i.state}`).join(', ') || '(none)'}`,
     );

@@ -51,13 +51,7 @@ describe('CapabilityResolver (Generalized Domain Resolution)', () => {
       withCorrelation: jest.fn().mockReturnThis(),
     } as unknown as jest.Mocked<StageLoggerPort>;
 
-    resolver = new CapabilityResolver(
-      mockTaxonomy,
-      mockServices,
-      mockEmbeddings,
-      mockLlm,
-      mockLogger,
-    );
+    resolver = new CapabilityResolver(mockTaxonomy, mockServices, mockEmbeddings, mockLlm, mockLogger);
   });
 
   it('uses contextualized query embedding when archetype is provided', async () => {

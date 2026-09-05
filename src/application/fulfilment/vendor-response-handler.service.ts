@@ -57,9 +57,17 @@ export class VendorResponseHandler {
       const pending = await this.distribution.findPendingDelivery(vendor.id);
       if (pending !== null) {
         const input = params.text.trim().toLowerCase();
-        if (/^(1|3|yes|i can get it|yes, i have it|1\.|3\.)/i.test(input) || input.includes('have it') || input.includes('can get it')) {
+        if (
+          /^(1|3|yes|i can get it|yes, i have it|1\.|3\.)/i.test(input) ||
+          input.includes('have it') ||
+          input.includes('can get it')
+        ) {
           action = { requestId: pending.requestId, accepted: true };
-        } else if (/^(2|4|5|no|refer|2\.|4\.|5\.)/i.test(input) || input.includes("don't have") || input.includes("not my line")) {
+        } else if (
+          /^(2|4|5|no|refer|2\.|4\.|5\.)/i.test(input) ||
+          input.includes("don't have") ||
+          input.includes('not my line')
+        ) {
           action = { requestId: pending.requestId, accepted: false };
         }
       }

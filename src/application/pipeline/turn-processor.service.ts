@@ -7,7 +7,7 @@ import type { Response } from '../../domain/models/response';
 import { fallbackWithReason } from '../../domain/models/response';
 import type { IntentResult } from '../../domain/models/understanding';
 import { isContinuing } from '../../domain/models/understanding';
-import type { WorkflowInstance } from '../../domain/models/workflow-instance';
+import { canResume, type WorkflowInstance } from '../../domain/models/workflow-instance';
 import {
   CHANNEL_NOTIFIER_REGISTRY,
   isAccepted,
@@ -34,6 +34,7 @@ import {
   WORKFLOW_REPOSITORY,
   type WorkflowRepositoryPort,
 } from '../../domain/ports/outbound/workflow-repository.port';
+import { encodeActionPayload } from '../../domain/workflows/action-payload';
 import { ConversationPolicyEngine } from '../../domain/workflows/conversation-policy';
 import type { WorkflowTrigger } from '../../domain/workflows/workflow-definition';
 import { WorkflowEngine, type WorkflowExecutionOutcome } from '../../domain/workflows/workflow-engine';
@@ -46,10 +47,14 @@ import { ResponseComposer } from '../response/response-composer.service';
 import { ConversationContinuityAnalyzer } from '../understanding/continuity-analyzer.service';
 import { IntentResolutionService } from '../understanding/intent-resolution.service';
 import { SemanticResolutionService } from '../understanding/semantic-resolution.service';
+import { UtteranceSegmentationService, type UtteranceSegment } from '../understanding/segmentation.service';
 import { WORKFLOW_SERVICES, type WorkflowServiceRegistry } from './workflow-services';
 
 const COMPONENT = 'MCOS';
 const STAGE = 'TurnProcessor';
+
+/** Statuses that mean the objective is over and nothing should be treated as in focus. */
+const TERMINAL_STATUSES: readonly string[] = ['completed', 'cancelled', 'archived', 'failed'];
 
 export interface TurnInput {
   readonly message: IncomingMessage;
@@ -94,6 +99,7 @@ export class TurnProcessor {
     @Inject(WORKFLOW_SERVICES) private readonly services: WorkflowServiceRegistry,
     private readonly context: ConversationContextManager,
     private readonly continuity: ConversationContinuityAnalyzer,
+    private readonly segmenter: UtteranceSegmentationService,
     private readonly intents: IntentResolutionService,
     private readonly semantics: SemanticResolutionService,
     private readonly definitions: WorkflowDefinitionRegistry,
@@ -152,97 +158,227 @@ export class TurnProcessor {
         return { response: vendorReply, workflowId: null };
       }
 
-      const relationship = await this.continuity.analyze({
+      // One message can carry several objectives ("Yes, KYB. Also who sells engine oil near
+      // Alaba?"). Splitting first is what lets each be routed on its own; before this stage
+      // existed the turn resolved to a single intent and the rest of the message was dropped.
+      const segments = await this.segmenter.segment({
         conversation,
         text,
         interactivePayload: input.interactivePayload,
-        now,
       });
 
-      // Case A (continuing an existing workflow) skips intent and semantic resolution: the
-      // workflow already knows what it asked for, and re-classifying "Aba" out of context
-      // would produce nonsense (MCOS §14).
-      const needsUnderstanding = !isContinuing(relationship.relationship);
+      const responses: Response[] = [];
+      const events: DomainEvent[] = [];
+      let last: WorkflowExecutionOutcome | null = null;
+      let failed = false;
+      let unroutableReason: string | null = null;
 
-      // A tapped platform-level action already says what the user wants. Classifying "⚡ Recharge
-      // Now" with an LLM could only agree or be wrong, and this one routes to a money flow.
-      const systemAction = resolveSystemAction(input.interactivePayload);
+      for (const segment of segments) {
+        // Segments after the first must see the registry as the previous one left it. Routing
+        // against a stale snapshot would resume a workflow that is no longer in focus, or
+        // start a second copy of one that was just created — which is why this loop is
+        // sequential rather than a Promise.all.
+        const current =
+          segment.index === 0
+            ? conversation
+            : (await this.context.load({ userId: message.userId, channel: message.channel })).conversation;
 
-      const intent =
-        systemAction !== null
-          ? intentForSystemAction(systemAction)
-          : needsUnderstanding
-            ? await this.intents.resolve({ conversation, text })
-            : null;
+        const result = await this.runSegment({
+          conversation: current,
+          segment,
+          artifacts: input.artifacts,
+          // Segmentation always returns a single segment when a payload is present, so a
+          // tapped button can never be attached to the wrong part of a message.
+          interactivePayload: input.interactivePayload,
+          now,
+        });
 
-      const semanticRequest =
-        intent !== null && this.shouldResolveSemantics(intent)
-          ? await this.semantics.resolve({ intent, text })
-          : null;
+        if ('unroutable' in result) {
+          // One unservable part must not sink the rest of the turn.
+          unroutableReason = result.unroutable;
+          continue;
+        }
 
-      const decision = await this.manager.route({
-        conversation,
-        relationship,
-        intent,
-        text,
-        interactivePayload: input.interactivePayload,
-        now,
-      });
-
-      const trigger: WorkflowTrigger = {
-        conversation,
-        recentHistory: conversation.history,
-        artifacts: input.artifacts,
-        text,
-        relationship,
-        intent,
-        semanticRequest,
-        interactivePayload: input.interactivePayload,
-        now,
-      };
-
-      const instance = await this.applyRouting(decision, conversation, trigger);
-
-      if (instance === null) {
-        const reason = decision.action === 'unroutable' ? decision.reason : 'routing_produced_no_workflow';
-        return await this.respondWithFallback(conversation, message, reason, null);
+        responses.push(...result.outcome.responses);
+        events.push(...result.outcome.events);
+        failed = failed || result.outcome.failed;
+        last = result.outcome;
       }
 
-      const first = await this.engine.execute(instance, trigger, this.services);
+      if (last === null) {
+        return await this.respondWithFallback(
+          conversation,
+          message,
+          unroutableReason ?? 'routing_produced_no_workflow',
+          null,
+        );
+      }
 
-      // A workflow that has worked out what the user actually wants steps aside for the one that
-      // serves it, within the same turn. Without this, a Triage instance resumed by a button tap
-      // answers on behalf of capabilities it does not implement.
-      const outcome = await this.applyHandoff(first, conversation, trigger);
+      // Offer the way back to whatever the user was doing before they digressed. Without this
+      // a parked objective is preserved but invisible, and the user has to remember it for us.
+      const nudge = await this.resumeNudge(conversation.id, last.instance, now);
+      if (nudge !== null) responses.push(nudge);
 
-      const response = this.composer.compose(outcome.responses, { workflowId: outcome.instance.id });
+      const response = this.composer.compose(responses, { workflowId: last.instance.id });
 
       await this.finalise({
         conversation,
         message,
-        instance: outcome.instance,
+        instance: last.instance,
         response,
-        events: [...first.events, ...(outcome === first ? [] : outcome.events)],
-        failed: outcome.failed,
+        events,
+        failed,
       });
 
       const durationMs = this.clock.now().getTime() - now.getTime();
       this.logger.stage({
         component: COMPONENT,
         stage: STAGE,
-        input: { conversationId: conversation.id, messageId: message.id },
+        input: { conversationId: conversation.id, messageId: message.id, segments: segments.length },
         action: `Completed turn processing in ${durationMs}ms (${(durationMs / 1000).toFixed(2)}s)`,
-        output: { workflowId: outcome.instance.id, status: outcome.instance.status },
+        output: {
+          segments: segments.length,
+          workflowId: last.instance.id,
+          status: last.instance.status,
+          ...(unroutableReason !== null ? { unservedSegment: unroutableReason } : {}),
+        },
         durationMs,
       });
 
-      return { response, workflowId: outcome.instance.id };
+      return { response, workflowId: last.instance.id };
     } catch (error) {
       // REQ-TS-002: Catch internal errors gracefully and send empathetic pleading error message
       return await this.handleInternalProcessingError(conversation, message, error);
     } finally {
       clearTimeout(heartbeatTimer);
     }
+  }
+
+  /**
+   * Understands, routes and executes one segment of a message.
+   *
+   * This is the whole of what a turn used to be. Extracting it is what makes a multi-objective
+   * message possible without a second copy of the understanding pipeline: each part goes
+   * through exactly the same stages, against the registry as the previous part left it.
+   */
+  private async runSegment(params: {
+    conversation: Conversation;
+    segment: UtteranceSegment;
+    artifacts: readonly Artifact[];
+    interactivePayload: string | null;
+    now: Date;
+  }): Promise<{ outcome: WorkflowExecutionOutcome } | { unroutable: string }> {
+    const { conversation, segment, interactivePayload, now } = params;
+    const text = segment.text;
+
+    const relationship = await this.continuity.analyze({
+      conversation,
+      text,
+      interactivePayload,
+      now,
+    });
+
+    // Case A (continuing an existing workflow) skips intent and semantic resolution: the
+    // workflow already knows what it asked for, and re-classifying "Aba" out of context
+    // would produce nonsense (MCOS §14).
+    const needsUnderstanding = !isContinuing(relationship.relationship);
+
+    // A tapped platform-level action already says what the user wants. Classifying "⚡ Recharge
+    // Now" with an LLM could only agree or be wrong, and this one routes to a money flow.
+    const systemAction = resolveSystemAction(interactivePayload);
+
+    const intent =
+      systemAction !== null
+        ? intentForSystemAction(systemAction)
+        : needsUnderstanding
+          ? await this.intents.resolve({ conversation, text })
+          : null;
+
+    const semanticRequest =
+      intent !== null && this.shouldResolveSemantics(intent)
+        ? await this.semantics.resolve({ intent, text })
+        : null;
+
+    const decision = await this.manager.route({
+      conversation,
+      relationship,
+      intent,
+      text,
+      interactivePayload,
+      now,
+    });
+
+    // The trigger carries the *segment's* text, not the whole message. That scoping is what
+    // stops a buyer-search product from being extracted into the onboarding instance's
+    // entities and fingerprint, which would then poison discovery on every later turn.
+    const trigger: WorkflowTrigger = {
+      conversation,
+      recentHistory: conversation.history,
+      artifacts: params.artifacts,
+      text,
+      relationship,
+      intent,
+      semanticRequest,
+      interactivePayload,
+      now,
+    };
+
+    const instance = await this.applyRouting(decision, conversation, trigger);
+
+    if (instance === null) {
+      return {
+        unroutable: decision.action === 'unroutable' ? decision.reason : 'routing_produced_no_workflow',
+      };
+    }
+
+    const first = await this.engine.execute(instance, trigger, this.services);
+
+    // A workflow that has worked out what the user actually wants steps aside for the one that
+    // serves it, within the same turn. Without this, a Triage instance resumed by a button tap
+    // answers on behalf of capabilities it does not implement.
+    const outcome = await this.applyHandoff(first, conversation, trigger);
+
+    return {
+      outcome: outcome === first ? outcome : { ...outcome, events: [...first.events, ...outcome.events] },
+    };
+  }
+
+  /**
+   * Invitation to resume a parked objective, or null when there is nothing to resume.
+   *
+   * Only offered once the turn has finished what it was doing — nudging someone back to an
+   * onboarding while they are mid-search would be interrupting them to ask about being
+   * interrupted. The button carries the workflow id, so accepting it resumes through discovery
+   * Layer 1 with no model in the loop.
+   */
+  private async resumeNudge(
+    conversationId: string,
+    instance: WorkflowInstance,
+    now: Date,
+  ): Promise<Response | null> {
+    if (!TERMINAL_STATUSES.includes(instance.status)) return null;
+
+    const suspended = await this.workflows.listByStatus(conversationId, 'suspended');
+    const resumable = suspended.filter((candidate) => canResume(candidate, now));
+
+    if (resumable.length === 0) return null;
+
+    // Most recently touched first: of several parked objectives, that is the one the user is
+    // most likely to still have in mind.
+    const [target] = [...resumable].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+
+    return {
+      text: 'Shall we carry on with what we were doing before?',
+      actions: [
+        {
+          type: 'resume',
+          title: 'Yes, continue',
+          payload: encodeActionPayload({ workflowId: target.id, action: 'resume' }),
+          ...(target.summary.length > 0 ? { description: target.summary.slice(0, 72) } : {}),
+        },
+      ],
+      metadata: { nudge: 'resume_suspended', resumeWorkflowId: target.id },
+    };
   }
 
   /**
@@ -635,7 +771,7 @@ export class TurnProcessor {
   }): Promise<void> {
     // Clear the active pointer once the objective is finished, so the next message is not
     // read as continuing something that is over.
-    if (['completed', 'cancelled', 'archived', 'failed'].includes(params.instance.status)) {
+    if (TERMINAL_STATUSES.includes(params.instance.status)) {
       await this.workflows.setActiveWorkflow(params.conversation.id, null);
     }
 

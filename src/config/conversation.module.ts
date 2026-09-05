@@ -25,6 +25,7 @@ import { TurnProcessor } from '../application/pipeline/turn-processor.service';
 import { WORKFLOW_SERVICES } from '../application/pipeline/workflow-services';
 import { ResponseComposer } from '../application/response/response-composer.service';
 import { ConversationContinuityAnalyzer } from '../application/understanding/continuity-analyzer.service';
+import { UtteranceSegmentationService } from '../application/understanding/segmentation.service';
 import { IntentResolutionService } from '../application/understanding/intent-resolution.service';
 import { SemanticResolutionService } from '../application/understanding/semantic-resolution.service';
 import { WorkflowExpirySweeper } from '../application/workflow/workflow-expiry.sweeper';
@@ -50,6 +51,7 @@ import { triageWorkflow } from '../domain/workflows/definitions/triage.workflow'
 import { vendorOnboardingWorkflow } from '../domain/workflows/definitions/vendor-onboarding.workflow';
 import { buyerSearchWorkflow } from '../domain/workflows/definitions/buyer-search.workflow';
 import { creditRechargeWorkflow } from '../domain/workflows/definitions/credit-recharge.workflow';
+import { platformInfoWorkflow } from '../domain/workflows/definitions/platform-info.workflow';
 import { WalletService } from '../application/wallet/wallet.service';
 import { WorkflowEngine } from '../domain/workflows/workflow-engine';
 import { WorkflowManager } from '../domain/workflows/workflow-manager';
@@ -84,6 +86,7 @@ import { AppConfigService } from './app-config.service';
     VendorResponseHandler,
     ResponseComposer,
     ConversationContinuityAnalyzer,
+    UtteranceSegmentationService,
     SemanticResolutionService,
     TurnProcessor,
     MessageIngestionService,
@@ -99,6 +102,10 @@ import { AppConfigService } from './app-config.service';
         registry.register(vendorOnboardingWorkflow);
         registry.register(buyerSearchWorkflow);
         registry.register(creditRechargeWorkflow);
+        // Answers questions about the platform itself. Without it a billing digression had no
+        // owner, routing came back unroutable, and a direct question about money was answered
+        // with a greeting.
+        registry.register(platformInfoWorkflow);
         registry.register(triageWorkflow);
         return registry;
       },
@@ -162,6 +169,7 @@ import { AppConfigService } from './app-config.service';
         CapabilityMatchingService,
         RequestDistributionService,
         WalletService,
+        AppConfigService,
       ],
       useFactory: (
         extraction: OnboardingExtractionService,
@@ -170,7 +178,21 @@ import { AppConfigService } from './app-config.service';
         matching: CapabilityMatchingService,
         distribution: RequestDistributionService,
         wallet: WalletService,
-      ) => ({ extraction, discovery, vendors, matching, distribution, wallet }),
+        config: AppConfigService,
+      ) => ({
+        extraction,
+        discovery,
+        vendors,
+        matching,
+        distribution,
+        wallet,
+        // Pricing passed as data, not as the config service: a workflow that could read the
+        // whole configuration would be able to branch on the channel, which MCOS §3.1 forbids.
+        credits: {
+          visibilityFee: config.credits.visibilityFee,
+          onboardingGrant: config.credits.onboardingGrant,
+        },
+      }),
     },
 
     { provide: HANDLE_INCOMING_MESSAGE, useExisting: MessageIngestionService },

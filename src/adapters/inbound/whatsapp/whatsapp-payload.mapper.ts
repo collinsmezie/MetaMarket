@@ -271,4 +271,3 @@ function parseTimestamp(timestamp: string | undefined): Date {
   const seconds = Number.parseInt(timestamp, 10);
   return Number.isFinite(seconds) ? new Date(seconds * 1_000) : new Date();
 }
-

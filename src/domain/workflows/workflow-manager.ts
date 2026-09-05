@@ -138,7 +138,11 @@ export class WorkflowManager {
     const isGreeting = /^(hi|hello|hey|good day|good morning|good evening|start|menu)$/i.test(
       input.text.trim(),
     );
-    if ((isGreeting && relationship !== 'continuation' && relationship !== 'clarification') || relationship === 'new' || relationship === 'topic_shift') {
+    if (
+      (isGreeting && relationship !== 'continuation' && relationship !== 'clarification') ||
+      relationship === 'new' ||
+      relationship === 'topic_shift'
+    ) {
       return this.startNew(input, registry);
     }
 
