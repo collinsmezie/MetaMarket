@@ -5,6 +5,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { OpenAiEmbeddingAdapter } from '../adapters/outbound/ai/openai-embedding.adapter';
 import { ChannelNotifierRegistry } from '../adapters/outbound/channel/channel-notifier.registry';
 import { TwilioSmsNotifier } from '../adapters/outbound/channel/twilio-sms-notifier.adapter';
+import { WebChannelNotifier } from '../adapters/outbound/channel/web-channel-notifier.adapter';
+import { WebStreamHub } from '../adapters/outbound/channel/web-stream.hub';
 import { WhatsAppNotifier } from '../adapters/outbound/channel/whatsapp-notifier.adapter';
 import { OutboxEventPublisher } from '../adapters/outbound/events/outbox-event-publisher';
 import { OutboxRelay } from '../adapters/outbound/events/outbox-relay.service';
@@ -158,19 +160,22 @@ import { AppConfigService } from './app-config.service';
 
     WhatsAppNotifier,
     TwilioSmsNotifier,
+    WebStreamHub,
+    WebChannelNotifier,
     PrismaOutboundMessageRepository,
     { provide: OUTBOUND_MESSAGE_REPOSITORY, useExisting: PrismaOutboundMessageRepository },
     {
       // Undecorated. The sweep is the durability mechanism and cannot be wrapped in itself.
       provide: RAW_CHANNEL_NOTIFIER_REGISTRY,
-      inject: [WhatsAppNotifier, TwilioSmsNotifier],
-      useFactory: (whatsapp: WhatsAppNotifier, sms: TwilioSmsNotifier) =>
-        new ChannelNotifierRegistry([whatsapp, sms]),
+      inject: [WhatsAppNotifier, WebChannelNotifier, TwilioSmsNotifier],
+      useFactory: (whatsapp: WhatsAppNotifier, web: WebChannelNotifier, sms: TwilioSmsNotifier) =>
+        new ChannelNotifierRegistry([whatsapp, web, sms]),
     },
     {
       provide: CHANNEL_NOTIFIER_REGISTRY,
       inject: [
         WhatsAppNotifier,
+        WebChannelNotifier,
         TwilioSmsNotifier,
         OUTBOUND_MESSAGE_REPOSITORY,
         STAGE_LOGGER,
@@ -185,6 +190,7 @@ import { AppConfigService } from './app-config.service';
       // separate services have to remember to opt into.
       useFactory: (
         whatsapp: WhatsAppNotifier,
+        web: WebChannelNotifier,
         sms: TwilioSmsNotifier,
         queue: OutboundMessageRepositoryPort,
         logger: StageLoggerPort,
@@ -192,7 +198,9 @@ import { AppConfigService } from './app-config.service';
         ids: IdGeneratorPort,
       ) =>
         new ChannelNotifierRegistry(
-          [whatsapp, sms].map((notifier) => new DurableChannelNotifier(notifier, queue, logger, clock, ids)),
+          [whatsapp, web, sms].map(
+            (notifier) => new DurableChannelNotifier(notifier, queue, logger, clock, ids),
+          ),
         ),
     },
 
@@ -228,6 +236,9 @@ import { AppConfigService } from './app-config.service';
     MEDIA_BATCH_TRACKER,
     MEDIA_DOWNLOADER_REGISTRY,
     CHANNEL_NOTIFIER_REGISTRY,
+    // Exported for the web inbound adapter, which subscribes the browser to the same bus the
+    // notifier publishes on.
+    WebStreamHub,
     EVENT_PUBLISHER,
     BullModule,
   ],

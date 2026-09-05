@@ -6,7 +6,7 @@
  * may branch on the channel value (MCOS §3.1) — adding `telegram` here must never
  * require touching a workflow.
  */
-export const CHANNELS = ['whatsapp', 'sms', 'voice', 'ussd'] as const;
+export const CHANNELS = ['whatsapp', 'web', 'sms', 'voice', 'ussd'] as const;
 
 export type Channel = (typeof CHANNELS)[number];
 
@@ -38,6 +38,19 @@ export const CHANNEL_CAPABILITIES: Readonly<Record<Channel, ChannelCapabilities>
     maxTextLength: 4096,
     // Meta renders at most 3 reply buttons; beyond that a list message is required.
     maxActions: 3,
+  },
+  // The browser is the one channel with no provider-imposed ceiling. Declaring it as the
+  // inverse of USSD is what keeps the formatter honest: if a workflow's reply only renders
+  // correctly here, that is a bug the WhatsApp path would have hidden.
+  web: {
+    supportsRichText: true,
+    supportsButtons: true,
+    supportsLists: true,
+    supportsMedia: true,
+    maxTextLength: null,
+    // The client renders actions as a list, so it is not held to WhatsApp's three-button
+    // limit. Workflows that offer more must still degrade gracefully elsewhere.
+    maxActions: 10,
   },
   sms: {
     supportsRichText: false,

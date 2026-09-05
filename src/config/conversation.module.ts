@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { WalletModule } from './wallet.module';
 import { HealthController } from '../adapters/inbound/health/health.controller';
+import { WebChannelController } from '../adapters/inbound/web/web-channel.controller';
 import { WhatsAppWebhookController } from '../adapters/inbound/whatsapp/whatsapp-webhook.controller';
 import { MediaProcessingProcessor } from '../adapters/outbound/queue/media-processing.processor';
 import { ConversationContextManager } from '../application/conversation/conversation-context.manager';
@@ -63,7 +64,7 @@ import { AppConfigService } from './app-config.service';
  */
 @Module({
   imports: [WalletModule],
-  controllers: [WhatsAppWebhookController, HealthController],
+  controllers: [WhatsAppWebhookController, WebChannelController, HealthController],
   providers: [
     ConversationContextManager,
     MediaProcessingService,

@@ -51,12 +51,31 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
+  const webOrigins = config.webClientOrigins;
+
+  if (webOrigins.length > 0) {
+    // The web client is deployed separately and is therefore always cross-origin. Credentials
+    // stay off: identity travels in the request body, not a cookie, so there is nothing for a
+    // third-party page to replay.
+    app.enableCors({
+      origin: [...webOrigins],
+      methods: ['GET', 'POST'],
+      credentials: false,
+    });
+  }
+
   app.enableShutdownHooks();
 
   await app.listen(config.port);
 
   logger.log(`MetaMarket listening on port ${config.port} (${config.nodeEnv})`);
   logger.log(`WhatsApp webhook: POST /webhooks/whatsapp`);
+  logger.log(`Web channel: POST /channels/web/messages, GET /channels/web/stream`);
+  logger.log(
+    webOrigins.length > 0
+      ? `Web CORS origins: ${webOrigins.join(', ')}`
+      : 'Web CORS disabled (set WEB_CLIENT_ORIGINS to enable browser access)',
+  );
   logger.log(`Health: GET /health`);
 }
 

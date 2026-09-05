@@ -38,6 +38,23 @@ export class AppConfigService {
     return this.get('PORT');
   }
 
+  /**
+   * Origins permitted to reach the web channel endpoints.
+   *
+   * Empty means no browser may call them. That is the safe default for a deployment that only
+   * serves WhatsApp — these routes start workflows and spend Konnet credits, so opening them
+   * to '*' to save a config line would be a real hole.
+   */
+  get webClientOrigins(): readonly string[] {
+    // `get` maps an empty string to undefined, so the schema default lands here as absent.
+    const raw = this.get('WEB_CLIENT_ORIGINS') ?? '';
+
+    return raw
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter((origin) => origin.length > 0);
+  }
+
   get logging() {
     return {
       level: this.get('LOG_LEVEL'),

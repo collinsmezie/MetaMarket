@@ -31,6 +31,11 @@ export const envSchema = z
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
     LOG_PRETTY: booleanFromString(false),
 
+    // Comma-separated origins allowed to call the web channel endpoints. The web client is
+    // deployed separately, so it is always cross-origin; an empty list disables CORS entirely
+    // rather than defaulting to '*', because these endpoints start workflows and spend credits.
+    WEB_CLIENT_ORIGINS: z.string().default(''),
+
     DATABASE_URL: z.string().url(),
     REDIS_URL: z.string().url(),
 

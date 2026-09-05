@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import type { IncomingMessage, MessagePart } from '../../../domain/models/incoming-message';
 import { PROVIDER_MESSAGE_ID_KEY } from '../../../domain/models/incoming-message';
+import { normalizePhoneNumber } from '../../../domain/models/user-identity';
+
+// Re-exported because identity normalisation moved to the domain when the web channel
+// arrived, and every inbound adapter must resolve a user the same way.
+export { normalizePhoneNumber };
 
 /**
  * Translates Meta Cloud API webhook payloads into canonical messages (ADR-001 inbound adapter).
@@ -267,13 +272,3 @@ function parseTimestamp(timestamp: string | undefined): Date {
   return Number.isFinite(seconds) ? new Date(seconds * 1_000) : new Date();
 }
 
-/**
- * Normalises a phone number to E.164 with a leading '+'.
- *
- * The user identity must be stable across channels: Meta omits the '+', Twilio includes it,
- * and treating those as different users would split one person's conversation in two.
- */
-export function normalizePhoneNumber(raw: string): string {
-  const digits = raw.replace(/[^\d]/g, '');
-  return `+${digits}`;
-}
