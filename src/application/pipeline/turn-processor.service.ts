@@ -17,6 +17,11 @@ import type {
   ConversationTurnInput,
   ConversationTurnResult,
 } from '../../domain/ports/inbound/conversation-core.port';
+import type {
+  SegmentExecutionInput,
+  SegmentExecutionResult,
+  SegmentExecutorPort,
+} from '../../domain/ports/inbound/segment-executor.port';
 import {
   ConversationEvents,
   EVENT_PUBLISHER,
@@ -52,7 +57,7 @@ import { ResponseComposer } from '../response/response-composer.service';
 import { ConversationContinuityAnalyzer } from '../understanding/continuity-analyzer.service';
 import { IntentResolutionService } from '../understanding/intent-resolution.service';
 import { SemanticResolutionService } from '../understanding/semantic-resolution.service';
-import { UtteranceSegmentationService, type UtteranceSegment } from '../understanding/segmentation.service';
+import { UtteranceSegmentationService } from '../understanding/segmentation.service';
 import { WORKFLOW_SERVICES, type WorkflowServiceRegistry } from './workflow-services';
 
 const COMPONENT = 'MCOS';
@@ -92,7 +97,7 @@ function intentForSystemAction(action: SystemAction): IntentResult {
  * Runs with the conversation lock already held by the caller.
  */
 @Injectable()
-export class TurnProcessor implements ConversationCorePort {
+export class TurnProcessor implements ConversationCorePort, SegmentExecutorPort {
   constructor(
     @Inject(WORKFLOW_REPOSITORY) private readonly workflows: WorkflowRepositoryPort,
     @Inject(EVENT_PUBLISHER) private readonly events: EventPublisherPort,
@@ -189,7 +194,7 @@ export class TurnProcessor implements ConversationCorePort {
             ? conversation
             : (await this.context.load({ userId: message.userId, channel: message.channel })).conversation;
 
-        const result = await this.runSegment({
+        const result = await this.executeSegment({
           conversation: current,
           segment,
           artifacts: input.artifacts,
@@ -267,13 +272,7 @@ export class TurnProcessor implements ConversationCorePort {
    * message possible without a second copy of the understanding pipeline: each part goes
    * through exactly the same stages, against the registry as the previous part left it.
    */
-  private async runSegment(params: {
-    conversation: Conversation;
-    segment: UtteranceSegment;
-    artifacts: readonly Artifact[];
-    interactivePayload: string | null;
-    now: Date;
-  }): Promise<{ outcome: WorkflowExecutionOutcome } | { unroutable: string }> {
+  async executeSegment(params: SegmentExecutionInput): Promise<SegmentExecutionResult> {
     const { conversation, segment, interactivePayload, now } = params;
     const text = segment.text;
 
