@@ -1,7 +1,7 @@
 {
   "name": "metamarket",
   "version": "0.1.0",
-  "description": "MetaMarket \u2014 Multi-Channel Conversation Platform for informal markets",
+  "description": "MetaMarket — Multi-Channel Conversation Platform for informal markets",
   "private": true,
   "license": "UNLICENSED",
   "engines": {
@@ -38,6 +38,8 @@
     "@aws-sdk/client-s3": "^3.1104.0",
     "@aws-sdk/s3-request-presigner": "^3.1104.0",
     "@google/generative-ai": "^0.21.0",
+    "@langchain/langgraph": "^1.4.14",
+    "@langchain/langgraph-checkpoint-postgres": "^1.0.5",
     "@nestjs/bullmq": "^10.2.3",
     "@nestjs/common": "^10.4.15",
     "@nestjs/config": "^3.3.0",
