@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { END, START, StateGraph, type BaseCheckpointSaver } from '@langchain/langgraph';
 import type { RunnableConfig } from '@langchain/core/runnables';
 import type { Artifact } from '../../domain/models/artifact';
@@ -109,8 +109,8 @@ function buildTurnGraph(handlers: TurnGraphHandlers, checkpointer: BaseCheckpoin
  * to say about whether a graph framework helps with conversational chaos.
  */
 @Injectable()
-export class LangGraphConversationCore implements ConversationCorePort, OnModuleInit {
-  private graph!: ReturnType<typeof buildTurnGraph>;
+export class LangGraphConversationCore implements ConversationCorePort {
+  private graph: ReturnType<typeof buildTurnGraph> | null = null;
   /** Per-invocation context, keyed because it cannot be checkpointed. */
   private readonly contexts = new Map<string, TurnContext>();
 
@@ -129,8 +129,16 @@ export class LangGraphConversationCore implements ConversationCorePort, OnModule
     private readonly checkpointer: TurnCheckpointer,
   ) {}
 
-  onModuleInit(): void {
-    this.graph = buildTurnGraph(
+  /**
+   * Compiles on first use rather than at module init.
+   *
+   * The checkpointer swaps its in-memory placeholder for the Postgres saver during *its* own
+   * init, so compiling in a lifecycle hook makes correctness depend on provider ordering: get
+   * it wrong and the graph silently captures the placeholder, every turn still works, and
+   * nothing is ever persisted. Lazy compilation cannot observe the wrong one.
+   */
+  private compiled(): ReturnType<typeof buildTurnGraph> {
+    this.graph ??= buildTurnGraph(
       {
         segment: (state, config) => this.segmentNode(state, config),
         serve: (state, config) => this.serveNode(state, config),
@@ -138,6 +146,8 @@ export class LangGraphConversationCore implements ConversationCorePort, OnModule
       },
       this.checkpointer.instance,
     );
+
+    return this.graph;
   }
 
   async handleTurn(input: ConversationTurnInput): Promise<ConversationTurnResult> {
@@ -192,7 +202,7 @@ export class LangGraphConversationCore implements ConversationCorePort, OnModule
 
       let final: TurnGraphStateType;
       try {
-        final = await this.graph.invoke(
+        final = await this.compiled().invoke(
           { conversationId: conversation.id },
           {
             configurable: {
