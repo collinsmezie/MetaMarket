@@ -216,7 +216,7 @@ export class TurnProcessor {
 
       // Offer the way back to whatever the user was doing before they digressed. Without this
       // a parked objective is preserved but invisible, and the user has to remember it for us.
-      const nudge = await this.resumeNudge(conversation.id, last.instance, now);
+      const nudge = await this.resumeNudge(conversation.id, now);
       if (nudge !== null) responses.push(nudge);
 
       const response = this.composer.compose(responses, { workflowId: last.instance.id });
@@ -346,19 +346,29 @@ export class TurnProcessor {
   /**
    * Invitation to resume a parked objective, or null when there is nothing to resume.
    *
-   * Only offered once the turn has finished what it was doing — nudging someone back to an
-   * onboarding while they are mid-search would be interrupting them to ask about being
-   * interrupted. The button carries the workflow id, so accepting it resumes through discovery
-   * Layer 1 with no model in the loop.
+   * The condition is "nothing is in focus any more", read from the registry rather than from
+   * the last workflow this turn happened to touch. Keying it off that one instance's status was
+   * too narrow: a turn whose final segment was unroutable, or which ended on a workflow that
+   * had already completed earlier, left the parked objective unmentioned — the user was told
+   * their work was safe and then never heard about it again.
+   *
+   * Still suppressed while something is genuinely active, because nudging someone back to an
+   * onboarding mid-search is interrupting them to ask about being interrupted. And because the
+   * check runs every turn, ignoring the nudge once does not bury the objective for good.
+   *
+   * The button carries the workflow id, so accepting resumes through discovery Layer 1 with no
+   * model in the loop.
    */
-  private async resumeNudge(
-    conversationId: string,
-    instance: WorkflowInstance,
-    now: Date,
-  ): Promise<Response | null> {
-    if (!TERMINAL_STATUSES.includes(instance.status)) return null;
+  private async resumeNudge(conversationId: string, now: Date): Promise<Response | null> {
+    const [active, suspended] = await Promise.all([
+      this.workflows.listByStatus(conversationId, 'active'),
+      this.workflows.listByStatus(conversationId, 'suspended'),
+    ]);
 
-    const suspended = await this.workflows.listByStatus(conversationId, 'suspended');
+    // An expired "active" workflow is not in focus — it is merely un-swept, and letting it
+    // suppress the nudge would hide the parked objective behind something already dead.
+    if (active.some((candidate) => canResume(candidate, now))) return null;
+
     const resumable = suspended.filter((candidate) => canResume(candidate, now));
 
     if (resumable.length === 0) return null;
@@ -367,14 +377,23 @@ export class TurnProcessor {
     // most likely to still have in mind.
     const [target] = [...resumable].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
+    // The summary names the parked objective. A bare "shall we carry on?" is not a reminder —
+    // the user has to remember what they were doing, which is the work this is meant to do for
+    // them. Workflows are required to keep the summary current (MCOS §11), so this is the one
+    // description of the objective that is guaranteed to exist.
+    const label = target.summary.trim();
+
     return {
-      text: 'Shall we carry on with what we were doing before?',
+      text:
+        label.length > 0
+          ? `Before that — shall we carry on with what we started?\n\n_${label.slice(0, 120)}_`
+          : 'Shall we carry on with what we were doing before?',
       actions: [
         {
           type: 'resume',
           title: 'Yes, continue',
           payload: encodeActionPayload({ workflowId: target.id, action: 'resume' }),
-          ...(target.summary.length > 0 ? { description: target.summary.slice(0, 72) } : {}),
+          ...(label.length > 0 ? { description: label.slice(0, 72) } : {}),
         },
       ],
       metadata: { nudge: 'resume_suspended', resumeWorkflowId: target.id },
