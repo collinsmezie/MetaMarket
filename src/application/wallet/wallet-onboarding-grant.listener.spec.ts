@@ -12,6 +12,7 @@ const VENDOR: Vendor = {
   userId: '+2348012345678',
   conversationId: 'conv_1',
   businessName: 'Top Hardware',
+  contactPhone: '+2348012345678',
   location: null,
   status: 'active',
   conversationSummary: '',

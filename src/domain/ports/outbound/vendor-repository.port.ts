@@ -15,12 +15,15 @@ export interface CreateVendorInput {
   readonly userId: string;
   readonly conversationId: string;
   readonly businessName: string;
+  /** WhatsApp number for request fan-out. Null only for legacy records. */
+  readonly contactPhone: string | null;
   readonly location: NormalizedLocation | null;
   readonly conversationSummary: string;
 }
 
 export interface VendorMutation {
   readonly businessName?: string;
+  readonly contactPhone?: string | null;
   readonly location?: NormalizedLocation | null;
   readonly status?: Vendor['status'];
   readonly conversationSummary?: string;

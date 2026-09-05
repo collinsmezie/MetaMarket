@@ -67,14 +67,15 @@ export class VendorFanoutNotifier {
         return;
       }
 
-      const result = await this.notifiers.forChannel('whatsapp').send(
-        {
-          channel: 'whatsapp',
-          address: params.vendor.userId,
-          conversationId: params.vendor.conversationId,
-        },
-        response,
-      );
+      // The number the vendor gave during onboarding, not their conversation identity. A
+      // vendor who onboarded in the browser is identified by a session, so addressing this to
+      // `userId` would send a WhatsApp message to "web:<sessionId>" and reach nobody — while
+      // still reporting success, because the provider never sees the address we meant.
+      const address = params.vendor.contactPhone ?? params.vendor.userId;
+
+      const result = await this.notifiers
+        .forChannel('whatsapp')
+        .send({ channel: 'whatsapp', address, conversationId: params.vendor.conversationId }, response);
 
       if (!isAccepted(result)) {
         // Commonly Meta's 24-hour service window. Not retried: re-minting buttons for a request

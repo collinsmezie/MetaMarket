@@ -35,6 +35,13 @@ export interface Vendor {
   readonly conversationId: string;
   /** Registered name, informal shop name, trading name or personal brand — all accepted. */
   readonly businessName: string;
+  /**
+   * WhatsApp number customer requests are fanned out to.
+   *
+   * Separate from {@link userId} because they are not always the same identity: a vendor who
+   * onboards in the browser has a session identity, not a phone number.
+   */
+  readonly contactPhone: string | null;
   readonly location: NormalizedLocation | null;
   readonly status: VendorStatus;
   /** Natural-language digest of the onboarding conversation. */
@@ -62,6 +69,8 @@ export interface OnboardingFields {
   readonly city: string | null;
   readonly state: string | null;
   readonly businessName: string | null;
+  /** The number buyers' requests are sent to. Required: without it fan-out cannot reach them. */
+  readonly contactPhone: string | null;
 }
 
 export const EMPTY_ONBOARDING_FIELDS: OnboardingFields = {
@@ -69,6 +78,7 @@ export const EMPTY_ONBOARDING_FIELDS: OnboardingFields = {
   city: null,
   state: null,
   businessName: null,
+  contactPhone: null,
 };
 
 /**
@@ -84,13 +94,20 @@ export function isComplete(fields: OnboardingFields): boolean {
     fields.capabilityStatement !== null &&
     fields.city !== null &&
     fields.state !== null &&
-    fields.businessName !== null
+    fields.businessName !== null &&
+    fields.contactPhone !== null
   );
 }
 
 /** Fields still outstanding, in the order onboarding should pursue them. */
 export function missingFields(fields: OnboardingFields): readonly (keyof OnboardingFields)[] {
-  const order: (keyof OnboardingFields)[] = ['capabilityStatement', 'city', 'state', 'businessName'];
+  const order: (keyof OnboardingFields)[] = [
+    'capabilityStatement',
+    'city',
+    'state',
+    'businessName',
+    'contactPhone',
+  ];
   return order.filter((field) => fields[field] === null);
 }
 
@@ -109,5 +126,6 @@ export function mergeFields(
     city: current.city ?? extracted.city ?? null,
     state: current.state ?? extracted.state ?? null,
     businessName: current.businessName ?? extracted.businessName ?? null,
+    contactPhone: current.contactPhone ?? extracted.contactPhone ?? null,
   };
 }

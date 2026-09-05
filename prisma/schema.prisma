@@ -408,6 +408,13 @@ model Vendor {
   /// Registered name, informal shop name, trading name or personal brand — all accepted.
   businessName String @map("business_name")
 
+  /// WhatsApp number customer requests are fanned out to.
+  ///
+  /// Separate from `userId` because the two are not always the same identity. A vendor who
+  /// onboards in the browser has a session identity, not a phone number, so without this the
+  /// fan-out would address a WhatsApp message to "web:<sessionId>" and silently reach nobody.
+  contactPhone String? @map("contact_phone")
+
   /// Normalised location. The state is usually inferred from the city and then confirmed, so
   /// the confidence is retained rather than discarded.
   city              String?

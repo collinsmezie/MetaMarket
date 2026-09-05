@@ -1,5 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { FIELD_ACCEPT_THRESHOLD, type OnboardingFields } from '../../domain/models/vendor';
+import { normalizePhoneNumber } from '../../domain/models/user-identity';
+
+/**
+ * Whether a string is long enough to be a phone number.
+ *
+ * Nigerian numbers are 10 digits without the country code and 13 with it; the floor is set
+ * below both so a vendor writing a local format is not rejected, and above anything that could
+ * be a quantity or a house number.
+ */
+function isPlausiblePhone(raw: string): boolean {
+  const digits = raw.replace(/[^\d]/g, '');
+  return digits.length >= 10 && digits.length <= 15;
+}
 import { LLM_PROVIDER_SERVICE, type LlmService } from '../../domain/ports/outbound/llm-provider.port';
 import { STAGE_LOGGER, type StageLoggerPort } from '../../domain/ports/outbound/stage-logger.port';
 import { onboardingExtractionJsonSchema, onboardingExtractionSchema } from './schemas';
@@ -71,6 +84,12 @@ export class OnboardingExtractionService {
           : {}),
         ...(data.businessName.trim().length > 0 && data.businessNameConfidence >= FIELD_ACCEPT_THRESHOLD
           ? { businessName: data.businessName.trim() }
+          : {}),
+        // A number is only accepted when it plausibly *is* one. The model is asked for digits
+        // as written, so anything short is a misread rather than a phone number, and recording
+        // it would send every one of this vendor's buyer requests into the void.
+        ...(isPlausiblePhone(data.phone) && data.phoneConfidence >= FIELD_ACCEPT_THRESHOLD
+          ? { contactPhone: normalizePhoneNumber(data.phone) }
           : {}),
         ...(data.city.trim().length > 0 && data.cityConfidence >= FIELD_ACCEPT_THRESHOLD
           ? { city: data.city.trim() }
