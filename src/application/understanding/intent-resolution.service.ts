@@ -95,6 +95,7 @@ ${this.supportedIntents.map((intent) => `- ${intent}`).join('\n')}
 Rules:
 - Extract only what the user actually said. Never infer a product, quantity or place that is not present.
 - Messages mix English, Nigerian Pidgin and local terms. "I wan buy hammer" is a product search.
+- A question *about MetaMarket itself* is not a request to buy or sell. "How much do you charge per month to list items here?" asks what the platform costs — it is a pricing question, not vendor onboarding, even though it mentions listing. The same goes for "how does this work?" and "what can you do?".
 - Common entity names: product, service, quantity, location, city, state, business_name, brand, budget, order_id, vendor_id.
 - A message can carry entities for several steps at once ("I sell wire, my shop is Divine Electricals in Aba"). Extract all of them.
 - Set command only for explicit control words: cancel, restart, help, stop. Otherwise return an empty string.
