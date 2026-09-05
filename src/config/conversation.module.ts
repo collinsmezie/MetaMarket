@@ -5,6 +5,8 @@ import { WebChannelController } from '../adapters/inbound/web/web-channel.contro
 import { WhatsAppWebhookController } from '../adapters/inbound/whatsapp/whatsapp-webhook.controller';
 import { MediaProcessingProcessor } from '../adapters/outbound/queue/media-processing.processor';
 import { ConversationContextManager } from '../application/conversation/conversation-context.manager';
+import { LangGraphConversationCore } from '../application/langgraph/langgraph-conversation-core';
+import { TurnCheckpointer } from '../application/langgraph/turn-checkpointer.provider';
 import { MediaProcessingService } from '../application/media/media-processing.service';
 import { TaxonomySeeder } from '../application/taxonomy/taxonomy-seeder.service';
 import { BusinessUnderstandingService } from '../application/capability/business-understanding.service';
@@ -93,6 +95,8 @@ import { AppConfigService } from './app-config.service';
     UtteranceSegmentationService,
     SemanticResolutionService,
     TurnProcessor,
+    TurnCheckpointer,
+    LangGraphConversationCore,
     MessageIngestionService,
     MediaProcessingProcessor,
     WorkflowExpirySweeper,
@@ -199,10 +203,10 @@ import { AppConfigService } from './app-config.service';
       }),
     },
 
-    // The conversation core under test on this branch. Swapping this one binding is what
-    // exchanges MCOS's deterministic pipeline for the LangGraph supervisor
-    // (Conversation-Core-Comparison TDR §6).
-    { provide: CONVERSATION_CORE, useExisting: TurnProcessor },
+    // The conversation core under test on this branch: the LangGraph supervisor graph. On
+    // mcos-native this same binding points at TurnProcessor, and that one line is the whole
+    // difference between the two branches at the seam (Conversation-Core-Comparison TDR §6).
+    { provide: CONVERSATION_CORE, useExisting: LangGraphConversationCore },
 
     // The per-segment pipeline, shared by both cores. Only the driver differs between them.
     { provide: SEGMENT_EXECUTOR, useExisting: TurnProcessor },
