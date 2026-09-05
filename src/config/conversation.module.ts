@@ -32,6 +32,7 @@ import { SemanticResolutionService } from '../application/understanding/semantic
 import { WorkflowExpirySweeper } from '../application/workflow/workflow-expiry.sweeper';
 import { HANDLE_INCOMING_MESSAGE } from '../domain/ports/inbound/handle-incoming-message.port';
 import { CONVERSATION_CORE } from '../domain/ports/inbound/conversation-core.port';
+import { SEGMENT_EXECUTOR } from '../domain/ports/inbound/segment-executor.port';
 import {
   EMBEDDING_PROVIDER,
   type EmbeddingProviderPort,
@@ -202,6 +203,9 @@ import { AppConfigService } from './app-config.service';
     // exchanges MCOS's deterministic pipeline for the LangGraph supervisor
     // (Conversation-Core-Comparison TDR §6).
     { provide: CONVERSATION_CORE, useExisting: TurnProcessor },
+
+    // The per-segment pipeline, shared by both cores. Only the driver differs between them.
+    { provide: SEGMENT_EXECUTOR, useExisting: TurnProcessor },
 
     { provide: HANDLE_INCOMING_MESSAGE, useExisting: MessageIngestionService },
   ],
