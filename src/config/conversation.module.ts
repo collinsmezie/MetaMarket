@@ -23,6 +23,7 @@ import { VendorResponseHandler } from '../application/fulfilment/vendor-response
 import { MessageIngestionService } from '../application/pipeline/message-ingestion.service';
 import { TurnProcessor } from '../application/pipeline/turn-processor.service';
 import { WORKFLOW_SERVICES } from '../application/pipeline/workflow-services';
+import { ConversationDelivery } from '../application/response/conversation-delivery.service';
 import { ResponseComposer } from '../application/response/response-composer.service';
 import { ConversationContinuityAnalyzer } from '../application/understanding/continuity-analyzer.service';
 import { UtteranceSegmentationService } from '../application/understanding/segmentation.service';
@@ -30,6 +31,7 @@ import { IntentResolutionService } from '../application/understanding/intent-res
 import { SemanticResolutionService } from '../application/understanding/semantic-resolution.service';
 import { WorkflowExpirySweeper } from '../application/workflow/workflow-expiry.sweeper';
 import { HANDLE_INCOMING_MESSAGE } from '../domain/ports/inbound/handle-incoming-message.port';
+import { CONVERSATION_CORE } from '../domain/ports/inbound/conversation-core.port';
 import {
   EMBEDDING_PROVIDER,
   type EmbeddingProviderPort,
@@ -85,6 +87,7 @@ import { AppConfigService } from './app-config.service';
     VendorFanoutNotifier,
     VendorResponseHandler,
     ResponseComposer,
+    ConversationDelivery,
     ConversationContinuityAnalyzer,
     UtteranceSegmentationService,
     SemanticResolutionService,
@@ -194,6 +197,11 @@ import { AppConfigService } from './app-config.service';
         },
       }),
     },
+
+    // The conversation core under test on this branch. Swapping this one binding is what
+    // exchanges MCOS's deterministic pipeline for the LangGraph supervisor
+    // (Conversation-Core-Comparison TDR §6).
+    { provide: CONVERSATION_CORE, useExisting: TurnProcessor },
 
     { provide: HANDLE_INCOMING_MESSAGE, useExisting: MessageIngestionService },
   ],

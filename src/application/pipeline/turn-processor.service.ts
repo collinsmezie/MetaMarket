@@ -10,9 +10,13 @@ import { isContinuing } from '../../domain/models/understanding';
 import { canResume, type WorkflowInstance } from '../../domain/models/workflow-instance';
 import {
   CHANNEL_NOTIFIER_REGISTRY,
-  isAccepted,
   type ChannelNotifierRegistryPort,
 } from '../../domain/ports/outbound/channel-notifier.port';
+import type {
+  ConversationCorePort,
+  ConversationTurnInput,
+  ConversationTurnResult,
+} from '../../domain/ports/inbound/conversation-core.port';
 import {
   ConversationEvents,
   EVENT_PUBLISHER,
@@ -43,6 +47,7 @@ import { WorkflowDefinitionRegistry } from '../../domain/workflows/workflow-regi
 import { resolveSystemAction, type SystemAction } from '../../domain/workflows/system-actions';
 import { ConversationContextManager } from '../conversation/conversation-context.manager';
 import { VendorResponseHandler } from '../fulfilment/vendor-response-handler.service';
+import { ConversationDelivery } from '../response/conversation-delivery.service';
 import { ResponseComposer } from '../response/response-composer.service';
 import { ConversationContinuityAnalyzer } from '../understanding/continuity-analyzer.service';
 import { IntentResolutionService } from '../understanding/intent-resolution.service';
@@ -87,7 +92,7 @@ function intentForSystemAction(action: SystemAction): IntentResult {
  * Runs with the conversation lock already held by the caller.
  */
 @Injectable()
-export class TurnProcessor {
+export class TurnProcessor implements ConversationCorePort {
   constructor(
     @Inject(WORKFLOW_REPOSITORY) private readonly workflows: WorkflowRepositoryPort,
     @Inject(EVENT_PUBLISHER) private readonly events: EventPublisherPort,
@@ -108,10 +113,11 @@ export class TurnProcessor {
     private readonly policy: ConversationPolicyEngine,
     private readonly composer: ResponseComposer,
     private readonly vendorResponses: VendorResponseHandler,
+    private readonly delivery: ConversationDelivery,
     private readonly config: AppConfigService,
   ) {}
 
-  async process(input: TurnInput): Promise<TurnOutcome> {
+  async handleTurn(input: ConversationTurnInput): Promise<ConversationTurnResult> {
     const now = this.clock.now();
     const { message, text } = input;
 
@@ -822,111 +828,24 @@ export class TurnProcessor {
     return { response, workflowId };
   }
 
-  /**
-   * Delivers a response on the channel the user is currently using and records it in history.
-   */
+  /** Delegates to the shared delivery service, which both conversation cores use. */
   private async send(
     conversation: Conversation,
     response: Response,
     workflowId: string | null,
   ): Promise<void> {
-    const channel = conversation.lastChannel;
-
-    if (!this.notifiers.supports(channel)) {
-      this.logger.stageFailed({
-        component: COMPONENT,
-        stage: `${STAGE}:Delivery`,
-        input: { channel, conversationId: conversation.id },
-        action: 'No outbound notifier is registered for this channel; the reply cannot be delivered',
-        error: new Error(`Unsupported outbound channel "${channel}"`),
-      });
-      return;
-    }
-
-    await this.publishEvent(ConversationEvents.ResponseCreated, conversation.id, workflowId, {
-      hasText: response.text !== undefined,
-      actions: response.actions?.length ?? 0,
-    });
-
-    const result = await this.notifiers
-      .forChannel(channel)
-      .send({ channel, address: conversation.userId, conversationId: conversation.id }, response);
-
-    // A queued reply counts as said: it is durably recorded and will reach the user, so the
-    // history must contain it or the next turn will reason as though the platform stayed silent.
-    if (isAccepted(result)) {
-      await this.context.recordAssistantTurn({
-        conversationId: conversation.id,
-        channel,
-        content: response.text ?? '',
-        ...(workflowId !== null ? { workflowId } : {}),
-      });
-
-      if (result.delivered) {
-        await this.publishEvent(ConversationEvents.MessageSent, conversation.id, workflowId, {
-          providerMessageId: result.providerMessageId,
-          messageCount: result.messageCount ?? 1,
-        });
-
-        return;
-      }
-
-      this.logger.stage({
-        component: COMPONENT,
-        stage: `${STAGE}:Delivery`,
-        input: { channel, conversationId: conversation.id },
-        action: 'Channel is unavailable; the reply is queued and will be delivered on retry',
-        output: { queued: true },
-      });
-
-      return;
-    }
-
-    // A delivery failure must not roll back committed workflow state; it is recorded so the
-    // outcome is visible rather than silently lost.
-    this.logger.stageFailed({
-      component: COMPONENT,
-      stage: `${STAGE}:Delivery`,
-      input: { channel, conversationId: conversation.id },
-      action: 'Channel rejected the outbound message',
-      error: new Error(result.error ?? 'unknown delivery failure'),
-    });
-
-    await this.publishEvent(ConversationEvents.MessageFailed, conversation.id, workflowId, {
-      error: result.error ?? 'unknown delivery failure',
-    });
+    await this.delivery.send(conversation, response, workflowId);
   }
 
-  /** Delivers a response outside the normal turn flow, e.g. when the lock was unavailable. */
   async deliver(message: IncomingMessage, response: Response, workflowId: string | null): Promise<void> {
-    const context = await this.context.loadById(message.conversationId);
-    if (context === null) return;
-
-    await this.send(context.conversation, response, workflowId);
+    await this.delivery.deliver(message, response, workflowId);
   }
 
   private async publishLifecycle(eventType: string, instance: WorkflowInstance): Promise<void> {
-    await this.publishEvent(eventType, instance.conversationId, instance.id, {
+    await this.delivery.publishEvent(eventType, instance.conversationId, instance.id, {
       workflowType: instance.workflowType,
       state: instance.currentState,
       status: instance.status,
-    });
-  }
-
-  private async publishEvent(
-    eventType: string,
-    conversationId: string,
-    workflowId: string | null,
-    payload: Record<string, unknown>,
-  ): Promise<void> {
-    await this.events.publish({
-      eventId: this.ids.uuid(),
-      eventType,
-      timestamp: this.clock.now(),
-      producer: 'ConversationOS',
-      conversationId,
-      ...(workflowId !== null ? { workflowId } : {}),
-      payload,
     });
   }
 

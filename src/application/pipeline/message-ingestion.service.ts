@@ -36,7 +36,10 @@ import {
 } from '../../domain/ports/outbound/system.port';
 import { ConversationContextManager } from '../conversation/conversation-context.manager';
 import { MediaProcessingService } from '../media/media-processing.service';
-import { TurnProcessor } from './turn-processor.service';
+import {
+  CONVERSATION_CORE,
+  type ConversationCorePort,
+} from '../../domain/ports/inbound/conversation-core.port';
 
 const COMPONENT = 'MCOS';
 const STAGE = 'MessageIngestion';
@@ -45,7 +48,7 @@ const STAGE = 'MessageIngestion';
  * Entry point for every inbound message, on every channel (MCOS §14).
  *
  * Responsibilities are deliberately narrow: deduplicate, persist, decide whether the turn
- * can run now or must wait for media, and hand off to {@link TurnProcessor} under the
+ * can run now or must wait for media, and hand off to the conversation core under the
  * conversation lock.
  */
 @Injectable()
@@ -59,7 +62,7 @@ export class MessageIngestionService implements HandleIncomingMessagePort {
     @Inject(ID_GENERATOR) private readonly ids: IdGeneratorPort,
     private readonly context: ConversationContextManager,
     private readonly media: MediaProcessingService,
-    private readonly turns: TurnProcessor,
+    @Inject(CONVERSATION_CORE) private readonly core: ConversationCorePort,
   ) {}
 
   async handle(incoming: IncomingMessage): Promise<HandleIncomingMessageResult> {
@@ -192,7 +195,7 @@ export class MessageIngestionService implements HandleIncomingMessagePort {
     const interactivePayload = this.interactivePayloadOf(message);
 
     const outcome = await this.context.withLock(message.conversationId, async () =>
-      this.turns.process({ message, artifacts, text, interactivePayload }),
+      this.core.handleTurn({ message, artifacts, text, interactivePayload }),
     );
 
     if (outcome === null) {
@@ -231,7 +234,7 @@ export class MessageIngestionService implements HandleIncomingMessagePort {
       error: new Error('Conversation lock unavailable'),
     });
 
-    await this.turns.deliver(message, response, null);
+    await this.core.deliver(message, response, null);
   }
 
   private interactivePayloadOf(message: IncomingMessage): string | null {
