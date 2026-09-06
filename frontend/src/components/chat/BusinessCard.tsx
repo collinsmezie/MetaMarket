@@ -33,10 +33,23 @@ interface BusinessCardProps {
   tier?: string;
 }
 
+function formatRating(rating?: string | number | null): string {
+  if (!rating) return '4.9';
+  if (typeof rating === 'number') return rating.toFixed(1);
+  const trimmed = rating.trim();
+  if (/^\d+(\.\d+)?$/.test(trimmed)) return Number(trimmed).toFixed(1);
+  if (trimmed.includes('⭐')) {
+    const match = trimmed.match(/\d+(\.\d+)?/);
+    return match ? Number(match[0]).toFixed(1) : '5.0';
+  }
+  return trimmed;
+}
+
 export function BusinessCard({ vendor, tier }: BusinessCardProps) {
   const location = vendor.location || 'Nigeria';
   const phone = vendor.phone ?? '';
   const shortName = (vendor.vendorName || 'Vendor').split(' ')[0];
+  const rating = formatRating(vendor.rating);
 
   const description =
     vendor.description ||
@@ -66,7 +79,7 @@ export function BusinessCard({ vendor, tier }: BusinessCardProps) {
             <Star key={star} className="w-3 h-3 fill-amber-400 text-amber-400" />
           ))}
         </div>
-        {vendor.rating && <span className="font-bold text-amber-300">{vendor.rating}</span>}
+        <span className="font-bold text-amber-300">{rating}</span>
       </div>
 
       <p className="text-[11px] text-slate-300 leading-snug">{description}</p>
