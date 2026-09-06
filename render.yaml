@@ -1,0 +1,77 @@
+services:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Backend API — MetaMarket NestJS (LangGraph / Conversation OS)
+  # ─────────────────────────────────────────────────────────────────────────────
+  - type: web
+    name: metamarket-backend
+    runtime: node
+    plan: starter
+    buildCommand: npm install && npx prisma generate && npm run build
+    preDeployCommand: npx prisma migrate deploy
+    startCommand: npm run start:prod
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: metamarket-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: metamarket-redis
+          property: connectionString
+      - key: WEB_CLIENT_ORIGINS
+        value: https://metamarket-frontend.onrender.com,http://localhost:3000
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Frontend Web Client — Next.js
+  # ─────────────────────────────────────────────────────────────────────────────
+  - type: web
+    name: metamarket-frontend
+    runtime: node
+    plan: starter
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npx next start -p $PORT
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NEXT_PUBLIC_API_URL
+        value: https://metamarket-backend.onrender.com
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Managed Redis (BullMQ queues, distributed conversation locking, SSE delivery)
+  # ─────────────────────────────────────────────────────────────────────────────
+  - type: redis
+    name: metamarket-redis
+    plan: starter
+    ipAllowList: []
+
+databases:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Managed PostgreSQL (pg16 + pgvector)
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: metamarket-db
+    databaseName: metamarket
+    user: metamarket
+    plan: starter
