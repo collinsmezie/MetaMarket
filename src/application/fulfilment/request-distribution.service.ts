@@ -56,6 +56,16 @@ export interface DistributionResult {
   readonly fannedOut: readonly RankedVendor[];
 }
 
+/** A revealed vendor, with enough detail for the customer to choose between them. */
+export interface RevealedVendor {
+  readonly vendorId: string;
+  readonly rank: number;
+  readonly businessName: string;
+  readonly city: string | null;
+  readonly state: string | null;
+  readonly phone: string | null;
+}
+
 /** A vendor considered for an immediate slot, with the wallet identity billing needs. */
 interface Candidate {
   readonly ranked: RankedVendor;
@@ -549,14 +559,33 @@ export class RequestDistributionService {
   }
 
   /** Vendors who have accepted and may therefore be shown to the customer. */
-  async revealedVendors(requestId: string): Promise<readonly { vendorId: string; rank: number }[]> {
+  async revealedVendors(requestId: string): Promise<readonly RevealedVendor[]> {
     const rows = await this.prisma.requestDelivery.findMany({
       where: { requestId, revealedToCustomer: true },
       orderBy: { rank: 'asc' },
       select: { vendorId: true, rank: true },
     });
 
-    return rows;
+    // Details, not just ids: the customer is about to be shown a numbered list and asked to
+    // pick from it, and a list of uuids is not a list a person can choose from. There is no
+    // vendor relation on the delivery row, so the records are resolved through the repository.
+    const resolved = await this.resolveVendors(rows.map((row) => row.vendorId));
+
+    return rows.flatMap((row) => {
+      const vendor = resolved.get(row.vendorId);
+      if (vendor === undefined) return [];
+
+      return [
+        {
+          vendorId: row.vendorId,
+          rank: row.rank,
+          businessName: vendor.businessName,
+          city: vendor.location?.city ?? null,
+          state: vendor.location?.state ?? null,
+          phone: vendor.contactPhone,
+        },
+      ];
+    });
   }
 
   /**
