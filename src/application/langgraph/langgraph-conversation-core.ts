@@ -34,6 +34,7 @@ import { ConversationContextManager } from '../conversation/conversation-context
 import { VendorResponseHandler } from '../fulfilment/vendor-response-handler.service';
 import { ConversationDelivery } from '../response/conversation-delivery.service';
 import { ResponseComposer } from '../response/response-composer.service';
+import { SuggestedActionsService } from '../response/suggested-actions.service';
 import { UtteranceSegmentationService } from '../understanding/segmentation.service';
 import { TurnCheckpointer } from './turn-checkpointer.provider';
 import { TURN_CONTEXT_KEY, TurnGraphState, type TurnGraphStateType } from './turn-graph.state';
@@ -125,6 +126,7 @@ export class LangGraphConversationCore implements ConversationCorePort {
     private readonly segmenter: UtteranceSegmentationService,
     private readonly composer: ResponseComposer,
     private readonly delivery: ConversationDelivery,
+    private readonly suggestions: SuggestedActionsService,
     private readonly vendorResponses: VendorResponseHandler,
     private readonly checkpointer: TurnCheckpointer,
   ) {}
@@ -227,9 +229,13 @@ export class LangGraphConversationCore implements ConversationCorePort {
         );
       }
 
-      const response = this.composer.compose([...final.responses], {
+      const composed = this.composer.compose([...final.responses], {
         workflowId: final.lastWorkflowId,
       });
+
+      // Offered after composition so the suggestion sees the whole reply, and only where the
+      // workflows left no affordances of their own.
+      const response = await this.suggestions.augment({ conversation, response: composed, userText: text });
 
       await this.finalise({
         conversation,
