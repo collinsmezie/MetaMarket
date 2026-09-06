@@ -59,7 +59,7 @@ services:
       - key: NODE_VERSION
         value: "22"
       - key: NEXT_PUBLIC_API_URL
-        value: https://metamarket-backend.onrender.com
+        value: https://metamarket-backend-oan7.onrender.com
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Managed Key-Value Store / Redis (BullMQ queues, locking, SSE streaming)
