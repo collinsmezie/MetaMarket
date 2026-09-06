@@ -23,7 +23,7 @@ services:
           property: connectionString
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: metamarket-redis
           property: connectionString
       - key: WEB_CLIENT_ORIGINS
@@ -60,11 +60,11 @@ services:
         value: https://metamarket-backend.onrender.com
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Managed Redis (BullMQ queues, distributed conversation locking, SSE delivery)
+  # Managed Key-Value Store / Redis (BullMQ queues, locking, SSE streaming)
   # ─────────────────────────────────────────────────────────────────────────────
-  - type: redis
+  - type: keyvalue
     name: metamarket-redis
-    plan: starter
+    plan: 256mb
     ipAllowList: []
 
 databases:
@@ -74,4 +74,4 @@ databases:
   - name: metamarket-db
     databaseName: metamarket
     user: metamarket
-    plan: starter
+    plan: 0.5c-1g
