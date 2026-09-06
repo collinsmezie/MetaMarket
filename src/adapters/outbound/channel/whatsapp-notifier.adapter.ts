@@ -199,8 +199,14 @@ export class WhatsAppNotifier implements ChannelNotifierPort {
       });
     }
 
-    const text = response.text?.trim() ?? '';
     const actions = response.actions ?? [];
+    const baseText = response.text?.trim() ?? '';
+
+    // The options are numbered in the body as well as offered as taps. A tap is nicer, but it
+    // is not always available: interactive messages need approval on some numbers, list rows
+    // are easy to miss on a small screen, and plenty of traders simply reply "2". Numbering
+    // costs a few characters and makes both ways of answering work.
+    const text = actions.length > 0 ? appendNumberedOptions(baseText, actions) : baseText;
 
     if (text.length === 0 && actions.length === 0) return payloads;
 
@@ -450,6 +456,18 @@ function classify(error: unknown): { error: string; retryable: boolean } {
   const retryable = code !== undefined && SAFE_TO_RETRY_CODES.has(code) && !isTimeout;
 
   return { error: `WhatsApp send failed: ${named}`, retryable };
+}
+
+/**
+ * Numbers the offered options at the end of the message body.
+ *
+ * The numbers are what make a typed reply work: ingestion reads a bare "2" as the second option
+ * offered, so the list here and the resolution there are two halves of one feature.
+ */
+function appendNumberedOptions(body: string, actions: readonly Action[]): string {
+  const numbered = actions.map((action, index) => `${index + 1}. ${action.title}`).join('\n');
+
+  return body.length > 0 ? `${body}\n\n${numbered}` : numbered;
 }
 
 /**

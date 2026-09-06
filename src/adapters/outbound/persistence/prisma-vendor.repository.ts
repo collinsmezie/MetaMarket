@@ -38,6 +38,7 @@ export class PrismaVendorRepository implements VendorRepositoryPort {
         userId: input.userId,
         conversationId: input.conversationId,
         businessName: input.businessName,
+        contactPhone: input.contactPhone,
         city: input.location?.city ?? null,
         state: input.location?.state ?? null,
         country: input.location?.country ?? null,
@@ -64,6 +65,7 @@ export class PrismaVendorRepository implements VendorRepositoryPort {
   async update(vendorId: string, mutation: VendorMutation): Promise<Vendor> {
     const data: Prisma.VendorUpdateInput = {
       ...(mutation.businessName !== undefined ? { businessName: mutation.businessName } : {}),
+      ...(mutation.contactPhone !== undefined ? { contactPhone: mutation.contactPhone } : {}),
       ...(mutation.status !== undefined ? { status: mutation.status } : {}),
       ...(mutation.conversationSummary !== undefined
         ? { conversationSummary: mutation.conversationSummary }
@@ -300,6 +302,7 @@ export class PrismaVendorRepository implements VendorRepositoryPort {
       userId: row.userId,
       conversationId: row.conversationId,
       businessName: row.businessName,
+      contactPhone: row.contactPhone,
       location,
       status: row.status as VendorStatus,
       conversationSummary: row.conversationSummary,

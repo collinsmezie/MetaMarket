@@ -54,6 +54,7 @@ import { ConversationContextManager } from '../conversation/conversation-context
 import { VendorResponseHandler } from '../fulfilment/vendor-response-handler.service';
 import { ConversationDelivery } from '../response/conversation-delivery.service';
 import { ResponseComposer } from '../response/response-composer.service';
+import { SuggestedActionsService } from '../response/suggested-actions.service';
 import { ConversationContinuityAnalyzer } from '../understanding/continuity-analyzer.service';
 import { IntentResolutionService } from '../understanding/intent-resolution.service';
 import { SemanticResolutionService } from '../understanding/semantic-resolution.service';
@@ -119,6 +120,7 @@ export class TurnProcessor implements ConversationCorePort, SegmentExecutorPort 
     private readonly composer: ResponseComposer,
     private readonly vendorResponses: VendorResponseHandler,
     private readonly delivery: ConversationDelivery,
+    private readonly suggestions: SuggestedActionsService,
     private readonly config: AppConfigService,
   ) {}
 
@@ -230,7 +232,11 @@ export class TurnProcessor implements ConversationCorePort, SegmentExecutorPort 
       const nudge = await this.resumeNudge(conversation.id, now);
       if (nudge !== null) responses.push(nudge);
 
-      const response = this.composer.compose(responses, { workflowId: last.instance.id });
+      const composed = this.composer.compose(responses, { workflowId: last.instance.id });
+
+      // Offered after composition so the suggestion sees the whole reply, and only where the
+      // workflows left no affordances of their own.
+      const response = await this.suggestions.augment({ conversation, response: composed, userText: text });
 
       await this.finalise({
         conversation,

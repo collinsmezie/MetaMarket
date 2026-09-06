@@ -114,6 +114,15 @@ export class PrismaOutboundMessageRepository implements OutboundMessageRepositor
    * out by the lease is the claim itself — a worker that dies holding rows leaves them to become
    * due again on their own.
    */
+  async latestForConversation(conversationId: string): Promise<OutboundMessage | null> {
+    const row = await this.prisma.outboundMessage.findFirst({
+      where: { conversationId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return row === null ? null : this.toDomain(row);
+  }
+
   async claimDue(params: {
     batchSize: number;
     now: Date;

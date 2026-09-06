@@ -4,7 +4,11 @@ import type { RankedVendor } from '../../domain/models/demand';
 import type { Vendor } from '../../domain/models/vendor';
 import { PrismaService } from '../../adapters/outbound/persistence/prisma.service';
 import { AppConfigService } from '../../config/app-config.service';
-import { WALLET_DEBIT_REASONS, responseDebitReference } from '../../domain/models/credit';
+import {
+  deliveryDebitReference,
+  WALLET_DEBIT_REASONS,
+  responseDebitReference,
+} from '../../domain/models/credit';
 import {
   EVENT_PUBLISHER,
   type DomainEvent,
@@ -29,16 +33,14 @@ const COMPONENT = 'RequestDistribution';
 const STAGE = 'RequestDistributionService';
 
 /**
- * How many top-ranked vendors reach the customer immediately.
+ * How many top-ranked vendors are shown to the customer straight away.
  *
- * One, deliberately. The immediate delivery costs the vendor a credit whether or not the customer
- * ever contacts them, so handing out several on speculation would bill vendors for nothing. The
- * rest earn visibility by responding.
+ * Eight: enough that a buyer sees real competition rather than one shop, few enough that the
+ * list stays readable on a phone. Each of the eight is charged the visibility fee at reveal —
+ * they were shown, so they were made visible, whether or not the buyer calls. That is a
+ * deliberate business decision and the reason this number is small.
  */
-const IMMEDIATE_DELIVERY_COUNT = 1;
-
-/** Vendors the request is fanned out to beyond the immediate one. */
-const FANOUT_LIMIT = 8;
+const REVEAL_COUNT = 8;
 
 /** How long vendors have to respond before the delivery is recorded as a no-response. */
 const RESPONSE_WINDOW_MS = 30 * 60 * 1000;
@@ -65,9 +67,14 @@ interface Candidate {
 /**
  * Demand-driven fulfilment (MCOS Refinement #11 §1-§6).
  *
- * Immediately returns the highest-ranked vendor, notifies them, deducts their credit, then
- * creates the request and fans it out to the rest. Remaining vendors become visible to the
- * customer only when they explicitly respond — a vendor who ignores the request is never shown.
+ * Shows the buyer the top {@link REVEAL_COUNT} matched vendors immediately, charging each the
+ * visibility fee, and fans the request out to *every* matched vendor. The two counts differ on
+ * purpose: the buyer needs a readable list, but evidence is only worth having if it comes from
+ * the whole matched set — a vendor who was never asked teaches the Evidence Service nothing, and
+ * their silence is indistinguishable from a decline.
+ *
+ * Vendors beyond the revealed set still become visible by responding, and pay then rather than
+ * now.
  *
  * Distribution strategy lives here and nowhere else: the Conversation OS "SHALL remain
  * independent of the distribution strategy" (§4).
@@ -136,9 +143,9 @@ export class RequestDistributionService {
     const fee = this.visibilityFee;
     const capabilityName = params.capabilityName ?? params.product ?? params.query;
 
-    // Bounded so an insolvent marketplace cannot turn one search into a wallet lookup per ranked
-    // vendor. Beyond this depth a vendor would not have been contacted at all.
-    const considered = params.ranked.slice(0, IMMEDIATE_DELIVERY_COUNT + FANOUT_LIMIT);
+    // Every matched vendor is contacted: the fan-out is how evidence is collected, and a vendor
+    // who was never asked teaches the Evidence Service nothing. Only the display list is capped.
+    const considered = params.ranked;
 
     // Resolved once, concurrently, because both the billing walk and the fan-out ask need the
     // vendor record — `userId` to bill and `conversationId` to reach their phone. Fetching them
@@ -181,26 +188,40 @@ export class RequestDistributionService {
       .filter(
         (entry): entry is { rankedVendor: RankedVendor; rank: number; vendor: Vendor } =>
           entry.vendor !== undefined,
-      )
-      .slice(0, FANOUT_LIMIT);
+      );
 
     for (const { rankedVendor, rank, vendor } of fannedOut) {
+      // The revealed set is the head of the ranking, so a vendor's position decides whether they
+      // are shown now and billed now, or shown later if they answer.
+      const revealNow = rank < REVEAL_COUNT;
+
+      const billing = revealNow
+        ? await this.billForReveal({ requestId: request.id, vendor, capabilityName, fee, params })
+        : { creditDeducted: false, events: [], pushes: [] };
+
+      events.push(...billing.events);
+      pushes.push(...billing.pushes);
+
       const delivery = await this.prisma.requestDelivery.create({
         data: {
           requestId: request.id,
           vendorId: vendor.id,
           rank,
           score: rankedVendor.score,
-          immediate: false,
+          immediate: revealNow,
+          revealedToCustomer: revealNow,
+          ...(billing.creditDeducted ? { creditDeducted: true } : {}),
           deliveredAt: now,
         },
       });
+
+      if (revealNow) selected.push({ ranked: rankedVendor, rank, vendor });
 
       events.push(
         this.event('request.delivered', {
           requestId: request.id,
           vendorId: vendor.id,
-          payload: { capability: params.capabilityId, product: params.product, immediate: false },
+          payload: { capability: params.capabilityId, product: params.product, immediate: revealNow },
         }),
       );
 
@@ -237,10 +258,11 @@ export class RequestDistributionService {
       component: COMPONENT,
       stage: STAGE,
       input: { query: params.query, rankedVendors: params.ranked.length, visibilityFee: fee },
-      action: `Fanned the request out to ${fannedOut.length} vendor(s)`,
+      action: `Revealed ${selected.length} vendor(s) and fanned the request out to ${fannedOut.length}`,
       output: {
         requestId: request.id,
-        fannedOut: fannedOut.map((entry) => entry.rankedVendor.businessName),
+        revealed: selected.map((candidate) => candidate.ranked.businessName),
+        fannedOut: fannedOut.length,
       },
       durationMs: Date.now() - startedAt,
     });
@@ -282,10 +304,21 @@ export class RequestDistributionService {
     const events: DomainEvent[] = [];
     const pushes: Promise<void>[] = [];
 
+    // A vendor in the revealed set already paid at reveal time and is already visible. Charging
+    // again for the same request would bill them twice for one buyer.
+    const alreadyPaid = delivery.creditDeducted;
+
     // A decline needs no vendor record and no wallet: nothing becomes visible, so nothing is due.
-    const billing = params.accepted
-      ? await this.billResponder({ delivery, request: delivery.request })
-      : { revealed: false, creditDeducted: false, balanceAfter: undefined, events: [], pushes: [] };
+    const billing =
+      params.accepted && !alreadyPaid
+        ? await this.billResponder({ delivery, request: delivery.request })
+        : {
+            revealed: params.accepted && alreadyPaid ? true : false,
+            creditDeducted: alreadyPaid,
+            balanceAfter: undefined,
+            events: [],
+            pushes: [],
+          };
 
     events.push(...billing.events);
     pushes.push(...billing.pushes);
@@ -423,6 +456,80 @@ export class RequestDistributionService {
           payload: {
             reason: WALLET_DEBIT_REASONS.responseAccepted,
             capability: request.capabilityId,
+            credits: fee,
+          },
+        }),
+      ],
+      pushes: [],
+    };
+  }
+
+  /**
+   * Charges a vendor for being shown to the buyer straight away.
+   *
+   * The reveal happens whether or not the debit succeeds. That is the deliberate trade the
+   * existing immediate-delivery path already made: the billing model degrades before the
+   * customer experience does, so a buyer asking for a hammer gets a full list of shops even on a
+   * day when the marketplace has insolvent vendors. An unpaid reveal is recorded as
+   * `creditDeducted: false` and shows up in reconciliation rather than being lost.
+   */
+  private async billForReveal(input: {
+    requestId: string;
+    vendor: Vendor;
+    capabilityName: string;
+    fee: number;
+    params: { capabilityId: string | null; product: string | null };
+  }): Promise<{ creditDeducted: boolean; events: DomainEvent[]; pushes: Promise<void>[] }> {
+    const { requestId, vendor, capabilityName, fee } = input;
+
+    const debit = await this.wallet.debit({
+      userId: vendor.userId,
+      amountCredits: fee,
+      reason: WALLET_DEBIT_REASONS.profileDelivery,
+      providerReference: deliveryDebitReference(requestId, vendor.id),
+      metadata: {
+        requestId,
+        capabilityId: input.params.capabilityId,
+        product: input.params.product,
+      },
+    });
+
+    if (debit.outcome === 'insufficient') {
+      return {
+        creditDeducted: false,
+        events: [
+          this.event('vendor.credit.insufficient', {
+            requestId,
+            vendorId: vendor.id,
+            payload: {
+              requiredCredits: fee,
+              balance: debit.balance,
+              capability: input.params.capabilityId,
+            },
+          }),
+        ],
+        pushes: [
+          this.walletNotifier.notifyInsufficient({
+            userId: vendor.userId,
+            conversationId: vendor.conversationId,
+            capabilityName,
+            requiredCredits: fee,
+            balance: debit.balance,
+            variant: 'lead',
+          }),
+        ],
+      };
+    }
+
+    return {
+      creditDeducted: true,
+      events: [
+        this.event('vendor.credit.deducted', {
+          requestId,
+          vendorId: vendor.id,
+          payload: {
+            reason: WALLET_DEBIT_REASONS.profileDelivery,
+            capability: input.params.capabilityId,
             credits: fee,
           },
         }),

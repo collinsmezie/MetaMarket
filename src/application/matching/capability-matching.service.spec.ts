@@ -56,6 +56,7 @@ describe('CapabilityMatchingService Business Card Archetype Formatting', () => {
         userId: '2349127834513',
         conversationId: 'c-1',
         businessName: 'Mobinco Bookshop',
+        contactPhone: '+2348012345678',
         location: { city: 'Warri', state: 'Delta', country: 'Nigeria', confidence: 1 },
         status: 'active',
         conversationSummary:

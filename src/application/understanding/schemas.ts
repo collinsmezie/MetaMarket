@@ -210,3 +210,52 @@ export const segmentationJsonSchema = {
   required: ['segments', 'reasoning'],
   additionalProperties: false,
 } as const;
+
+// ── Suggested next actions ───────────────────────────────────────────────────────────
+
+/**
+ * Options the assistant offers the user for their next step.
+ *
+ * These are suggestions, not commands: each is replayed as if the user typed it, so the model
+ * cannot propose a step the platform is unable to route. That is why there is no payload or
+ * workflow reference here — only words.
+ */
+export const suggestedActionsSchema = z.object({
+  options: z
+    .array(
+      z.object({
+        /** What the user sees and, if they tap it, effectively says. Keep it short. */
+        label: z.string().min(1),
+      }),
+    )
+    .max(4),
+  reasoning: z.string(),
+});
+
+export type SuggestedActionsOutput = z.infer<typeof suggestedActionsSchema>;
+
+export const suggestedActionsJsonSchema = {
+  type: 'object',
+  properties: {
+    options: {
+      type: 'array',
+      description:
+        'Between 0 and 4 next steps the user is most likely to want. Empty when the reply needs no options.',
+      items: {
+        type: 'object',
+        properties: {
+          label: {
+            type: 'string',
+            description:
+              "The option as the user would say it, at most 20 characters so it fits a WhatsApp button. E.g. 'Yes', 'No', 'Cancel', 'Aba', 'Show more sellers'.",
+          },
+        },
+        required: ['label'],
+        additionalProperties: false,
+      },
+    },
+    reasoning: { type: 'string', description: 'One short sentence.' },
+  },
+  required: ['options', 'reasoning'],
+  additionalProperties: false,
+} as const;

@@ -27,6 +27,10 @@ import {
   MESSAGE_REPOSITORY,
   type MessageRepositoryPort,
 } from '../../domain/ports/outbound/message-repository.port';
+import {
+  OUTBOUND_MESSAGE_REPOSITORY,
+  type OutboundMessageRepositoryPort,
+} from '../../domain/ports/outbound/outbound-message-repository.port';
 import { STAGE_LOGGER, type StageLoggerPort } from '../../domain/ports/outbound/stage-logger.port';
 import {
   CLOCK,
@@ -34,6 +38,7 @@ import {
   ID_GENERATOR,
   type IdGeneratorPort,
 } from '../../domain/ports/outbound/system.port';
+import { decodeReplayPayload } from '../../domain/workflows/action-payload';
 import { ConversationContextManager } from '../conversation/conversation-context.manager';
 import { MediaProcessingService } from '../media/media-processing.service';
 import {
@@ -55,6 +60,7 @@ const STAGE = 'MessageIngestion';
 export class MessageIngestionService implements HandleIncomingMessagePort {
   constructor(
     @Inject(MESSAGE_REPOSITORY) private readonly messages: MessageRepositoryPort,
+    @Inject(OUTBOUND_MESSAGE_REPOSITORY) private readonly outbound: OutboundMessageRepositoryPort,
     @Inject(MEDIA_PROCESSING_QUEUE) private readonly mediaQueue: MediaProcessingQueuePort,
     @Inject(EVENT_PUBLISHER) private readonly events: EventPublisherPort,
     @Inject(STAGE_LOGGER) private readonly logger: StageLoggerPort,
@@ -191,11 +197,15 @@ export class MessageIngestionService implements HandleIncomingMessagePort {
     message: IncomingMessage,
     artifacts: readonly Artifact[],
   ): Promise<HandleIncomingMessageResult> {
-    const text = collectText(artifacts);
-    const interactivePayload = this.interactivePayloadOf(message);
+    const chosen = await this.resolveChoice(message, collectText(artifacts));
 
     const outcome = await this.context.withLock(message.conversationId, async () =>
-      this.core.handleTurn({ message, artifacts, text, interactivePayload }),
+      this.core.handleTurn({
+        message,
+        artifacts,
+        text: chosen.text,
+        interactivePayload: chosen.interactivePayload,
+      }),
     );
 
     if (outcome === null) {
@@ -235,6 +245,77 @@ export class MessageIngestionService implements HandleIncomingMessagePort {
     });
 
     await this.core.deliver(message, response, null);
+  }
+
+  /**
+   * Resolves an answer that names one of the options the platform last offered.
+   *
+   * Two shapes reach here. A *tapped* suggestion carries a replay payload, which grants no
+   * authority over any workflow — the option's words are the whole message, so the payload is
+   * dropped and the text routes normally. A *typed* answer may be just a number, because on
+   * WhatsApp the options are numbered in the message body and replying "2" is the natural thing
+   * to do.
+   *
+   * Resolution is deliberately narrow: only a bare number, and only within the range actually
+   * offered. "2" on its own is a choice; "2 cartons" is a quantity, and treating it as a menu
+   * selection would silently answer a question the user was not answering.
+   */
+  private async resolveChoice(
+    message: IncomingMessage,
+    text: string,
+  ): Promise<{ text: string; interactivePayload: string | null }> {
+    const payload = this.interactivePayloadOf(message);
+
+    const replayed = payload === null ? null : decodeReplayPayload(payload);
+    if (replayed !== null) {
+      // The button title already arrived as the message text; prefer the payload only if the
+      // channel sent no title with it.
+      return { text: text.trim().length > 0 ? text : replayed, interactivePayload: null };
+    }
+
+    if (payload !== null) return { text, interactivePayload: payload };
+
+    const choice = await this.resolveNumberedChoice(message.conversationId, text);
+    return choice === null ? { text, interactivePayload: null } : { text: choice, interactivePayload: null };
+  }
+
+  /** The label the user's number refers to, or null when the reply is not a bare choice. */
+  private async resolveNumberedChoice(conversationId: string, text: string): Promise<string | null> {
+    const trimmed = text.trim();
+    if (!/^\d{1,2}[.)]?$/.test(trimmed)) return null;
+
+    const index = Number.parseInt(trimmed, 10) - 1;
+    if (index < 0) return null;
+
+    let last;
+    try {
+      last = await this.outbound.latestForConversation(conversationId);
+    } catch (error) {
+      // A lookup failure must not swallow the user's message: it simply goes through as typed.
+      this.logger.stageFailed({
+        component: COMPONENT,
+        stage: `${STAGE}:Choice`,
+        input: { conversationId, reply: trimmed },
+        action: 'Could not read the last offered options; treating the reply as plain text',
+        error,
+      });
+      return null;
+    }
+
+    const options = last?.response.actions ?? [];
+    const option = options[index];
+
+    if (option === undefined) return null;
+
+    this.logger.stage({
+      component: COMPONENT,
+      stage: `${STAGE}:Choice`,
+      input: { conversationId, reply: trimmed },
+      action: `Read "${trimmed}" as the offered option "${option.title}"`,
+      output: { option: option.title, offered: options.length },
+    });
+
+    return option.title;
   }
 
   private interactivePayloadOf(message: IncomingMessage): string | null {

@@ -32,7 +32,7 @@ function buildServices(options: {
 }) {
   const extractions = [...options.extractions];
   const observed: string[] = [];
-  const finalized: { businessName: string; city: string; state: string }[] = [];
+  const finalized: { businessName: string; contactPhone: string; city: string; state: string }[] = [];
   const questionsAsked: (string | null)[] = [];
 
   const services: OnboardingServices = {
@@ -67,6 +67,7 @@ function buildServices(options: {
       async finalizeProfile(params) {
         finalized.push({
           businessName: params.businessName,
+          contactPhone: params.contactPhone,
           city: params.city,
           state: params.state,
         });
@@ -164,13 +165,21 @@ describe('Vendor onboarding workflow', () => {
         businessName: 'Emeka Plumbing',
         city: 'Aba',
         state: null,
+        contactPhone: '+2348012345678',
       },
       proposedState: 'Abia',
     });
 
     const outcome = await engine.execute(instance, makeTrigger({ text: 'yes' }), services);
 
-    expect(finalized).toEqual([{ businessName: 'Emeka Plumbing', city: 'Aba', state: 'Abia' }]);
+    expect(finalized).toEqual([
+      {
+        businessName: 'Emeka Plumbing',
+        contactPhone: '+2348012345678',
+        city: 'Aba',
+        state: 'Abia',
+      },
+    ]);
     expect(outcome.instance.status).toBe('completed');
     expect(outcome.responses.at(-1)?.text).toContain('Emeka Plumbing');
   });
@@ -345,7 +354,7 @@ describe('Vendor onboarding workflow', () => {
     expect(outcome.instance.currentState).toBe('AwaitBusinessName');
   });
 
-  it('creates a searchable profile at the end', async () => {
+  it('asks for the fan-out number once every other field is known', async () => {
     const { engine, workflows } = buildEngine();
     const { services, finalized } = buildServices({
       extractions: [{ fields: { businessName: 'Divine Electricals' } }],
@@ -357,12 +366,38 @@ describe('Vendor onboarding workflow', () => {
         city: 'Aba',
         state: 'Abia',
         businessName: null,
+        contactPhone: null,
       },
     });
 
     const outcome = await engine.execute(instance, makeTrigger({ text: 'Divine Electricals' }), services);
 
+    // A profile without a number is searchable but unreachable, so it must not be created yet.
+    expect(finalized).toEqual([]);
+    expect(outcome.instance.currentState).toBe('AwaitPhone');
+    expect(outcome.responses.at(-1)?.text).toContain('WhatsApp number');
+  });
+
+  it('creates a searchable profile once the number is given', async () => {
+    const { engine, workflows } = buildEngine();
+    const { services, finalized } = buildServices({
+      extractions: [{ fields: { contactPhone: '+2348012345678' } }],
+    });
+
+    const instance = seed(workflows, 'AwaitPhone', {
+      fields: {
+        capabilityStatement: 'electrical materials',
+        city: 'Aba',
+        state: 'Abia',
+        businessName: 'Divine Electricals',
+        contactPhone: null,
+      },
+    });
+
+    const outcome = await engine.execute(instance, makeTrigger({ text: '08012345678' }), services);
+
     expect(finalized[0].businessName).toBe('Divine Electricals');
+    expect(finalized[0].contactPhone).toBe('+2348012345678');
     expect(outcome.instance.status).toBe('completed');
     expect(outcome.instance.importantEntities.vendor_id).toBe('vendor_1');
   });

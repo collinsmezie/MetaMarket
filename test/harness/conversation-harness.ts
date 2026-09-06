@@ -158,6 +158,11 @@ class OracleLlm implements LlmService {
           reasoning: `oracle: ${turn.label}`,
         };
 
+      case 'suggested_actions':
+        // A fixed pair, so the option pipeline is exercised without the scorecard depending on
+        // what a model would have suggested that day.
+        return { options: [{ label: 'Yes' }, { label: 'Cancel' }], reasoning: 'oracle' };
+
       case 'continuity_analysis':
         return {
           relationship: primary.relationship,

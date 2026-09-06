@@ -252,6 +252,9 @@ export const onboardingExtractionSchema = z.object({
   capabilityStatement: z.string(),
   businessName: z.string(),
   businessNameConfidence: confidence,
+  /** A phone number the vendor gave for buyers' requests. Empty when not mentioned. */
+  phone: z.string(),
+  phoneConfidence: confidence,
   city: z.string(),
   cityConfidence: confidence,
   state: z.string(),
@@ -275,6 +278,12 @@ export const onboardingExtractionJsonSchema = {
     },
     businessName: { type: 'string', description: 'Shop or business name. Empty if not mentioned.' },
     businessNameConfidence: { type: 'number' },
+    phone: {
+      type: 'string',
+      description:
+        'Phone or WhatsApp number the vendor gave, digits as they wrote them. Empty if not mentioned.',
+    },
+    phoneConfidence: { type: 'number' },
     city: { type: 'string', description: 'City or town. Empty if not mentioned.' },
     cityConfidence: { type: 'number' },
     state: {
@@ -291,6 +300,8 @@ export const onboardingExtractionJsonSchema = {
     'capabilityStatement',
     'businessName',
     'businessNameConfidence',
+    'phone',
+    'phoneConfidence',
     'city',
     'cityConfidence',
     'state',

@@ -36,6 +36,7 @@ const STATE_AWAIT_CLARIFICATION = 'AwaitClarification';
 const STATE_AWAIT_LOCATION = 'AwaitLocation';
 const STATE_CONFIRM_STATE = 'ConfirmState';
 const STATE_AWAIT_BUSINESS_NAME = 'AwaitBusinessName';
+const STATE_AWAIT_PHONE = 'AwaitPhone';
 const STATE_CREATE_PROFILE = 'CreateProfile';
 const STATE_COMPLETE = 'Complete';
 
@@ -109,6 +110,7 @@ export interface OnboardingServices extends WorkflowServices {
     finalizeProfile(params: {
       vendorId: string;
       businessName: string;
+      contactPhone: string;
       city: string;
       state: string;
       summary: string;
@@ -186,6 +188,9 @@ function nextStateFor(data: OnboardingData): string {
     return data.proposedState !== null ? STATE_CONFIRM_STATE : STATE_AWAIT_LOCATION;
   }
   if (data.fields.businessName === null) return STATE_AWAIT_BUSINESS_NAME;
+  // Last, because it is the one field the platform sometimes already knows: asking for it
+  // first would interrupt a vendor to request something we could have suggested.
+  if (data.fields.contactPhone === null) return STATE_AWAIT_PHONE;
   return STATE_CREATE_PROFILE;
 }
 
@@ -201,7 +206,9 @@ function questionFor(state: string, data: OnboardingData): string {
     case STATE_CONFIRM_STATE:
       return `That's ${data.fields.city} in ${data.proposedState} State, right?`;
     case STATE_AWAIT_BUSINESS_NAME:
-      return "Lastly, what's your business name?";
+      return "What's your business name?";
+    case STATE_AWAIT_PHONE:
+      return 'Lastly, which WhatsApp number should I send buyer requests to?';
     default:
       return '';
   }
@@ -412,6 +419,7 @@ const askCapability = {
     STATE_AWAIT_LOCATION,
     STATE_CONFIRM_STATE,
     STATE_AWAIT_BUSINESS_NAME,
+    STATE_AWAIT_PHONE,
     STATE_CREATE_PROFILE,
     // A vendor who is already listed finishes here: they are adding capabilities, not building
     // a profile, so there is nothing for CreateProfile to do.
@@ -434,6 +442,7 @@ const waitingState = (name: string) => ({
     STATE_AWAIT_LOCATION,
     STATE_CONFIRM_STATE,
     STATE_AWAIT_BUSINESS_NAME,
+    STATE_AWAIT_PHONE,
     STATE_CREATE_PROFILE,
     // A vendor who is already listed finishes here: they are adding capabilities, not building
     // a profile, so there is nothing for CreateProfile to do.
@@ -457,12 +466,19 @@ const createProfile = {
       throw new Error('Cannot create a vendor profile before the vendor and location are resolved.');
     }
 
+    if (data.fields.contactPhone === null) {
+      // Reaching here without a number would create a searchable vendor that no buyer request
+      // can ever reach — worse than an incomplete profile, because it looks complete.
+      throw new Error('Cannot create a vendor profile before a contact number is on file.');
+    }
+
     const businessName = data.fields.businessName ?? '';
     const summary = summaryFor(data.fields);
 
     await services.vendors.finalizeProfile({
       vendorId: data.vendorId,
       businessName,
+      contactPhone: data.fields.contactPhone,
       city: data.fields.city,
       state: data.fields.state,
       summary,
@@ -474,7 +490,7 @@ const createProfile = {
         text: [
           `All set, ${businessName}.`,
           '',
-          `You're listed in ${data.fields.city}, ${data.fields.state} State. Buyers looking for what you sell can now find you.`,
+          `You're listed in ${data.fields.city}, ${data.fields.state} State. Buyers looking for what you sell can now find you, and I'll send their requests to ${data.fields.contactPhone}.`,
           '',
           "I'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
         ].join('\n'),
@@ -507,6 +523,7 @@ export const vendorOnboardingWorkflow: WorkflowDefinition = {
     waitingState(STATE_AWAIT_LOCATION),
     waitingState(STATE_CONFIRM_STATE),
     waitingState(STATE_AWAIT_BUSINESS_NAME),
+    waitingState(STATE_AWAIT_PHONE),
     createProfile,
     complete,
   ],

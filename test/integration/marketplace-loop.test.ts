@@ -120,6 +120,7 @@ describe('Marketplace learning loop', () => {
       userId,
       conversationId: CONVERSATION_ID,
       businessName: name,
+      contactPhone: userId,
       location: { city: 'Aba', state: 'Abia', country: 'Nigeria', confidence: 1 },
       conversationSummary: '',
     });

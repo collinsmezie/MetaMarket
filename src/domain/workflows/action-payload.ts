@@ -69,3 +69,42 @@ export function decodeActionPayload(raw: string): ActionPayload | null {
 
   return value === undefined || value.length === 0 ? { workflowId, action } : { workflowId, action, value };
 }
+
+/**
+ * Prefix marking a suggested option that carries no workflow reference.
+ *
+ * Distinct from {@link PREFIX} so {@link decodeActionPayload} rejects it outright: the routing
+ * layer must never mistake a suggestion for a reference to a live workflow instance.
+ */
+const REPLAY_PREFIX = 'mmr';
+
+/**
+ * Encodes an option the AI suggested rather than a workflow offered.
+ *
+ * Such an option has nothing deterministic to point at, so tapping it re-enters the pipeline as
+ * if the user had typed the option's words. That is the whole trick: the model can propose any
+ * next step it likes and still cannot mint a button that routes somewhere undefined, because the
+ * payload grants no authority — the text does the work, and the text is subject to the same
+ * understanding and routing as anything else the user says.
+ */
+export function encodeReplayPayload(label: string): string {
+  const encoded = `${REPLAY_PREFIX}${DELIMITER}${label.replace(new RegExp(`\\${DELIMITER}`, 'g'), '/')}`;
+
+  // Truncated rather than rejected: a suggestion is cosmetic, and losing the tail of a long
+  // label is better than failing to compose the reply it belongs to.
+  return Buffer.byteLength(encoded, 'utf8') > MAX_PAYLOAD_BYTES
+    ? encoded.slice(0, MAX_PAYLOAD_BYTES)
+    : encoded;
+}
+
+/** The label a replay payload carries, or null when it is not one. */
+export function decodeReplayPayload(raw: string): string | null {
+  if (!raw.startsWith(`${REPLAY_PREFIX}${DELIMITER}`)) return null;
+
+  const label = raw.slice(REPLAY_PREFIX.length + DELIMITER.length).trim();
+  return label.length > 0 ? label : null;
+}
+
+export function isReplayPayload(raw: string | null): boolean {
+  return raw !== null && decodeReplayPayload(raw) !== null;
+}

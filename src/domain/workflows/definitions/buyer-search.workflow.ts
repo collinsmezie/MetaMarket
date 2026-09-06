@@ -162,7 +162,25 @@ function renderVendors(vendors: readonly RankedVendorView[], resolvedProduct: st
 
   const text = `${header}${cardList}`;
 
-  return { text, actions: [] };
+  // The same vendors as structured data, for channels that can render a card. The text stays
+  // authoritative — WhatsApp has nothing else — and a client that ignores this loses nothing.
+  // Emitting it as metadata rather than a new Response field keeps the domain from acquiring a
+  // shape that exists only because one client is a browser (MCOS §3.1, §13).
+  const cards = vendors.map((vendor) => ({
+    vendorId: vendor.vendorId,
+    vendorName: vendor.businessName || 'Vendor',
+    location:
+      vendor.city && vendor.state
+        ? `${vendor.city}, ${vendor.state}`
+        : vendor.city || vendor.state || 'Nigeria',
+    phone: vendor.phone ?? null,
+    matchedConcept: resolvedProduct,
+    description: vendor.description ?? (vendor.reasons.length > 0 ? vendor.reasons[0] : null) ?? null,
+    rating: vendor.rating ?? null,
+    score: vendor.score,
+  }));
+
+  return { text, actions: [], metadata: { vendors: cards } };
 }
 
 const resolveDemand = {
@@ -275,7 +293,7 @@ const resolveDemand = {
       response: {
         text: rendered.text,
         actions: [],
-        metadata: { messages },
+        metadata: { messages, ...rendered.metadata },
       },
       dataPatch: {
         query,

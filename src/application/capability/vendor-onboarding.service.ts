@@ -66,6 +66,10 @@ export class VendorOnboardingService {
       userId: params.userId,
       conversationId: params.conversationId,
       businessName: '',
+      // Collected by the onboarding workflow before the profile is completed. A vendor who
+      // arrived over WhatsApp has a usable number already; one who arrived in the browser
+      // does not, which is why this cannot default to the conversation identity.
+      contactPhone: null,
       location: null,
       conversationSummary: '',
     });
@@ -88,6 +92,7 @@ export class VendorOnboardingService {
   async finalizeProfile(params: {
     vendorId: string;
     businessName: string;
+    contactPhone: string;
     city: string;
     state: string;
     summary: string;
@@ -96,6 +101,7 @@ export class VendorOnboardingService {
 
     const vendor = await this.vendors.update(params.vendorId, {
       businessName: params.businessName,
+      contactPhone: params.contactPhone,
       location: {
         city: params.city,
         state: params.state,

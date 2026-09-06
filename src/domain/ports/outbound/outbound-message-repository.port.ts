@@ -46,6 +46,15 @@ export interface OutboundMessageRepositoryPort {
    */
   claimDue(params: { batchSize: number; now: Date; leaseMs: number }): Promise<readonly OutboundMessage[]>;
 
+  /**
+   * The most recent reply composed for a conversation, whatever became of its delivery.
+   *
+   * Exists so a numbered answer can be resolved back to the option it names. The queue already
+   * holds every composed response verbatim, including its actions, which makes it the one place
+   * that knows what the user was last offered — conversation history keeps only the text.
+   */
+  latestForConversation(conversationId: string): Promise<OutboundMessage | null>;
+
   /** Drops delivered rows past their retention window; the log is a queue, not an archive. */
   purgeSent(params: { sentBefore: Date; limit: number }): Promise<number>;
 }
