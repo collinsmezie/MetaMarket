@@ -5,7 +5,7 @@ services:
   - type: web
     name: metamarket-backend
     runtime: node
-    plan: starter
+    plan: 0.5c-512mb
     buildCommand: npm install && npx prisma generate && npm run build
     preDeployCommand: npx prisma migrate deploy
     startCommand: npm run start:prod
@@ -49,7 +49,7 @@ services:
   - type: web
     name: metamarket-frontend
     runtime: node
-    plan: starter
+    plan: 0.5c-512mb
     rootDir: frontend
     buildCommand: npm install && npm run build
     startCommand: npx next start -p $PORT
