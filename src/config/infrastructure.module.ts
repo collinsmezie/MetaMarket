@@ -239,6 +239,9 @@ import { AppConfigService } from './app-config.service';
     // Exported for the web inbound adapter, which subscribes the browser to the same bus the
     // notifier publishes on.
     WebStreamHub,
+    // Exported so ingestion can read back the options the last reply offered, which is what
+    // lets a bare "2" be resolved to the option it names.
+    OUTBOUND_MESSAGE_REPOSITORY,
     EVENT_PUBLISHER,
     BullModule,
   ],
