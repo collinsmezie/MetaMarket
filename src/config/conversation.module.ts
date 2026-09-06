@@ -25,6 +25,7 @@ import { TurnProcessor } from '../application/pipeline/turn-processor.service';
 import { WORKFLOW_SERVICES } from '../application/pipeline/workflow-services';
 import { ConversationDelivery } from '../application/response/conversation-delivery.service';
 import { ResponseComposer } from '../application/response/response-composer.service';
+import { SuggestedActionsService } from '../application/response/suggested-actions.service';
 import { ConversationContinuityAnalyzer } from '../application/understanding/continuity-analyzer.service';
 import { UtteranceSegmentationService } from '../application/understanding/segmentation.service';
 import { IntentResolutionService } from '../application/understanding/intent-resolution.service';
@@ -88,6 +89,7 @@ import { AppConfigService } from './app-config.service';
     VendorFanoutNotifier,
     VendorResponseHandler,
     ResponseComposer,
+    SuggestedActionsService,
     ConversationDelivery,
     ConversationContinuityAnalyzer,
     UtteranceSegmentationService,

@@ -487,6 +487,11 @@ export class InMemoryOutboundQueue implements OutboundMessageRepositoryPort {
   readonly rows: OutboundMessage[] = [];
   private counter = 0;
 
+  async latestForConversation(conversationId: string): Promise<OutboundMessage | null> {
+    const matching = this.rows.filter((row) => row.conversationId === conversationId);
+    return matching.length === 0 ? null : matching[matching.length - 1];
+  }
+
   async enqueue(params: {
     id: string;
     channel: Channel;
