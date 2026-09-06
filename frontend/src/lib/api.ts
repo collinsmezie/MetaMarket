@@ -25,6 +25,9 @@ export const getApiBase = (): string => {
   // 2. Dynamic Browser Runtime: Derive public backend FQDN when running on Render
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
+    if (host.includes('metamarket-frontend.onrender.com')) {
+      return 'https://metamarket-backend-oan7.onrender.com';
+    }
     if (host.includes('.onrender.com') && host.includes('frontend')) {
       return `https://${host.replace('frontend', 'backend')}`;
     }
