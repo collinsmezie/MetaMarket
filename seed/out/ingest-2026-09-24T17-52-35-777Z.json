@@ -1,0 +1,789 @@
+{
+  "base": "http://localhost:4000",
+  "startedAt": "2026-09-24T17:52:35.778Z",
+  "results": [
+    {
+      "id": "v01",
+      "channel": "web",
+      "businessName": "Okonkwo Cement Depot",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell Dangote cement, BUA cement, sharp sand and 12mm iron rods in Aba",
+          "reply": "That's Aba in Abia State, right?",
+          "seconds": 109
+        },
+        {
+          "turn": 2,
+          "sent": "Yes",
+          "reply": "Hello! Welcome to MetaMarket. I connect you with trusted sellers across Nigeria.\n\nTell me what you're looking to buy, or say \"I sell …\" to list your business so buyers can find you.",
+          "seconds": 12
+        }
+      ],
+      "conversationId": "b36d8db9-8e7d-4684-a775-6b974ea937bb",
+      "completed": false,
+      "error": "No scripted answer for reply: Hello! Welcome to MetaMarket. I connect you with trusted sellers across Nigeria.\n\nTell me what you're looking to buy, or say \"I sell …\" to list your business so"
+    },
+    {
+      "id": "v03",
+      "channel": "web",
+      "businessName": "Chidi Plumbing Works",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell PVC pipes, taps, water closets and fittings, and I also do plumbing installation and repairs",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 67
+        },
+        {
+          "turn": 2,
+          "sent": "Enugu, Enugu State",
+          "reply": "What's your business name?",
+          "seconds": 52
+        },
+        {
+          "turn": 3,
+          "sent": "Chidi Plumbing Works",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 18
+        },
+        {
+          "turn": 4,
+          "sent": "08090000003",
+          "reply": "All set, Chidi Plumbing Works.\n\nYou're listed in Enugu, Enugu State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000003.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 24
+        }
+      ],
+      "conversationId": "2cc0b3fd-e0f1-4a70-ac7c-2d3ddbba8a4c",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v04",
+      "channel": "web",
+      "businessName": "Rainbow Paints Ilorin",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We are a paint and coatings shop",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 77
+        },
+        {
+          "turn": 2,
+          "sent": "Ilorin, Kwara State",
+          "reply": "What's your business name?",
+          "seconds": 46
+        },
+        {
+          "turn": 3,
+          "sent": "Rainbow Paints Ilorin",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 56
+        },
+        {
+          "turn": 4,
+          "sent": "08090000004",
+          "reply": "All set, Rainbow Paints Ilorin.\n\nYou're listed in Ilorin, Kwara State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000004.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 38
+        }
+      ],
+      "conversationId": "3287500d-f67f-4f8c-a58e-2424f0410f77",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v05",
+      "channel": "web",
+      "businessName": "Gbenga Roofing",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Aluminium roofing sheets, stone-coated roofing tiles and long span, plus roof installation and leak repairs",
+          "reply": "We're checking across our seller network for *Aluminium roofing sheets* and will notify you the moment a supplier is ready.",
+          "seconds": 103
+        }
+      ],
+      "conversationId": "6224b664-0039-4f90-b582-df34f71ac2c6",
+      "completed": false,
+      "error": "No scripted answer for reply: We're checking across our seller network for *Aluminium roofing sheets* and will notify you the moment a supplier is ready."
+    },
+    {
+      "id": "v06",
+      "channel": "whatsapp",
+      "businessName": "PowerHouse Generators",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v06"
+    },
+    {
+      "id": "v07",
+      "channel": "web",
+      "businessName": "SunLite Solar Kano",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell 550W mono solar panels, 5kVA inverters and 200Ah tubular batteries",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 40
+        },
+        {
+          "turn": 2,
+          "sent": "Kano, Kano State",
+          "reply": "What's your business name?",
+          "seconds": 46
+        },
+        {
+          "turn": 3,
+          "sent": "SunLite Solar Kano",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 20
+        },
+        {
+          "turn": 4,
+          "sent": "08090000007",
+          "reply": "🎁 Welcome, Grant Received!\nYou have been credited with 2000 free visibility credits to get started.\nCurrent Balance: 2000 Credits",
+          "seconds": 30
+        }
+      ],
+      "conversationId": "b191d1d4-ee76-4b2d-a25e-54c093819355",
+      "completed": false,
+      "error": "No scripted answer for reply: 🎁 Welcome, Grant Received!\nYou have been credited with 2000 free visibility credits to get started.\nCurrent Balance: 2000 Credits"
+    },
+    {
+      "id": "v08",
+      "channel": "web",
+      "businessName": "Computer Village Phones",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I have a shop in Computer Village Ikeja where I sell phones, chargers and earpieces",
+          "reply": "That's Ikeja in Lagos State, right?",
+          "seconds": 52
+        },
+        {
+          "turn": 2,
+          "sent": "Yes",
+          "reply": "Hello! Welcome to MetaMarket. I connect you with trusted sellers across Nigeria.\n\nTell me what you're looking to buy, or say \"I sell …\" to list your business so buyers can find you.",
+          "seconds": 32
+        }
+      ],
+      "conversationId": "59c431d0-5435-4000-b2ff-9be29207275d",
+      "completed": false,
+      "error": "No scripted answer for reply: Hello! Welcome to MetaMarket. I connect you with trusted sellers across Nigeria.\n\nTell me what you're looking to buy, or say \"I sell …\" to list your business so"
+    },
+    {
+      "id": "v09",
+      "channel": "web",
+      "businessName": "ByteWorks Abuja",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We sell UK-used laptops and desktops and we fix laptops, replace screens and install software",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 54
+        },
+        {
+          "turn": 2,
+          "sent": "Wuse, Abuja",
+          "reply": "What's your business name?",
+          "seconds": 42
+        },
+        {
+          "turn": 3,
+          "sent": "ByteWorks Abuja",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 20
+        },
+        {
+          "turn": 4,
+          "sent": "08090000009",
+          "reply": "All set, ByteWorks Abuja.\n\nYou're listed in Wuse, Abuja State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000009.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 16
+        }
+      ],
+      "conversationId": "cc1fc905-eaba-498d-b032-4ebeb85dca27",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v10",
+      "channel": "web",
+      "businessName": "Coolzone Appliances",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Home appliances dealer: fridges, deep freezers, air conditioners, washing machines and standing fans",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 20
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell",
+          "reply": "What do you sell or what service do you provide?",
+          "seconds": 67
+        },
+        {
+          "turn": 3,
+          "sent": "Home appliances dealer: fridges, deep freezers, air conditioners, washing machines and standing fans. That is all.",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 60
+        },
+        {
+          "turn": 4,
+          "sent": "Benin City, Edo State",
+          "reply": "What's your business name?",
+          "seconds": 52
+        },
+        {
+          "turn": 5,
+          "sent": "Coolzone Appliances",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 34
+        },
+        {
+          "turn": 6,
+          "sent": "08090000010",
+          "reply": "All set, Coolzone Appliances.\n\nYou're listed in Benin City, Edo State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000010.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 26
+        }
+      ],
+      "conversationId": "be269c8f-cce4-41bb-9c22-e2ab15d0cc7f",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v11",
+      "channel": "whatsapp",
+      "businessName": "Ladipo Auto Parts",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v11"
+    },
+    {
+      "id": "v12",
+      "channel": "web",
+      "businessName": "Baba Tunde Mechanic Workshop",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I am a mechanic. I do engine repairs, servicing, brake work and AC repair for cars",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 34
+        },
+        {
+          "turn": 2,
+          "sent": "Ibadan, Oyo State",
+          "reply": "What's your business name?",
+          "seconds": 26
+        },
+        {
+          "turn": 3,
+          "sent": "Baba Tunde Mechanic Workshop",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 54
+        },
+        {
+          "turn": 4,
+          "sent": "08090000012",
+          "reply": "All set, Baba Tunde Mechanic Workshop.\n\nYou're listed in Ibadan, Oyo State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000012.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 24
+        }
+      ],
+      "conversationId": "8e7f3640-2352-4806-80e6-1772eee7e35d",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v13",
+      "channel": "web",
+      "businessName": "Amaka's Boutique",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We run a ladies' boutique for clothing and fashion accessories",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 70
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell",
+          "reply": "You mentioned you run a ladies' boutique for clothing and fashion accessories and that you want to sell. Could you clarify if you're looking to list your business so buyers can find you? Also, I’ve kept your earlier request on hold—just say *carry on* whenever you’re ready to continue.",
+          "seconds": 68
+        },
+        {
+          "turn": 3,
+          "sent": "I want to sell",
+          "reply": "What do you sell or what service do you provide?",
+          "seconds": 20
+        },
+        {
+          "turn": 4,
+          "sent": "We run a ladies' boutique for clothing and fashion accessories. That is all.",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 50
+        },
+        {
+          "turn": 5,
+          "sent": "Owerri, Imo State",
+          "reply": "What's your business name?",
+          "seconds": 30
+        },
+        {
+          "turn": 6,
+          "sent": "Amaka's Boutique",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 22
+        },
+        {
+          "turn": 7,
+          "sent": "08090000013",
+          "reply": "All set, Amaka's Boutique.\n\nYou're listed in Owerri, Imo State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000013.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 24
+        }
+      ],
+      "conversationId": "ae481f71-b4fa-40b5-b71b-c5e1a7b5772e",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v14",
+      "channel": "web",
+      "businessName": "Aba Made Shoes",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I make and sell leather sandals, men's loafers and school shoes",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 38
+        },
+        {
+          "turn": 2,
+          "sent": "Aba, Abia State",
+          "reply": "What's your business name?",
+          "seconds": 52
+        },
+        {
+          "turn": 3,
+          "sent": "Aba Made Shoes",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 28
+        },
+        {
+          "turn": 4,
+          "sent": "08090000014",
+          "reply": "All set, Aba Made Shoes.\n\nYou're listed in Aba, Abia State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000014.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 42
+        }
+      ],
+      "conversationId": "5c9ebf4c-8b1d-4aab-af1d-4a65f3db5d13",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v15",
+      "channel": "web",
+      "businessName": "Balogun Fabrics",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "My shop is in Balogun market, I sell ankara, lace, aso-oke and senator materials",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 60
+        },
+        {
+          "turn": 2,
+          "sent": "Lagos Island, Lagos State",
+          "reply": "What's your business name?",
+          "seconds": 40
+        },
+        {
+          "turn": 3,
+          "sent": "Balogun Fabrics",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 70
+        },
+        {
+          "turn": 4,
+          "sent": "08090000015",
+          "reply": "All set, Balogun Fabrics.\n\nYou're listed in Lagos Island, Lagos State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000015.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 28
+        }
+      ],
+      "conversationId": "0413ed38-1a09-41e7-a681-e4f6b1935073",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v16",
+      "channel": "web",
+      "businessName": "Stitches by Halima",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I am a tailor and fashion designer. I sew native wears, kaftans and wedding outfits",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 46
+        },
+        {
+          "turn": 2,
+          "sent": "Kaduna, Kaduna State",
+          "reply": "What's your business name?",
+          "seconds": 44
+        },
+        {
+          "turn": 3,
+          "sent": "Stitches by Halima",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 24
+        },
+        {
+          "turn": 4,
+          "sent": "08090000016",
+          "reply": "All set, Stitches by Halima.\n\nYou're listed in Kaduna, Kaduna State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000016.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 40
+        }
+      ],
+      "conversationId": "ca7d1ef1-edc0-44fa-87d5-527a8eb73e08",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v17",
+      "channel": "web",
+      "businessName": "Glow Beauty Store",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Cosmetics and skincare: body lotions, perfumes, human hair wigs and makeup kits",
+          "reply": "What would you like to do with these products?",
+          "seconds": 16
+        }
+      ],
+      "conversationId": "9417a07d-b78c-4de6-ae3a-88715b5029e1",
+      "completed": false,
+      "error": "No scripted answer for reply: What would you like to do with these products?"
+    },
+    {
+      "id": "v18",
+      "channel": "web",
+      "businessName": "Kings Cut Barbershop",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We are a barbing salon offering haircuts, beard grooming and hair dye",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 38
+        },
+        {
+          "turn": 2,
+          "sent": "Lekki, Lagos State",
+          "reply": "What's your business name?",
+          "seconds": 36
+        },
+        {
+          "turn": 3,
+          "sent": "Kings Cut Barbershop",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 22
+        }
+      ],
+      "conversationId": "990c9fe6-3383-4bd3-9cf0-fa15e24e12e5",
+      "completed": false,
+      "error": "Timed out waiting for a reply for v18"
+    },
+    {
+      "id": "v19",
+      "channel": "whatsapp",
+      "businessName": "Onitsha Central Pharmacy",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v19"
+    },
+    {
+      "id": "v20",
+      "channel": "web",
+      "businessName": "Mile 12 Foodstuff",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell foodstuff in Mile 12 market: bags of rice, beans, garri, palm oil and yam",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 54
+        },
+        {
+          "turn": 2,
+          "sent": "Ketu, Lagos State",
+          "reply": "What's your business name?",
+          "seconds": 36
+        }
+      ],
+      "conversationId": "770c1edd-f853-4b7f-8856-1e8bc06d68a5",
+      "completed": false,
+      "error": "Timed out waiting for a reply for v20"
+    },
+    {
+      "id": "v21",
+      "channel": "web",
+      "businessName": "Mama Nkechi Provisions",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I run a provisions store",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 83
+        },
+        {
+          "turn": 2,
+          "sent": "Asaba, Delta State",
+          "reply": "What's your business name?",
+          "seconds": 22
+        }
+      ],
+      "conversationId": "8b726e64-4d99-487d-9366-2adca0af11e6",
+      "completed": false,
+      "error": "Timed out waiting for a reply for v21"
+    },
+    {
+      "id": "v22",
+      "channel": "web",
+      "businessName": "Iceberg Frozen Foods",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell frozen chicken, turkey wings, titus fish and croaker",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 50
+        },
+        {
+          "turn": 2,
+          "sent": "Warri, Delta State",
+          "reply": "What's your business name?",
+          "seconds": 34
+        },
+        {
+          "turn": 3,
+          "sent": "Iceberg Frozen Foods",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 50
+        },
+        {
+          "turn": 4,
+          "sent": "08090000022",
+          "reply": "All set, Iceberg Frozen Foods.\n\nYou're listed in Warri, Delta State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000022.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 24
+        }
+      ],
+      "conversationId": "22a85312-7bed-4f85-8fa1-3ee8587b3fd5",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v23",
+      "channel": "web",
+      "businessName": "Aqua Fresh Table Water",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We produce and supply sachet water and bottled water, and we deliver to shops and events",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 34
+        },
+        {
+          "turn": 2,
+          "sent": "Jos, Plateau State",
+          "reply": "What's your business name?",
+          "seconds": 38
+        },
+        {
+          "turn": 3,
+          "sent": "Aqua Fresh Table Water",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 24
+        },
+        {
+          "turn": 4,
+          "sent": "08090000023",
+          "reply": "All set, Aqua Fresh Table Water.\n\nYou're listed in Jos, Plateau State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000023.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 30
+        }
+      ],
+      "conversationId": "b6c41b8c-bac8-402a-98fc-011c3e91a3e9",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v24",
+      "channel": "web",
+      "businessName": "Green Harvest Agro",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Agro inputs dealer: NPK fertiliser, urea, herbicides, knapsack sprayers and hybrid maize seed",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 44
+        },
+        {
+          "turn": 2,
+          "sent": "Makurdi, Benue State",
+          "reply": "What's your business name?",
+          "seconds": 34
+        },
+        {
+          "turn": 3,
+          "sent": "Green Harvest Agro",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 24
+        },
+        {
+          "turn": 4,
+          "sent": "08090000024",
+          "reply": "All set, Green Harvest Agro.\n\nYou're listed in Makurdi, Benue State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000024.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 14
+        }
+      ],
+      "conversationId": "c6942e2e-ca2b-457f-9867-697f966db826",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v25",
+      "channel": "whatsapp",
+      "businessName": "Oga Carpenter Furniture",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v25"
+    },
+    {
+      "id": "v26",
+      "channel": "web",
+      "businessName": "Scholars Bookshop",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We are a bookshop and stationery store",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 107
+        },
+        {
+          "turn": 2,
+          "sent": "Ilorin, Kwara State",
+          "reply": "What's your business name?",
+          "seconds": 22
+        },
+        {
+          "turn": 3,
+          "sent": "Scholars Bookshop",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 16
+        },
+        {
+          "turn": 4,
+          "sent": "08090000026",
+          "reply": "All set, Scholars Bookshop.\n\nYou're listed in Ilorin, Kwara State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000026.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 18
+        }
+      ],
+      "conversationId": "d1e92758-b916-4ba6-89a1-d2250683ce50",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v27",
+      "channel": "web",
+      "businessName": "Little Ones Baby Store",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell Pampers diapers, baby wipes, feeding bottles and baby formula",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 38
+        },
+        {
+          "turn": 2,
+          "sent": "Calabar, Cross River State",
+          "reply": "What's your business name?",
+          "seconds": 46
+        },
+        {
+          "turn": 3,
+          "sent": "Little Ones Baby Store",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 20
+        },
+        {
+          "turn": 4,
+          "sent": "08090000027",
+          "reply": "All set, Little Ones Baby Store.\n\nYou're listed in Calabar, Cross River State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000027.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 24
+        }
+      ],
+      "conversationId": "6b1adbf6-e242-431f-a442-f1c9a04a54ec",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v28",
+      "channel": "web",
+      "businessName": "Sparkle Cleaning Supplies",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Cleaning supplies: detergents, bleach, iron sponge, mops and toilet paper in bulk",
+          "reply": "We're checking across our seller network for *detergents* and will notify you the moment a supplier is ready.",
+          "seconds": 93
+        }
+      ],
+      "conversationId": "e975dd75-ec99-4a18-ba0c-42544da382d8",
+      "completed": false,
+      "error": "No scripted answer for reply: We're checking across our seller network for *detergents* and will notify you the moment a supplier is ready."
+    },
+    {
+      "id": "v29",
+      "channel": "web",
+      "businessName": "Royal Events Rentals",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We rent canopies, chairs and tables for events and we also provide catering and decoration services",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 40
+        },
+        {
+          "turn": 2,
+          "sent": "Yenagoa, Bayelsa State",
+          "reply": "What's your business name?",
+          "seconds": 46
+        },
+        {
+          "turn": 3,
+          "sent": "Royal Events Rentals",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 18
+        },
+        {
+          "turn": 4,
+          "sent": "08090000029",
+          "reply": "All set, Royal Events Rentals.\n\nYou're listed in Yenagoa, Bayelsa State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000029.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 28
+        }
+      ],
+      "conversationId": "fd5808f5-c5b0-4844-9d86-750c3aac130b",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v30",
+      "channel": "whatsapp",
+      "businessName": "SafeGuard PPE Warri",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v30"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "base": "http://localhost:4000",
+  "startedAt": "2026-09-24T18:14:45.746Z",
+  "results": [
+    {
+      "id": "v01",
+      "channel": "web",
+      "businessName": "Okonkwo Cement Depot",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell Dangote cement, BUA cement, sharp sand and 12mm iron rods in Aba",
+          "reply": "That's Aba in Abia State, right?",
+          "seconds": 93
+        },
+        {
+          "turn": 2,
+          "sent": "Yes",
+          "reply": "Hello! Welcome to MetaMarket. I connect you with trusted sellers across Nigeria.\n\nTell me what you're looking to buy, or say \"I sell …\" to list your business so buyers can find you.",
+          "seconds": 52
+        },
+        {
+          "turn": 3,
+          "sent": "I want to sell I sell Dangote cement, BUA cement, sharp sand and 12mm iron rods in Aba",
+          "reply": "What's your business name?",
+          "seconds": 58
+        },
+        {
+          "turn": 4,
+          "sent": "Okonkwo Cement Depot",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 145
+        },
+        {
+          "turn": 5,
+          "sent": "08090000001",
+          "reply": "All set, Okonkwo Cement Depot.\n\nYou're listed in Aba, Abia State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000001.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 52
+        }
+      ],
+      "conversationId": "40964013-4bd0-4129-99cb-b339bdaa520b",
+      "completed": true,
+      "error": null
+    }
+  ]
+}

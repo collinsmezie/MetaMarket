@@ -10,6 +10,7 @@
  * Writes a run log to seed/out/ingest-<timestamp>.json (conversation ids, turns, replies).
  */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { createHmac } from 'node:crypto';
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, '').split('=')).map(([k, v]) => [k, v ?? 'true']));
 const BASE = args.base ?? process.env.BASE ?? 'http://localhost:4000';
@@ -33,13 +34,14 @@ const json = async (res) => {
 /** Chooses the answer to the workflow's latest question (Information Before Questions applies: any turn may carry more). */
 function answerFor(reply, vendor, sentSoFar) {
   const q = reply.toLowerCase();
-  if (/all set|you're listed|profile created/.test(q)) return null;
-  if (/which city and state|where is your business|which state is that/.test(q)) return vendor.followups.location;
-  if (/right\?/.test(q)) return 'Yes';
-  if (/business name/.test(q)) return vendor.followups.businessName;
-  if (/whatsapp number|phone number|which number/.test(q)) return vendor.followups.phone;
-  if (/what do you sell|what would you like to add|what service/.test(q)) return sentSoFar.includes(vendor.statement) ? `${vendor.statement}. That is all.` : vendor.statement;
-  if (/buy something|sell something|want to buy|want to sell|buy or sell/.test(q)) return 'I want to sell';
+  if (/all set|you're listed|profile created|grant received|welcome, grant|current balance:\s*\d+/i.test(q)) return null;
+  if (/which city and state|where is your business|which state is that|what city|where are you located|location/i.test(q)) return vendor.followups.location;
+  if (/right\?|is that correct\?|correct\?|confirm|shall i|ready to list|should i proceed/i.test(q)) return 'Yes';
+  if (/business name|name of your/i.test(q)) return vendor.followups.businessName;
+  if (/whatsapp number|phone number|which number|contact number/i.test(q)) return vendor.followups.phone;
+  if (/we found a match|match for|found a seller|checking across our seller network|supplier is ready|connecting you with/i.test(q)) return `I am a seller listing my products. ${vendor.statement}`;
+  if (/what would you like to do|what you want to do|inquire about their availability|find these products|looking to buy, or say|looking to buy|buy something|sell something|want to buy|want to sell|buy or sell/i.test(q)) return `I want to sell ${vendor.statement}`;
+  if (/what do you sell|what would you like to add|what service|what products|anything else|other products|any other/i.test(q)) return sentSoFar.includes(vendor.statement) ? `${vendor.statement}. That is all.` : vendor.statement;
   return null;
 }
 
@@ -92,7 +94,17 @@ async function sendWhatsApp(vendor, text, index) {
       },
     ],
   };
-  const res = await fetch(`${BASE}/webhooks/whatsapp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const rawBody = JSON.stringify(body);
+  const appSecret = process.env.WHATSAPP_APP_SECRET || 'e788c83cccfe24b065f39fdf12a15b5a';
+  const hmac = createHmac('sha256', appSecret).update(rawBody).digest('hex');
+  const res = await fetch(`${BASE}/webhooks/whatsapp`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-hub-signature-256': `sha256=${hmac}`,
+    },
+    body: rawBody,
+  });
   if (res.status !== 200) throw new Error(`webhook rejected: ${res.status} ${await res.text()}`);
   return { accepted: true };
 }
@@ -102,8 +114,15 @@ async function onboard(vendor) {
   const log = { id: vendor.id, channel: vendor.channel, businessName: vendor.businessName, turns: [], conversationId: null, completed: false, error: null };
   const sent = [];
   try {
+    const existingHistory = (await historyFor(vendor)).history ?? [];
+    const lastReply = existingHistory.filter((e) => e.role === 'assistant').slice(-1)[0]?.content;
+    if (lastReply && /all set|you're listed in|grant received|current balance:\s*\d+/i.test(lastReply)) {
+      log.completed = true;
+      console.log(`✓ ${vendor.id} ${vendor.businessName} [${vendor.channel}] already completed`);
+      return log;
+    }
     let text = vendor.statement;
-    let seen = ((await historyFor(vendor)).history ?? []).filter((e) => e.role === 'assistant').length;
+    let seen = existingHistory.filter((e) => e.role === 'assistant').length;
     for (let turn = 1; turn <= 8 && text !== null; turn += 1) {
       const startedAt = Date.now();
       await send(vendor, text, turn);
@@ -113,9 +132,12 @@ async function onboard(vendor) {
       seen = assistant.length;
       const reply = assistant[assistant.length - 1].content;
       log.turns.push({ turn, sent: text, reply, seconds: Math.round((Date.now() - startedAt) / 1000) });
-      if (/all set|you're listed in/i.test(reply)) {
+      if (/all set|you're listed in|grant received|current balance:\s*\d+/i.test(reply)) {
         log.completed = true;
         break;
+      }
+      if (/want to make sure|welcome to metamarket/i.test(reply)) {
+        await sleep(4_000);
       }
       text = answerFor(reply, vendor, sent);
       if (text === null) log.error = `No scripted answer for reply: ${reply.slice(0, 160)}`;

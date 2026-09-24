@@ -10,209 +10,29 @@
       "title": "Cement/Concrete/Mortar",
       "level": "CLASS"
     },
-    "ingest": null,
-    "vendor": {
-      "id": "7242c13b-b2ce-49af-9157-aba0b3f22ec8",
-      "status": "onboarding",
-      "businessName": "",
-      "contactPhone": null,
-      "city": null,
-      "state": null,
-      "onboardedAt": null,
-      "conversationId": "b36d8db9-8e7d-4684-a775-6b974ea937bb"
+    "ingest": {
+      "id": "v01",
+      "channel": "web",
+      "businessName": "Okonkwo Cement Depot",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell Dangote cement, BUA cement, sharp sand and 12mm iron rods in Aba",
+          "reply": "That's Aba in Abia State, right?",
+          "seconds": 109
+        },
+        {
+          "turn": 2,
+          "sent": "Yes",
+          "reply": "Hello! Welcome to MetaMarket. I connect you with trusted sellers across Nigeria.\n\nTell me what you're looking to buy, or say \"I sell …\" to list your business so buyers can find you.",
+          "seconds": 12
+        }
+      ],
+      "conversationId": "b36d8db9-8e7d-4684-a775-6b974ea937bb",
+      "completed": false,
+      "error": "No scripted answer for reply: Hello! Welcome to MetaMarket. I connect you with trusted sellers across Nigeria.\n\nTell me what you're looking to buy, or say \"I sell …\" to list your business so"
     },
-    "turns": [
-      {
-        "status": "PROCESSING",
-        "channel": "web"
-      }
-    ],
-    "wallet": null,
-    "csre": [
-      {
-        "surface": "Dangote cement",
-        "canonical": "cement",
-        "entityType": "PRODUCT",
-        "concept": "cement",
-        "status": "PROPOSED",
-        "confidence": 0.95,
-        "relevance": "DIRECT_PRODUCT"
-      },
-      {
-        "surface": "BUA cement",
-        "canonical": "cement",
-        "entityType": "PRODUCT",
-        "concept": "cement",
-        "status": "PROPOSED",
-        "confidence": 0.95,
-        "relevance": "DIRECT_PRODUCT"
-      },
-      {
-        "surface": "sharp sand",
-        "canonical": "sharp sand",
-        "entityType": "MATERIAL",
-        "concept": "sharp sand",
-        "status": "PROPOSED",
-        "confidence": 0.9,
-        "relevance": "COMMERCIAL_MATERIAL"
-      },
-      {
-        "surface": "12mm iron rods",
-        "canonical": "iron rods",
-        "entityType": "MATERIAL",
-        "concept": "iron rods",
-        "status": "PROPOSED",
-        "confidence": 0.9,
-        "relevance": "COMMERCIAL_MATERIAL"
-      }
-    ],
-    "gpc": [],
-    "capabilities": [],
-    "evidence": {
-      "observations": [
-        {
-          "type": "CSRE_SEMANTIC_RESOLUTION",
-          "status": "INTERPRETED",
-          "evidence": 1
-        },
-        {
-          "type": "CSRE_SEMANTIC_RESOLUTION",
-          "status": "INTERPRETED",
-          "evidence": 1
-        },
-        {
-          "type": "CSRE_SEMANTIC_RESOLUTION",
-          "status": "INTERPRETED",
-          "evidence": 1
-        },
-        {
-          "type": "CSRE_SEMANTIC_RESOLUTION",
-          "status": "INTERPRETED",
-          "evidence": 1
-        },
-        {
-          "type": "ENRICHMENT_INSIGHT",
-          "status": "INTERPRETED",
-          "evidence": 14
-        }
-      ],
-      "vendorAssertions": [],
-      "phraseAssertions": [
-        {
-          "subject": "sharp sand",
-          "predicate": "mkg:EXPRESSES",
-          "object": "sharp sand",
-          "belief": 0.21,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "12mm iron rods",
-          "predicate": "mkg:EXPRESSES",
-          "object": "iron rods",
-          "belief": 0.21,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "Dangote cement",
-          "predicate": "mkg:EXPRESSES",
-          "object": "cement",
-          "belief": 0.222,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "BUA cement",
-          "predicate": "mkg:EXPRESSES",
-          "object": "cement",
-          "belief": 0.222,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "cement",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "Portland cement",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "cement",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "Hydraulic cement",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "cement",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "Dangote Portland cement",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "cement",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "Dangote cement",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "cement",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "BUA Portland cement",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "cement",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "BUA cement",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "sharp sand",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "Angular sand",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "sharp sand",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "Construction sand",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "iron rods",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "Rebar",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "iron rods",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "Steel rods",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "iron rods",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "12mm rebar",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "iron rods",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "12mm iron rods",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        }
-      ],
-      "decisions": []
-    }
+    "vendor": null
   },
   {
     "id": "v02",
@@ -226,49 +46,840 @@
       "level": "CLASS",
       "code": "78040300"
     },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v03",
+    "sector": "Plumbing materials",
+    "style": "HYBRID",
+    "channel": "web",
+    "businessName": "Chidi Plumbing Works",
+    "statement": "I sell PVC pipes, taps, water closets and fittings, and I also do plumbing installation and repairs",
+    "gpcExpected": {
+      "title": "Plumbing/Heating/Ventilation/Air Conditioning",
+      "level": "FAMILY",
+      "code": "79010000"
+    },
     "ingest": {
-      "id": "v02",
+      "id": "v03",
       "channel": "web",
-      "businessName": "Musa Electricals Alaba",
+      "businessName": "Chidi Plumbing Works",
       "turns": [
         {
           "turn": 1,
-          "sent": "We deal in electrical materials: wall sockets, switches, 2.5mm cables, circuit breakers and energy bulbs",
+          "sent": "I sell PVC pipes, taps, water closets and fittings, and I also do plumbing installation and repairs",
           "reply": "Which city and state is your business located in?",
-          "seconds": 65
+          "seconds": 67
         },
         {
           "turn": 2,
-          "sent": "Ojo, Lagos State",
+          "sent": "Enugu, Enugu State",
+          "reply": "What's your business name?",
+          "seconds": 52
+        },
+        {
+          "turn": 3,
+          "sent": "Chidi Plumbing Works",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 18
+        },
+        {
+          "turn": 4,
+          "sent": "08090000003",
+          "reply": "All set, Chidi Plumbing Works.\n\nYou're listed in Enugu, Enugu State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000003.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 24
+        }
+      ],
+      "conversationId": "2cc0b3fd-e0f1-4a70-ac7c-2d3ddbba8a4c",
+      "completed": true,
+      "error": null
+    },
+    "vendor": null
+  },
+  {
+    "id": "v04",
+    "sector": "Paints & coatings",
+    "style": "CATEGORY",
+    "channel": "web",
+    "businessName": "Rainbow Paints Ilorin",
+    "statement": "We are a paint and coatings shop",
+    "gpcExpected": {
+      "title": "Paints/Varnishes",
+      "level": "CLASS"
+    },
+    "ingest": {
+      "id": "v04",
+      "channel": "web",
+      "businessName": "Rainbow Paints Ilorin",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We are a paint and coatings shop",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 77
+        },
+        {
+          "turn": 2,
+          "sent": "Ilorin, Kwara State",
+          "reply": "What's your business name?",
+          "seconds": 46
+        },
+        {
+          "turn": 3,
+          "sent": "Rainbow Paints Ilorin",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 56
+        },
+        {
+          "turn": 4,
+          "sent": "08090000004",
+          "reply": "All set, Rainbow Paints Ilorin.\n\nYou're listed in Ilorin, Kwara State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000004.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 38
+        }
+      ],
+      "conversationId": "3287500d-f67f-4f8c-a58e-2424f0410f77",
+      "completed": true,
+      "error": null
+    },
+    "vendor": null
+  },
+  {
+    "id": "v05",
+    "sector": "Roofing",
+    "style": "HYBRID",
+    "channel": "web",
+    "businessName": "Gbenga Roofing",
+    "statement": "Aluminium roofing sheets, stone-coated roofing tiles and long span, plus roof installation and leak repairs",
+    "gpcExpected": {
+      "title": "Roofing Tiles/Slates/Shingles/Shakes",
+      "level": "BRICK",
+      "code": "10002683"
+    },
+    "ingest": {
+      "id": "v05",
+      "channel": "web",
+      "businessName": "Gbenga Roofing",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Aluminium roofing sheets, stone-coated roofing tiles and long span, plus roof installation and leak repairs",
+          "reply": "We're checking across our seller network for *Aluminium roofing sheets* and will notify you the moment a supplier is ready.",
+          "seconds": 103
+        }
+      ],
+      "conversationId": "6224b664-0039-4f90-b582-df34f71ac2c6",
+      "completed": false,
+      "error": "No scripted answer for reply: We're checking across our seller network for *Aluminium roofing sheets* and will notify you the moment a supplier is ready."
+    },
+    "vendor": null
+  },
+  {
+    "id": "v06",
+    "sector": "Generators & power",
+    "style": "HYBRID",
+    "channel": "whatsapp",
+    "businessName": "PowerHouse Generators",
+    "statement": "I sell Elepaq and Sumec Firman generators and I repair generators of all sizes",
+    "gpcExpected": {
+      "title": "Generators",
+      "level": "BRICK",
+      "code": "10005211"
+    },
+    "ingest": {
+      "id": "v06",
+      "channel": "whatsapp",
+      "businessName": "PowerHouse Generators",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v06"
+    },
+    "vendor": null
+  },
+  {
+    "id": "v07",
+    "sector": "Solar & inverters",
+    "style": "ITEMS",
+    "channel": "web",
+    "businessName": "SunLite Solar Kano",
+    "statement": "I sell 550W mono solar panels, 5kVA inverters and 200Ah tubular batteries",
+    "gpcExpected": {
+      "title": "Solar Panels",
+      "level": "BRICK",
+      "code": "10008389"
+    },
+    "ingest": {
+      "id": "v07",
+      "channel": "web",
+      "businessName": "SunLite Solar Kano",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell 550W mono solar panels, 5kVA inverters and 200Ah tubular batteries",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 40
+        },
+        {
+          "turn": 2,
+          "sent": "Kano, Kano State",
+          "reply": "What's your business name?",
+          "seconds": 46
+        },
+        {
+          "turn": 3,
+          "sent": "SunLite Solar Kano",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 20
+        },
+        {
+          "turn": 4,
+          "sent": "08090000007",
+          "reply": "🎁 Welcome, Grant Received!\nYou have been credited with 2000 free visibility credits to get started.\nCurrent Balance: 2000 Credits",
+          "seconds": 30
+        }
+      ],
+      "conversationId": "b191d1d4-ee76-4b2d-a25e-54c093819355",
+      "completed": false,
+      "error": "No scripted answer for reply: 🎁 Welcome, Grant Received!\nYou have been credited with 2000 free visibility credits to get started.\nCurrent Balance: 2000 Credits"
+    },
+    "vendor": null
+  },
+  {
+    "id": "v08",
+    "sector": "Mobile phones & accessories",
+    "style": "VENUE",
+    "channel": "web",
+    "businessName": "Computer Village Phones",
+    "statement": "I have a shop in Computer Village Ikeja where I sell phones, chargers and earpieces",
+    "gpcExpected": {
+      "title": "Mobile Phones",
+      "level": "BRICK",
+      "code": "10008506"
+    },
+    "ingest": {
+      "id": "v08",
+      "channel": "web",
+      "businessName": "Computer Village Phones",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I have a shop in Computer Village Ikeja where I sell phones, chargers and earpieces",
+          "reply": "That's Ikeja in Lagos State, right?",
+          "seconds": 52
+        },
+        {
+          "turn": 2,
+          "sent": "Yes",
+          "reply": "Hello! Welcome to MetaMarket. I connect you with trusted sellers across Nigeria.\n\nTell me what you're looking to buy, or say \"I sell …\" to list your business so buyers can find you.",
+          "seconds": 32
+        }
+      ],
+      "conversationId": "59c431d0-5435-4000-b2ff-9be29207275d",
+      "completed": false,
+      "error": "No scripted answer for reply: Hello! Welcome to MetaMarket. I connect you with trusted sellers across Nigeria.\n\nTell me what you're looking to buy, or say \"I sell …\" to list your business so"
+    },
+    "vendor": null
+  },
+  {
+    "id": "v09",
+    "sector": "Computers & laptops",
+    "style": "HYBRID",
+    "channel": "web",
+    "businessName": "ByteWorks Abuja",
+    "statement": "We sell UK-used laptops and desktops and we fix laptops, replace screens and install software",
+    "gpcExpected": {
+      "title": "Computers/Laptops",
+      "level": "CLASS"
+    },
+    "ingest": {
+      "id": "v09",
+      "channel": "web",
+      "businessName": "ByteWorks Abuja",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We sell UK-used laptops and desktops and we fix laptops, replace screens and install software",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 54
+        },
+        {
+          "turn": 2,
+          "sent": "Wuse, Abuja",
+          "reply": "What's your business name?",
+          "seconds": 42
+        },
+        {
+          "turn": 3,
+          "sent": "ByteWorks Abuja",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 20
+        },
+        {
+          "turn": 4,
+          "sent": "08090000009",
+          "reply": "All set, ByteWorks Abuja.\n\nYou're listed in Wuse, Abuja State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000009.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 16
+        }
+      ],
+      "conversationId": "cc1fc905-eaba-498d-b032-4ebeb85dca27",
+      "completed": true,
+      "error": null
+    },
+    "vendor": null
+  },
+  {
+    "id": "v10",
+    "sector": "Home appliances",
+    "style": "MIXED",
+    "channel": "web",
+    "businessName": "Coolzone Appliances",
+    "statement": "Home appliances dealer: fridges, deep freezers, air conditioners, washing machines and standing fans",
+    "gpcExpected": {
+      "title": "Refrigerator/Freezers",
+      "level": "BRICK",
+      "code": "10003695"
+    },
+    "ingest": {
+      "id": "v10",
+      "channel": "web",
+      "businessName": "Coolzone Appliances",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Home appliances dealer: fridges, deep freezers, air conditioners, washing machines and standing fans",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 20
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell",
+          "reply": "What do you sell or what service do you provide?",
+          "seconds": 67
+        },
+        {
+          "turn": 3,
+          "sent": "Home appliances dealer: fridges, deep freezers, air conditioners, washing machines and standing fans. That is all.",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 60
+        },
+        {
+          "turn": 4,
+          "sent": "Benin City, Edo State",
+          "reply": "What's your business name?",
+          "seconds": 52
+        },
+        {
+          "turn": 5,
+          "sent": "Coolzone Appliances",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 34
+        },
+        {
+          "turn": 6,
+          "sent": "08090000010",
+          "reply": "All set, Coolzone Appliances.\n\nYou're listed in Benin City, Edo State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000010.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 26
+        }
+      ],
+      "conversationId": "be269c8f-cce4-41bb-9c22-e2ab15d0cc7f",
+      "completed": true,
+      "error": null
+    },
+    "vendor": null
+  },
+  {
+    "id": "v11",
+    "sector": "Auto spare parts",
+    "style": "VENUE",
+    "channel": "whatsapp",
+    "businessName": "Ladipo Auto Parts",
+    "statement": "I sell at Ladipo market — tyres, brake pads, shock absorbers and Toyota spare parts",
+    "gpcExpected": {
+      "title": "Tyres",
+      "level": "BRICK",
+      "code": "10002924"
+    },
+    "ingest": {
+      "id": "v11",
+      "channel": "whatsapp",
+      "businessName": "Ladipo Auto Parts",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v11"
+    },
+    "vendor": null
+  },
+  {
+    "id": "v12",
+    "sector": "Auto repair services",
+    "style": "SERVICE",
+    "channel": "web",
+    "businessName": "Baba Tunde Mechanic Workshop",
+    "statement": "I am a mechanic. I do engine repairs, servicing, brake work and AC repair for cars",
+    "gpcExpected": {
+      "title": "Automotive services",
+      "level": "SERVICE (not in GPC)"
+    },
+    "ingest": {
+      "id": "v12",
+      "channel": "web",
+      "businessName": "Baba Tunde Mechanic Workshop",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I am a mechanic. I do engine repairs, servicing, brake work and AC repair for cars",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 34
+        },
+        {
+          "turn": 2,
+          "sent": "Ibadan, Oyo State",
+          "reply": "What's your business name?",
+          "seconds": 26
+        },
+        {
+          "turn": 3,
+          "sent": "Baba Tunde Mechanic Workshop",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 54
+        },
+        {
+          "turn": 4,
+          "sent": "08090000012",
+          "reply": "All set, Baba Tunde Mechanic Workshop.\n\nYou're listed in Ibadan, Oyo State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000012.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 24
+        }
+      ],
+      "conversationId": "8e7f3640-2352-4806-80e6-1772eee7e35d",
+      "completed": true,
+      "error": null
+    },
+    "vendor": null
+  },
+  {
+    "id": "v13",
+    "sector": "Fashion & clothing",
+    "style": "CATEGORY",
+    "channel": "web",
+    "businessName": "Amaka's Boutique",
+    "statement": "We run a ladies' boutique for clothing and fashion accessories",
+    "gpcExpected": {
+      "title": "Clothing",
+      "level": "FAMILY"
+    },
+    "ingest": {
+      "id": "v13",
+      "channel": "web",
+      "businessName": "Amaka's Boutique",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We run a ladies' boutique for clothing and fashion accessories",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 70
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell",
+          "reply": "You mentioned you run a ladies' boutique for clothing and fashion accessories and that you want to sell. Could you clarify if you're looking to list your business so buyers can find you? Also, I’ve kept your earlier request on hold—just say *carry on* whenever you’re ready to continue.",
+          "seconds": 68
+        },
+        {
+          "turn": 3,
+          "sent": "I want to sell",
+          "reply": "What do you sell or what service do you provide?",
+          "seconds": 20
+        },
+        {
+          "turn": 4,
+          "sent": "We run a ladies' boutique for clothing and fashion accessories. That is all.",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 50
+        },
+        {
+          "turn": 5,
+          "sent": "Owerri, Imo State",
+          "reply": "What's your business name?",
+          "seconds": 30
+        },
+        {
+          "turn": 6,
+          "sent": "Amaka's Boutique",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 22
+        },
+        {
+          "turn": 7,
+          "sent": "08090000013",
+          "reply": "All set, Amaka's Boutique.\n\nYou're listed in Owerri, Imo State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000013.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 24
+        }
+      ],
+      "conversationId": "ae481f71-b4fa-40b5-b71b-c5e1a7b5772e",
+      "completed": true,
+      "error": null
+    },
+    "vendor": null
+  },
+  {
+    "id": "v14",
+    "sector": "Footwear",
+    "style": "ITEMS",
+    "channel": "web",
+    "businessName": "Aba Made Shoes",
+    "statement": "I make and sell leather sandals, men's loafers and school shoes",
+    "gpcExpected": {
+      "title": "Footwear",
+      "level": "CLASS"
+    },
+    "ingest": {
+      "id": "v14",
+      "channel": "web",
+      "businessName": "Aba Made Shoes",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I make and sell leather sandals, men's loafers and school shoes",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 38
+        },
+        {
+          "turn": 2,
+          "sent": "Aba, Abia State",
+          "reply": "What's your business name?",
+          "seconds": 52
+        },
+        {
+          "turn": 3,
+          "sent": "Aba Made Shoes",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 28
+        },
+        {
+          "turn": 4,
+          "sent": "08090000014",
+          "reply": "All set, Aba Made Shoes.\n\nYou're listed in Aba, Abia State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000014.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 42
+        }
+      ],
+      "conversationId": "5c9ebf4c-8b1d-4aab-af1d-4a65f3db5d13",
+      "completed": true,
+      "error": null
+    },
+    "vendor": null
+  },
+  {
+    "id": "v15",
+    "sector": "Textiles & fabrics",
+    "style": "VENUE",
+    "channel": "web",
+    "businessName": "Balogun Fabrics",
+    "statement": "My shop is in Balogun market, I sell ankara, lace, aso-oke and senator materials",
+    "gpcExpected": {
+      "title": "Fabrics/Textiles",
+      "level": "CLASS"
+    },
+    "ingest": {
+      "id": "v15",
+      "channel": "web",
+      "businessName": "Balogun Fabrics",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "My shop is in Balogun market, I sell ankara, lace, aso-oke and senator materials",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 60
+        },
+        {
+          "turn": 2,
+          "sent": "Lagos Island, Lagos State",
           "reply": "What's your business name?",
           "seconds": 40
         },
         {
           "turn": 3,
-          "sent": "Musa Electricals Alaba",
+          "sent": "Balogun Fabrics",
           "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
-          "seconds": 52
+          "seconds": 70
         },
         {
           "turn": 4,
-          "sent": "08090000002",
-          "reply": "All set, Musa Electricals Alaba.\n\nYou're listed in Ojo, Lagos State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000002.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
-          "seconds": 34
+          "sent": "08090000015",
+          "reply": "All set, Balogun Fabrics.\n\nYou're listed in Lagos Island, Lagos State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000015.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 28
         }
       ],
-      "conversationId": "5b04e0c7-015f-46ec-af46-e59b8c31b0a6",
+      "conversationId": "0413ed38-1a09-41e7-a681-e4f6b1935073",
+      "completed": true,
+      "error": null
+    },
+    "vendor": null
+  },
+  {
+    "id": "v16",
+    "sector": "Tailoring",
+    "style": "SERVICE",
+    "channel": "web",
+    "businessName": "Stitches by Halima",
+    "statement": "I am a tailor and fashion designer. I sew native wears, kaftans and wedding outfits",
+    "gpcExpected": {
+      "title": "Tailoring services",
+      "level": "SERVICE (not in GPC)"
+    },
+    "ingest": {
+      "id": "v16",
+      "channel": "web",
+      "businessName": "Stitches by Halima",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I am a tailor and fashion designer. I sew native wears, kaftans and wedding outfits",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 46
+        },
+        {
+          "turn": 2,
+          "sent": "Kaduna, Kaduna State",
+          "reply": "What's your business name?",
+          "seconds": 44
+        },
+        {
+          "turn": 3,
+          "sent": "Stitches by Halima",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 24
+        },
+        {
+          "turn": 4,
+          "sent": "08090000016",
+          "reply": "All set, Stitches by Halima.\n\nYou're listed in Kaduna, Kaduna State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000016.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 40
+        }
+      ],
+      "conversationId": "ca7d1ef1-edc0-44fa-87d5-527a8eb73e08",
+      "completed": true,
+      "error": null
+    },
+    "vendor": null
+  },
+  {
+    "id": "v17",
+    "sector": "Beauty & cosmetics",
+    "style": "MIXED",
+    "channel": "web",
+    "businessName": "Glow Beauty Store",
+    "statement": "Cosmetics and skincare: body lotions, perfumes, human hair wigs and makeup kits",
+    "gpcExpected": {
+      "title": "Cosmetics/Fragrances",
+      "level": "FAMILY"
+    },
+    "ingest": {
+      "id": "v17",
+      "channel": "web",
+      "businessName": "Glow Beauty Store",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Cosmetics and skincare: body lotions, perfumes, human hair wigs and makeup kits",
+          "reply": "What would you like to do with these products?",
+          "seconds": 16
+        }
+      ],
+      "conversationId": "9417a07d-b78c-4de6-ae3a-88715b5029e1",
+      "completed": false,
+      "error": "No scripted answer for reply: What would you like to do with these products?"
+    },
+    "vendor": null
+  },
+  {
+    "id": "v18",
+    "sector": "Hair & barbing services",
+    "style": "SERVICE",
+    "channel": "web",
+    "businessName": "Kings Cut Barbershop",
+    "statement": "We are a barbing salon offering haircuts, beard grooming and hair dye",
+    "gpcExpected": {
+      "title": "Personal care services",
+      "level": "SERVICE (not in GPC)"
+    },
+    "ingest": {
+      "id": "v18",
+      "channel": "web",
+      "businessName": "Kings Cut Barbershop",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We are a barbing salon offering haircuts, beard grooming and hair dye",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 38
+        },
+        {
+          "turn": 2,
+          "sent": "Lekki, Lagos State",
+          "reply": "What's your business name?",
+          "seconds": 36
+        },
+        {
+          "turn": 3,
+          "sent": "Kings Cut Barbershop",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 22
+        }
+      ],
+      "conversationId": "990c9fe6-3383-4bd3-9cf0-fa15e24e12e5",
+      "completed": false,
+      "error": "Timed out waiting for a reply for v18"
+    },
+    "vendor": null
+  },
+  {
+    "id": "v19",
+    "sector": "Pharmacy & medical supplies",
+    "style": "MIXED",
+    "channel": "whatsapp",
+    "businessName": "Onitsha Central Pharmacy",
+    "statement": "Pharmacy and medical supplies — drugs, blood pressure monitors, glucose strips, surgical gloves and face masks",
+    "gpcExpected": {
+      "title": "Pharmaceutical Drugs",
+      "level": "FAMILY"
+    },
+    "ingest": {
+      "id": "v19",
+      "channel": "whatsapp",
+      "businessName": "Onitsha Central Pharmacy",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v19"
+    },
+    "vendor": null
+  },
+  {
+    "id": "v20",
+    "sector": "Foodstuff & grains",
+    "style": "VENUE",
+    "channel": "web",
+    "businessName": "Mile 12 Foodstuff",
+    "statement": "I sell foodstuff in Mile 12 market: bags of rice, beans, garri, palm oil and yam",
+    "gpcExpected": {
+      "title": "Grains/Rice",
+      "level": "CLASS"
+    },
+    "ingest": {
+      "id": "v20",
+      "channel": "web",
+      "businessName": "Mile 12 Foodstuff",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell foodstuff in Mile 12 market: bags of rice, beans, garri, palm oil and yam",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 54
+        },
+        {
+          "turn": 2,
+          "sent": "Ketu, Lagos State",
+          "reply": "What's your business name?",
+          "seconds": 36
+        }
+      ],
+      "conversationId": "770c1edd-f853-4b7f-8856-1e8bc06d68a5",
+      "completed": false,
+      "error": "Timed out waiting for a reply for v20"
+    },
+    "vendor": null
+  },
+  {
+    "id": "v21",
+    "sector": "Provisions & FMCG",
+    "style": "CATEGORY",
+    "channel": "web",
+    "businessName": "Mama Nkechi Provisions",
+    "statement": "I run a provisions store",
+    "gpcExpected": {
+      "title": "Food/Beverage/Tobacco",
+      "level": "SEGMENT"
+    },
+    "ingest": {
+      "id": "v21",
+      "channel": "web",
+      "businessName": "Mama Nkechi Provisions",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I run a provisions store",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 83
+        },
+        {
+          "turn": 2,
+          "sent": "Asaba, Delta State",
+          "reply": "What's your business name?",
+          "seconds": 22
+        }
+      ],
+      "conversationId": "8b726e64-4d99-487d-9366-2adca0af11e6",
+      "completed": false,
+      "error": "Timed out waiting for a reply for v21"
+    },
+    "vendor": null
+  },
+  {
+    "id": "v22",
+    "sector": "Frozen foods & poultry",
+    "style": "ITEMS",
+    "channel": "web",
+    "businessName": "Iceberg Frozen Foods",
+    "statement": "I sell frozen chicken, turkey wings, titus fish and croaker",
+    "gpcExpected": {
+      "title": "Poultry - Unprepared/Unprocessed",
+      "level": "BRICK"
+    },
+    "ingest": {
+      "id": "v22",
+      "channel": "web",
+      "businessName": "Iceberg Frozen Foods",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell frozen chicken, turkey wings, titus fish and croaker",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 50
+        },
+        {
+          "turn": 2,
+          "sent": "Warri, Delta State",
+          "reply": "What's your business name?",
+          "seconds": 34
+        },
+        {
+          "turn": 3,
+          "sent": "Iceberg Frozen Foods",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 50
+        },
+        {
+          "turn": 4,
+          "sent": "08090000022",
+          "reply": "All set, Iceberg Frozen Foods.\n\nYou're listed in Warri, Delta State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000022.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 24
+        }
+      ],
+      "conversationId": "22a85312-7bed-4f85-8fa1-3ee8587b3fd5",
       "completed": true,
       "error": null
     },
     "vendor": {
-      "id": "a75bfde1-899b-46a8-8705-f07430d1decc",
+      "id": "1afb5d2b-a6fc-4c22-b63a-3cd140ce80fa",
       "status": "active",
-      "businessName": "Musa Electricals Alaba",
-      "contactPhone": "+08090000002",
-      "city": "Ojo",
-      "state": "Lagos State",
-      "onboardedAt": "2026-09-24T17:25:14.783Z",
-      "conversationId": "5b04e0c7-015f-46ec-af46-e59b8c31b0a6"
+      "businessName": "Iceberg Frozen Foods",
+      "contactPhone": "+08090000022",
+      "city": "Warri",
+      "state": "Delta State",
+      "onboardedAt": "2026-09-24T17:47:10.649Z",
+      "conversationId": "22a85312-7bed-4f85-8fa1-3ee8587b3fd5"
     },
     "turns": [
       {
@@ -295,80 +906,54 @@
     },
     "csre": [
       {
-        "surface": "wall sockets",
-        "canonical": "wall socket",
-        "entityType": "PRODUCT",
-        "concept": "wall socket",
+        "surface": "frozen chicken",
+        "canonical": "frozen chicken",
+        "entityType": "FOOD",
+        "concept": "frozen chicken",
         "status": "PROPOSED",
         "confidence": 0.95,
         "relevance": "DIRECT_PRODUCT"
       },
       {
-        "surface": "switches",
-        "canonical": "switch",
-        "entityType": "PRODUCT",
-        "concept": "switch",
+        "surface": "turkey wings",
+        "canonical": "turkey wings",
+        "entityType": "FOOD",
+        "concept": "turkey wings",
         "status": "PROPOSED",
         "confidence": 0.95,
         "relevance": "DIRECT_PRODUCT"
       },
       {
-        "surface": "2.5mm cables",
-        "canonical": "2.5mm cable",
-        "entityType": "PRODUCT",
-        "concept": "2.5mm cable",
+        "surface": "titus fish",
+        "canonical": "titus fish",
+        "entityType": "FOOD",
+        "concept": "titus fish",
         "status": "PROPOSED",
         "confidence": 0.95,
         "relevance": "DIRECT_PRODUCT"
       },
       {
-        "surface": "circuit breakers",
-        "canonical": "circuit breaker",
-        "entityType": "PRODUCT",
-        "concept": "circuit breaker",
+        "surface": "croaker",
+        "canonical": "croaker",
+        "entityType": "FOOD",
+        "concept": "croaker",
         "status": "PROPOSED",
         "confidence": 0.95,
         "relevance": "DIRECT_PRODUCT"
       },
       {
-        "surface": "energy bulbs",
-        "canonical": "energy bulb",
-        "entityType": "PRODUCT",
-        "concept": "energy bulb",
-        "status": "PROPOSED",
-        "confidence": 0.95,
-        "relevance": "DIRECT_PRODUCT"
-      },
-      {
-        "surface": "Musa Electricals",
-        "canonical": "Musa Electricals",
+        "surface": "Iceberg Frozen Foods",
+        "canonical": "Iceberg Frozen Foods",
         "entityType": "ORGANIZATION",
-        "concept": "Musa Electricals",
+        "concept": "Iceberg Frozen Foods",
         "status": "PROPOSED",
-        "confidence": 0.9,
-        "relevance": "COMMERCIAL_ENTITY"
-      },
-      {
-        "surface": "Alaba",
-        "canonical": "Alaba International Market",
-        "entityType": "PLACE",
-        "concept": "Alaba International Market",
-        "status": "PROPOSED",
-        "confidence": 0.85,
+        "confidence": 0.6,
         "relevance": "COMMERCIAL_ENTITY"
       }
     ],
     "gpc": [
       {
-        "concept": "Musa Electricals",
-        "state": "NOT_APPLICABLE",
-        "code": null,
-        "level": null,
-        "title": null,
-        "confidence": 0
-      },
-      {
-        "concept": "Alaba International Market",
+        "concept": "Iceberg Frozen Foods",
         "state": "NOT_APPLICABLE",
         "code": null,
         "level": null,
@@ -378,58 +963,51 @@
     ],
     "capabilities": [
       {
-        "name": "Switches",
+        "name": "Turkey - Unprepared/Unprocessed",
         "domain": "product",
-        "confidence": 0.8659249987364613,
-        "inferred": false,
-        "evidence": 1
-      },
-      {
-        "name": "Circuit Breakers",
-        "domain": "product",
-        "confidence": 0.8659249987364613,
-        "inferred": false,
-        "evidence": 1
-      },
-      {
-        "name": "Electrical Distribution",
-        "domain": "product",
-        "confidence": 0.7242014604881614,
+        "confidence": 0.5610437021933912,
         "inferred": true,
         "evidence": 1
       },
       {
-        "name": "Electrical Connection/Distribution",
+        "name": "Fish - Unprepared/Unprocessed (Frozen)",
         "domain": "product",
-        "confidence": 0.5720937982841189,
+        "confidence": 0.5610437021933912,
         "inferred": true,
         "evidence": 1
       },
       {
-        "name": "Sockets/Receptacles/Outlets",
+        "name": "Meat/Poultry/Other Animals - Unprepared/Unprocessed",
         "domain": "product",
-        "confidence": 0.5610437021826734,
+        "confidence": 0.4379216953585294,
         "inferred": true,
         "evidence": 1
       },
       {
-        "name": "Electrical Wires",
+        "name": "Fish - Unprepared/Unprocessed",
         "domain": "product",
-        "confidence": 0.5610437021826734,
+        "confidence": 0.4379216953585294,
         "inferred": true,
         "evidence": 1
       },
       {
-        "name": "Light Bulbs/Tubes/Light-Emitting Diodes",
+        "name": "Meat/Poultry/Other Animals",
         "domain": "product",
-        "confidence": 0.5610437021826734,
+        "confidence": 0.3495879168801137,
         "inferred": true,
         "evidence": 1
       },
       {
-        "name": "Electrical Supplies",
+        "name": "Fish and Seafood",
         "domain": "product",
-        "confidence": 0.4462457824652092,
+        "confidence": 0.3495879168801137,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Food/Beverage",
+        "domain": "product",
+        "confidence": 0.28919672137395,
         "inferred": true,
         "evidence": 1
       }
@@ -457,39 +1035,19 @@
           "evidence": 1
         },
         {
-          "type": "CSRE_SEMANTIC_RESOLUTION",
-          "status": "INTERPRETED",
-          "evidence": 1
-        },
-        {
-          "type": "ENRICHMENT_INSIGHT",
-          "status": "INTERPRETED",
-          "evidence": 20
-        },
-        {
           "type": "WRS_EXTERNAL_EVIDENCE",
-          "status": "INTERPRETED",
-          "evidence": 2
-        },
-        {
-          "type": "CSRE_SEMANTIC_RESOLUTION",
-          "status": "INTERPRETED",
-          "evidence": 1
-        },
-        {
-          "type": "CSRE_SEMANTIC_RESOLUTION",
-          "status": "INTERPRETED",
-          "evidence": 1
-        },
-        {
-          "type": "ENRICHMENT_INSIGHT",
-          "status": "INTERPRETED",
-          "evidence": 5
-        },
-        {
-          "type": "GPC_MAPPING",
           "status": "IGNORED",
           "evidence": 0
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "ENRICHMENT_INSIGHT",
+          "status": "INTERPRETED",
+          "evidence": 2
         },
         {
           "type": "GPC_MAPPING",
@@ -499,14 +1057,14 @@
         {
           "type": "VENDOR_STATEMENT",
           "status": "INTERPRETED",
-          "evidence": 6
+          "evidence": 4
         }
       ],
       "vendorAssertions": [
         {
           "predicate": "mkg:SUPPLIES",
-          "object": "switches",
-          "belief": 0.476,
+          "object": "frozen chicken",
+          "belief": 0.535,
           "state": "CANDIDATE",
           "sources": 1,
           "counts": [
@@ -516,8 +1074,8 @@
         },
         {
           "predicate": "mkg:SUPPLIES",
-          "object": "2.5mm cables",
-          "belief": 0.476,
+          "object": "turkey wings",
+          "belief": 0.535,
           "state": "CANDIDATE",
           "sources": 1,
           "counts": [
@@ -527,8 +1085,8 @@
         },
         {
           "predicate": "mkg:SUPPLIES",
-          "object": "electrical materials",
-          "belief": 0.476,
+          "object": "titus fish",
+          "belief": 0.535,
           "state": "CANDIDATE",
           "sources": 1,
           "counts": [
@@ -538,30 +1096,8 @@
         },
         {
           "predicate": "mkg:SUPPLIES",
-          "object": "wall sockets",
-          "belief": 0.476,
-          "state": "CANDIDATE",
-          "sources": 1,
-          "counts": [
-            1,
-            0
-          ]
-        },
-        {
-          "predicate": "mkg:SUPPLIES",
-          "object": "circuit breakers",
-          "belief": 0.476,
-          "state": "CANDIDATE",
-          "sources": 1,
-          "counts": [
-            1,
-            0
-          ]
-        },
-        {
-          "predicate": "mkg:SUPPLIES",
-          "object": "energy bulbs",
-          "belief": 0.476,
+          "object": "croaker",
+          "belief": 0.535,
           "state": "CANDIDATE",
           "sources": 1,
           "counts": [
@@ -572,240 +1108,51 @@
       ],
       "phraseAssertions": [
         {
-          "subject": "wall sockets",
+          "subject": "titus fish",
           "predicate": "mkg:EXPRESSES",
-          "object": "wall socket",
+          "object": "titus fish",
           "belief": 0.222,
           "state": "CANDIDATE"
         },
         {
-          "subject": "switches",
+          "subject": "turkey wings",
           "predicate": "mkg:EXPRESSES",
-          "object": "switch",
+          "object": "turkey wings",
           "belief": 0.222,
           "state": "CANDIDATE"
         },
         {
-          "subject": "2.5mm cables",
+          "subject": "frozen chicken",
           "predicate": "mkg:EXPRESSES",
-          "object": "2.5mm cable",
+          "object": "frozen chicken",
           "belief": 0.222,
           "state": "CANDIDATE"
         },
         {
-          "subject": "circuit breakers",
+          "subject": "croaker",
           "predicate": "mkg:EXPRESSES",
-          "object": "circuit breaker",
+          "object": "croaker",
           "belief": 0.222,
           "state": "CANDIDATE"
         },
         {
-          "subject": "energy bulbs",
+          "subject": "Iceberg Frozen Foods",
           "predicate": "mkg:EXPRESSES",
-          "object": "energy bulb",
-          "belief": 0.222,
+          "object": "Iceberg Frozen Foods",
+          "belief": 0.14,
           "state": "CANDIDATE"
         },
         {
-          "subject": "wall socket",
+          "subject": "Iceberg Frozen Foods",
           "predicate": "mkg:HAS_ALIAS",
-          "object": "electrical outlet",
+          "object": "Frozen food distributor",
           "belief": 0.045,
           "state": "CANDIDATE"
         },
         {
-          "subject": "wall socket",
+          "subject": "Iceberg Frozen Foods",
           "predicate": "mkg:HAS_ALIAS",
-          "object": "power socket",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "wall socket",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "plug point",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "wall socket",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "wall socket (Nigeria)",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "switch",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "electrical switch",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "Musa Electricals Alaba",
-          "predicate": "mkg:EXPRESSES",
-          "object": "A location or venue associated with electrical materials",
-          "belief": 0.326,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "Musa Electricals",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "Electricals business",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "switch",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "circuit switch",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "switch",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "toggle",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "switch",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "switch (Nigeria)",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "2.5mm cable",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "2.5mm² cable",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "2.5mm cable",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "electrical wire",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "2.5mm cable",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "wiring cable",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "2.5mm cable",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "2.5mm cable (Nigeria)",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "circuit breaker",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "breaker",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "circuit breaker",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "trip switch",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "circuit breaker",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "electrical circuit breaker",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "energy bulb",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "eco bulb",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "energy bulb",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "energy bulb (Nigeria)",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "circuit breaker",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "circuit breaker (Nigeria)",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "energy bulb",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "energy-saving bulb",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "energy bulb",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "efficient light bulb",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "Musa Electricals Alaba",
-          "predicate": "mkg:EXPRESSES",
-          "object": "A business entity named Musa Electricals",
-          "belief": 0.326,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "Alaba",
-          "predicate": "mkg:EXPRESSES",
-          "object": "Alaba International Market",
-          "belief": 0.199,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "Musa Electricals",
-          "predicate": "mkg:EXPRESSES",
-          "object": "Musa Electricals",
-          "belief": 0.21,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "Musa Electricals",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "Electrical materials supplier",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "Alaba International Market",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "Alaba Market",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "Alaba International Market",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "Electrical materials hub",
-          "belief": 0.045,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "Alaba International Market",
-          "predicate": "mkg:HAS_ALIAS",
-          "object": "Alaba",
+          "object": "Frozen food company",
           "belief": 0.045,
           "state": "CANDIDATE"
         }
@@ -813,507 +1160,34 @@
       "decisions": [
         {
           "operation": "ADD",
-          "predicate": "mkg:EXPRESSES",
-          "object": "concept:proposed:a business entity named musa electricals",
-          "belief": 0.326,
-          "status": "PENDING"
-        },
-        {
-          "operation": "ADD",
-          "predicate": "mkg:EXPRESSES",
-          "object": "concept:proposed:a location or venue associated with electrical materials",
-          "belief": 0.326,
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:frozen chicken",
+          "belief": 0.535,
           "status": "PENDING"
         },
         {
           "operation": "ADD",
           "predicate": "mkg:SUPPLIES",
-          "object": "concept:proposed:electrical materials",
-          "belief": 0.476,
+          "object": "concept:proposed:turkey wings",
+          "belief": 0.535,
           "status": "PENDING"
         },
         {
           "operation": "ADD",
           "predicate": "mkg:SUPPLIES",
-          "object": "concept:proposed:wall sockets",
-          "belief": 0.476,
+          "object": "concept:proposed:titus fish",
+          "belief": 0.535,
           "status": "PENDING"
         },
         {
           "operation": "ADD",
           "predicate": "mkg:SUPPLIES",
-          "object": "concept:proposed:switches",
-          "belief": 0.476,
-          "status": "PENDING"
-        },
-        {
-          "operation": "ADD",
-          "predicate": "mkg:SUPPLIES",
-          "object": "concept:proposed:2.5mm cables",
-          "belief": 0.476,
-          "status": "PENDING"
-        },
-        {
-          "operation": "ADD",
-          "predicate": "mkg:SUPPLIES",
-          "object": "concept:proposed:circuit breakers",
-          "belief": 0.476,
-          "status": "PENDING"
-        },
-        {
-          "operation": "ADD",
-          "predicate": "mkg:SUPPLIES",
-          "object": "concept:proposed:energy bulbs",
-          "belief": 0.476,
+          "object": "concept:proposed:croaker",
+          "belief": 0.535,
           "status": "PENDING"
         }
       ]
     }
-  },
-  {
-    "id": "v03",
-    "sector": "Plumbing materials",
-    "style": "HYBRID",
-    "channel": "web",
-    "businessName": "Chidi Plumbing Works",
-    "statement": "I sell PVC pipes, taps, water closets and fittings, and I also do plumbing installation and repairs",
-    "gpcExpected": {
-      "title": "Plumbing/Heating/Ventilation/Air Conditioning",
-      "level": "FAMILY",
-      "code": "79010000"
-    },
-    "ingest": null,
-    "vendor": {
-      "id": "e641c87e-690a-416a-b23f-696a4675923a",
-      "status": "onboarding",
-      "businessName": "",
-      "contactPhone": null,
-      "city": null,
-      "state": null,
-      "onboardedAt": null,
-      "conversationId": "2cc0b3fd-e0f1-4a70-ac7c-2d3ddbba8a4c"
-    },
-    "turns": [
-      {
-        "status": "PROCESSING",
-        "channel": "web"
-      }
-    ],
-    "wallet": null,
-    "csre": [
-      {
-        "surface": "PVC pipes",
-        "canonical": "PVC pipes",
-        "entityType": "PRODUCT",
-        "concept": "PVC pipes",
-        "status": "PROPOSED",
-        "confidence": 0.95,
-        "relevance": "DIRECT_PRODUCT"
-      },
-      {
-        "surface": "taps",
-        "canonical": "taps",
-        "entityType": "PRODUCT",
-        "concept": "taps",
-        "status": "PROPOSED",
-        "confidence": 0.95,
-        "relevance": "DIRECT_PRODUCT"
-      },
-      {
-        "surface": "water closets",
-        "canonical": "water closets",
-        "entityType": "PRODUCT",
-        "concept": "water closets",
-        "status": "PROPOSED",
-        "confidence": 0.95,
-        "relevance": "DIRECT_PRODUCT"
-      },
-      {
-        "surface": "fittings",
-        "canonical": "plumbing fittings",
-        "entityType": "PRODUCT_CATEGORY",
-        "concept": "fittings",
-        "status": "PROPOSED",
-        "confidence": 0.9,
-        "relevance": "COMMERCIAL_CATEGORY"
-      },
-      {
-        "surface": "plumbing installation and repairs",
-        "canonical": "plumbing installation and repairs",
-        "entityType": "SERVICE",
-        "concept": "plumbing installation and repairs",
-        "status": "PROPOSED",
-        "confidence": 0.95,
-        "relevance": "DIRECT_SERVICE"
-      }
-    ],
-    "gpc": [],
-    "capabilities": [],
-    "evidence": {
-      "observations": [
-        {
-          "type": "CSRE_SEMANTIC_RESOLUTION",
-          "status": "INTERPRETED",
-          "evidence": 1
-        },
-        {
-          "type": "CSRE_SEMANTIC_RESOLUTION",
-          "status": "INTERPRETED",
-          "evidence": 1
-        },
-        {
-          "type": "CSRE_SEMANTIC_RESOLUTION",
-          "status": "INTERPRETED",
-          "evidence": 1
-        },
-        {
-          "type": "CSRE_SEMANTIC_RESOLUTION",
-          "status": "INTERPRETED",
-          "evidence": 1
-        },
-        {
-          "type": "CSRE_SEMANTIC_RESOLUTION",
-          "status": "INTERPRETED",
-          "evidence": 1
-        }
-      ],
-      "vendorAssertions": [],
-      "phraseAssertions": [
-        {
-          "subject": "taps",
-          "predicate": "mkg:EXPRESSES",
-          "object": "taps",
-          "belief": 0.222,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "PVC pipes",
-          "predicate": "mkg:EXPRESSES",
-          "object": "PVC pipes",
-          "belief": 0.222,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "water closets",
-          "predicate": "mkg:EXPRESSES",
-          "object": "water closets",
-          "belief": 0.222,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "plumbing installation and repairs",
-          "predicate": "mkg:EXPRESSES",
-          "object": "plumbing installation and repairs",
-          "belief": 0.222,
-          "state": "CANDIDATE"
-        },
-        {
-          "subject": "fittings",
-          "predicate": "mkg:EXPRESSES",
-          "object": "fittings",
-          "belief": 0.21,
-          "state": "CANDIDATE"
-        }
-      ],
-      "decisions": []
-    }
-  },
-  {
-    "id": "v04",
-    "sector": "Paints & coatings",
-    "style": "CATEGORY",
-    "channel": "web",
-    "businessName": "Rainbow Paints Ilorin",
-    "statement": "We are a paint and coatings shop",
-    "gpcExpected": {
-      "title": "Paints/Varnishes",
-      "level": "CLASS"
-    },
-    "ingest": null,
-    "vendor": {
-      "id": "a1336d08-8e4b-4c22-b096-7d234e8a0c1f",
-      "status": "onboarding",
-      "businessName": "",
-      "contactPhone": null,
-      "city": null,
-      "state": null,
-      "onboardedAt": null,
-      "conversationId": "3287500d-f67f-4f8c-a58e-2424f0410f77"
-    },
-    "turns": [
-      {
-        "status": "PROCESSING",
-        "channel": "web"
-      }
-    ],
-    "wallet": null,
-    "csre": [],
-    "gpc": [],
-    "capabilities": [],
-    "evidence": {
-      "observations": [],
-      "vendorAssertions": [],
-      "phraseAssertions": [],
-      "decisions": []
-    }
-  },
-  {
-    "id": "v05",
-    "sector": "Roofing",
-    "style": "HYBRID",
-    "channel": "web",
-    "businessName": "Gbenga Roofing",
-    "statement": "Aluminium roofing sheets, stone-coated roofing tiles and long span, plus roof installation and leak repairs",
-    "gpcExpected": {
-      "title": "Roofing Tiles/Slates/Shingles/Shakes",
-      "level": "BRICK",
-      "code": "10002683"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v06",
-    "sector": "Generators & power",
-    "style": "HYBRID",
-    "channel": "whatsapp",
-    "businessName": "PowerHouse Generators",
-    "statement": "I sell Elepaq and Sumec Firman generators and I repair generators of all sizes",
-    "gpcExpected": {
-      "title": "Generators",
-      "level": "BRICK",
-      "code": "10005211"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v07",
-    "sector": "Solar & inverters",
-    "style": "ITEMS",
-    "channel": "web",
-    "businessName": "SunLite Solar Kano",
-    "statement": "I sell 550W mono solar panels, 5kVA inverters and 200Ah tubular batteries",
-    "gpcExpected": {
-      "title": "Solar Panels",
-      "level": "BRICK",
-      "code": "10008389"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v08",
-    "sector": "Mobile phones & accessories",
-    "style": "VENUE",
-    "channel": "web",
-    "businessName": "Computer Village Phones",
-    "statement": "I have a shop in Computer Village Ikeja where I sell phones, chargers and earpieces",
-    "gpcExpected": {
-      "title": "Mobile Phones",
-      "level": "BRICK",
-      "code": "10008506"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v09",
-    "sector": "Computers & laptops",
-    "style": "HYBRID",
-    "channel": "web",
-    "businessName": "ByteWorks Abuja",
-    "statement": "We sell UK-used laptops and desktops and we fix laptops, replace screens and install software",
-    "gpcExpected": {
-      "title": "Computers/Laptops",
-      "level": "CLASS"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v10",
-    "sector": "Home appliances",
-    "style": "MIXED",
-    "channel": "web",
-    "businessName": "Coolzone Appliances",
-    "statement": "Home appliances dealer: fridges, deep freezers, air conditioners, washing machines and standing fans",
-    "gpcExpected": {
-      "title": "Refrigerator/Freezers",
-      "level": "BRICK",
-      "code": "10003695"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v11",
-    "sector": "Auto spare parts",
-    "style": "VENUE",
-    "channel": "whatsapp",
-    "businessName": "Ladipo Auto Parts",
-    "statement": "I sell at Ladipo market — tyres, brake pads, shock absorbers and Toyota spare parts",
-    "gpcExpected": {
-      "title": "Tyres",
-      "level": "BRICK",
-      "code": "10002924"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v12",
-    "sector": "Auto repair services",
-    "style": "SERVICE",
-    "channel": "web",
-    "businessName": "Baba Tunde Mechanic Workshop",
-    "statement": "I am a mechanic. I do engine repairs, servicing, brake work and AC repair for cars",
-    "gpcExpected": {
-      "title": "Automotive services",
-      "level": "SERVICE (not in GPC)"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v13",
-    "sector": "Fashion & clothing",
-    "style": "CATEGORY",
-    "channel": "web",
-    "businessName": "Amaka's Boutique",
-    "statement": "We run a ladies' boutique for clothing and fashion accessories",
-    "gpcExpected": {
-      "title": "Clothing",
-      "level": "FAMILY"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v14",
-    "sector": "Footwear",
-    "style": "ITEMS",
-    "channel": "web",
-    "businessName": "Aba Made Shoes",
-    "statement": "I make and sell leather sandals, men's loafers and school shoes",
-    "gpcExpected": {
-      "title": "Footwear",
-      "level": "CLASS"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v15",
-    "sector": "Textiles & fabrics",
-    "style": "VENUE",
-    "channel": "web",
-    "businessName": "Balogun Fabrics",
-    "statement": "My shop is in Balogun market, I sell ankara, lace, aso-oke and senator materials",
-    "gpcExpected": {
-      "title": "Fabrics/Textiles",
-      "level": "CLASS"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v16",
-    "sector": "Tailoring",
-    "style": "SERVICE",
-    "channel": "web",
-    "businessName": "Stitches by Halima",
-    "statement": "I am a tailor and fashion designer. I sew native wears, kaftans and wedding outfits",
-    "gpcExpected": {
-      "title": "Tailoring services",
-      "level": "SERVICE (not in GPC)"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v17",
-    "sector": "Beauty & cosmetics",
-    "style": "MIXED",
-    "channel": "web",
-    "businessName": "Glow Beauty Store",
-    "statement": "Cosmetics and skincare: body lotions, perfumes, human hair wigs and makeup kits",
-    "gpcExpected": {
-      "title": "Cosmetics/Fragrances",
-      "level": "FAMILY"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v18",
-    "sector": "Hair & barbing services",
-    "style": "SERVICE",
-    "channel": "web",
-    "businessName": "Kings Cut Barbershop",
-    "statement": "We are a barbing salon offering haircuts, beard grooming and hair dye",
-    "gpcExpected": {
-      "title": "Personal care services",
-      "level": "SERVICE (not in GPC)"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v19",
-    "sector": "Pharmacy & medical supplies",
-    "style": "MIXED",
-    "channel": "whatsapp",
-    "businessName": "Onitsha Central Pharmacy",
-    "statement": "Pharmacy and medical supplies — drugs, blood pressure monitors, glucose strips, surgical gloves and face masks",
-    "gpcExpected": {
-      "title": "Pharmaceutical Drugs",
-      "level": "FAMILY"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v20",
-    "sector": "Foodstuff & grains",
-    "style": "VENUE",
-    "channel": "web",
-    "businessName": "Mile 12 Foodstuff",
-    "statement": "I sell foodstuff in Mile 12 market: bags of rice, beans, garri, palm oil and yam",
-    "gpcExpected": {
-      "title": "Grains/Rice",
-      "level": "CLASS"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v21",
-    "sector": "Provisions & FMCG",
-    "style": "CATEGORY",
-    "channel": "web",
-    "businessName": "Mama Nkechi Provisions",
-    "statement": "I run a provisions store",
-    "gpcExpected": {
-      "title": "Food/Beverage/Tobacco",
-      "level": "SEGMENT"
-    },
-    "ingest": null,
-    "vendor": null
-  },
-  {
-    "id": "v22",
-    "sector": "Frozen foods & poultry",
-    "style": "ITEMS",
-    "channel": "web",
-    "businessName": "Iceberg Frozen Foods",
-    "statement": "I sell frozen chicken, turkey wings, titus fish and croaker",
-    "gpcExpected": {
-      "title": "Poultry - Unprepared/Unprocessed",
-      "level": "BRICK"
-    },
-    "ingest": null,
-    "vendor": null
   },
   {
     "id": "v23",
@@ -1327,8 +1201,402 @@
       "level": "BRICK",
       "code": "10000232"
     },
-    "ingest": null,
-    "vendor": null
+    "ingest": {
+      "id": "v23",
+      "channel": "web",
+      "businessName": "Aqua Fresh Table Water",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We produce and supply sachet water and bottled water, and we deliver to shops and events",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 34
+        },
+        {
+          "turn": 2,
+          "sent": "Jos, Plateau State",
+          "reply": "What's your business name?",
+          "seconds": 38
+        },
+        {
+          "turn": 3,
+          "sent": "Aqua Fresh Table Water",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 24
+        },
+        {
+          "turn": 4,
+          "sent": "08090000023",
+          "reply": "All set, Aqua Fresh Table Water.\n\nYou're listed in Jos, Plateau State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000023.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 30
+        }
+      ],
+      "conversationId": "b6c41b8c-bac8-402a-98fc-011c3e91a3e9",
+      "completed": true,
+      "error": null
+    },
+    "vendor": {
+      "id": "43117b4d-3ede-4846-a026-b2461b183bdc",
+      "status": "active",
+      "businessName": "Aqua Fresh Table Water",
+      "contactPhone": "+08090000023",
+      "city": "Jos",
+      "state": "Plateau State",
+      "onboardedAt": "2026-09-24T17:46:39.210Z",
+      "conversationId": "b6c41b8c-bac8-402a-98fc-011c3e91a3e9"
+    },
+    "turns": [
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      }
+    ],
+    "wallet": {
+      "balance": 2000,
+      "grants": 1,
+      "grantAmount": 2000
+    },
+    "csre": [
+      {
+        "surface": "sachet water",
+        "canonical": "sachet water",
+        "entityType": "PRODUCT",
+        "concept": "sachet water",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "bottled water",
+        "canonical": "bottled water",
+        "entityType": "PRODUCT",
+        "concept": "bottled water",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "deliver to shops and events",
+        "canonical": "delivery service",
+        "entityType": "SERVICE",
+        "concept": "delivery service",
+        "status": "PROPOSED",
+        "confidence": 0.9,
+        "relevance": "DIRECT_SERVICE"
+      },
+      {
+        "surface": "Aqua Fresh Table Water",
+        "canonical": "bottled water",
+        "entityType": "PRODUCT",
+        "concept": "bottled water",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      }
+    ],
+    "gpc": [
+      {
+        "concept": "sachet water",
+        "state": "MAPPED",
+        "code": "10000232",
+        "level": "BRICK",
+        "title": "Packaged Water - Unflavoured",
+        "confidence": 0.95
+      },
+      {
+        "concept": "bottled water",
+        "state": "MAPPED",
+        "code": "10000232",
+        "level": "BRICK",
+        "title": "Packaged Water - Unflavoured",
+        "confidence": 0.95
+      },
+      {
+        "concept": "delivery service",
+        "state": "NOT_APPLICABLE",
+        "code": null,
+        "level": null,
+        "title": null,
+        "confidence": 0
+      },
+      {
+        "concept": "bottled water",
+        "state": "MAPPED",
+        "code": "10000232",
+        "level": "BRICK",
+        "title": "Packaged Water - Unflavoured",
+        "confidence": 0.95
+      }
+    ],
+    "capabilities": [
+      {
+        "name": "Packaged Water - Unflavoured",
+        "domain": "product",
+        "confidence": 0.5610437021826734,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Delivery Services",
+        "domain": "service",
+        "confidence": 0.5610437021826734,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Retail Delivery",
+        "domain": "service",
+        "confidence": 0.5610437021826734,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Event Delivery",
+        "domain": "service",
+        "confidence": 0.5610437021826734,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Logistics Coordination",
+        "domain": "service",
+        "confidence": 0.5610437021826734,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Non Alcoholic Beverages - Ready to Drink",
+        "domain": "product",
+        "confidence": 0.4379216953504953,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Same-Day Delivery",
+        "domain": "service",
+        "confidence": 0.3835278152045867,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Beverages",
+        "domain": "product",
+        "confidence": 0.3495879168745476,
+        "inferred": true,
+        "evidence": 1
+      }
+    ],
+    "evidence": {
+      "observations": [
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "ENRICHMENT_INSIGHT",
+          "status": "INTERPRETED",
+          "evidence": 4
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "IGNORED",
+          "evidence": 0
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "ENRICHMENT_INSIGHT",
+          "status": "INTERPRETED",
+          "evidence": 4
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "VENDOR_STATEMENT",
+          "status": "INTERPRETED",
+          "evidence": 2
+        }
+      ],
+      "vendorAssertions": [
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "sachet water",
+          "belief": 0.506,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "bottled water",
+          "belief": 0.506,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        }
+      ],
+      "phraseAssertions": [
+        {
+          "subject": "sachet water",
+          "predicate": "mkg:EXPRESSES",
+          "object": "sachet water",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "bottled water",
+          "predicate": "mkg:EXPRESSES",
+          "object": "bottled water",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "deliver to shops and events",
+          "predicate": "mkg:EXPRESSES",
+          "object": "delivery service",
+          "belief": 0.21,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "sachet water",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "packaged water sachets",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "sachet water",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "pure water",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "delivery service",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "goods transportation service",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "bottled water",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "packaged water",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "bottled water",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "table water",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "bottled water",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "pure water",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "bottled water",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "packaged water bottles",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "sachet water",
+          "predicate": "mkg:MAPPED_TO_GPC",
+          "object": "Packaged Water - Unflavoured [10000232]",
+          "belief": 0.283,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Aqua Fresh Table Water",
+          "predicate": "mkg:EXPRESSES",
+          "object": "bottled water",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "bottled water",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "drinking water",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "bottled water",
+          "predicate": "mkg:MAPPED_TO_GPC",
+          "object": "Packaged Water - Unflavoured [10000232]",
+          "belief": 0.283,
+          "state": "CANDIDATE"
+        }
+      ],
+      "decisions": [
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:sachet water",
+          "belief": 0.506,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:bottled water",
+          "belief": 0.506,
+          "status": "PENDING"
+        }
+      ]
+    }
   },
   {
     "id": "v24",
@@ -1342,8 +1610,412 @@
       "level": "BRICK",
       "code": "10003234"
     },
-    "ingest": null,
-    "vendor": null
+    "ingest": {
+      "id": "v24",
+      "channel": "web",
+      "businessName": "Green Harvest Agro",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Agro inputs dealer: NPK fertiliser, urea, herbicides, knapsack sprayers and hybrid maize seed",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 44
+        },
+        {
+          "turn": 2,
+          "sent": "Makurdi, Benue State",
+          "reply": "What's your business name?",
+          "seconds": 34
+        },
+        {
+          "turn": 3,
+          "sent": "Green Harvest Agro",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 24
+        },
+        {
+          "turn": 4,
+          "sent": "08090000024",
+          "reply": "All set, Green Harvest Agro.\n\nYou're listed in Makurdi, Benue State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000024.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 14
+        }
+      ],
+      "conversationId": "c6942e2e-ca2b-457f-9867-697f966db826",
+      "completed": true,
+      "error": null
+    },
+    "vendor": {
+      "id": "b794166f-10ff-486e-853b-f3bb1837a206",
+      "status": "active",
+      "businessName": "Green Harvest Agro",
+      "contactPhone": "+08090000024",
+      "city": "Makurdi",
+      "state": "Benue State",
+      "onboardedAt": "2026-09-24T17:46:29.600Z",
+      "conversationId": "c6942e2e-ca2b-457f-9867-697f966db826"
+    },
+    "turns": [
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      }
+    ],
+    "wallet": {
+      "balance": 2000,
+      "grants": 1,
+      "grantAmount": 2000
+    },
+    "csre": [
+      {
+        "surface": "NPK fertiliser",
+        "canonical": "NPK fertiliser",
+        "entityType": "PRODUCT",
+        "concept": "NPK fertiliser",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "urea",
+        "canonical": "urea",
+        "entityType": "PRODUCT",
+        "concept": "urea",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "herbicides",
+        "canonical": "herbicides",
+        "entityType": "PRODUCT_CATEGORY",
+        "concept": "herbicides",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "COMMERCIAL_CATEGORY"
+      },
+      {
+        "surface": "knapsack sprayers",
+        "canonical": "knapsack sprayers",
+        "entityType": "EQUIPMENT",
+        "concept": "knapsack sprayers",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "hybrid maize seed",
+        "canonical": "hybrid maize seed",
+        "entityType": "PRODUCT",
+        "concept": "hybrid maize seed",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "Green Harvest Agro",
+        "canonical": "Green Harvest Agro",
+        "entityType": "ORGANIZATION",
+        "concept": "Green Harvest Agro",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "COMMERCIAL_ENTITY"
+      },
+      {
+        "surface": "08090000024",
+        "canonical": "WhatsApp contact number",
+        "entityType": "CONCEPT",
+        "concept": "WhatsApp contact number",
+        "status": "PROPOSED",
+        "confidence": 1,
+        "relevance": "NON_COMMERCIAL"
+      }
+    ],
+    "gpc": [
+      {
+        "concept": "Green Harvest Agro",
+        "state": "NOT_APPLICABLE",
+        "code": null,
+        "level": null,
+        "title": null,
+        "confidence": 0
+      }
+    ],
+    "capabilities": [
+      {
+        "name": "Plant/Soil Fertilizer/Food",
+        "domain": "product",
+        "confidence": 0.5610437022041089,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Weed-Killer/ Herbicide",
+        "domain": "product",
+        "confidence": 0.5610437022041089,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Sprayers (Non Powered)",
+        "domain": "product",
+        "confidence": 0.5610437022041089,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Plant Chemicals or Natural Agents/Treatments",
+        "domain": "product",
+        "confidence": 0.4379216953665636,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Sprayers",
+        "domain": "product",
+        "confidence": 0.4379216953665636,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Pest/Plant Control Products",
+        "domain": "product",
+        "confidence": 0.3495879168856799,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Tools/Equipment",
+        "domain": "product",
+        "confidence": 0.3495879168856799,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Pest/Plant Control Products",
+        "domain": "product",
+        "confidence": 0.2891967213777241,
+        "inferred": true,
+        "evidence": 1
+      }
+    ],
+    "evidence": {
+      "observations": [
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "ENRICHMENT_INSIGHT",
+          "status": "INTERPRETED",
+          "evidence": 2
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "IGNORED",
+          "evidence": 0
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "IGNORED",
+          "evidence": 0
+        },
+        {
+          "type": "VENDOR_STATEMENT",
+          "status": "INTERPRETED",
+          "evidence": 5
+        }
+      ],
+      "vendorAssertions": [
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "knapsack sprayers",
+          "belief": 0.535,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "hybrid maize seed",
+          "belief": 0.535,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "NPK fertiliser",
+          "belief": 0.535,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "urea",
+          "belief": 0.535,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "herbicides",
+          "belief": 0.535,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        }
+      ],
+      "phraseAssertions": [
+        {
+          "subject": "NPK fertiliser",
+          "predicate": "mkg:EXPRESSES",
+          "object": "NPK fertiliser",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "urea",
+          "predicate": "mkg:EXPRESSES",
+          "object": "urea",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "herbicides",
+          "predicate": "mkg:EXPRESSES",
+          "object": "herbicides",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "hybrid maize seed",
+          "predicate": "mkg:EXPRESSES",
+          "object": "hybrid maize seed",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "knapsack sprayers",
+          "predicate": "mkg:EXPRESSES",
+          "object": "knapsack sprayers",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Green Harvest Agro",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Green Harvest Agriculture",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Green Harvest Agro",
+          "predicate": "mkg:EXPRESSES",
+          "object": "Green Harvest Agro",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Green Harvest Agro",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Green Harvest Agro Ltd.",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        }
+      ],
+      "decisions": [
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:NPK fertiliser",
+          "belief": 0.535,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:urea",
+          "belief": 0.535,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:herbicides",
+          "belief": 0.535,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:knapsack sprayers",
+          "belief": 0.535,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:hybrid maize seed",
+          "belief": 0.535,
+          "status": "PENDING"
+        }
+      ]
+    }
   },
   {
     "id": "v25",
@@ -1357,8 +2029,227 @@
       "level": "BRICK",
       "code": "10002195"
     },
-    "ingest": null,
-    "vendor": null
+    "ingest": {
+      "id": "v25",
+      "channel": "whatsapp",
+      "businessName": "Oga Carpenter Furniture",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v25"
+    },
+    "vendor": {
+      "id": "8d921271-0dc4-419f-8cac-c3c1ff550d01",
+      "status": "onboarding",
+      "businessName": "",
+      "contactPhone": null,
+      "city": null,
+      "state": null,
+      "onboardedAt": null,
+      "conversationId": "ae7906cf-cc56-42f4-8ca7-20b75864ceff"
+    },
+    "turns": [
+      {
+        "status": "COMMITTED",
+        "channel": "whatsapp"
+      }
+    ],
+    "wallet": null,
+    "csre": [
+      {
+        "surface": "sofas",
+        "canonical": "sofa",
+        "entityType": "PRODUCT",
+        "concept": "sofa",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "beds",
+        "canonical": "bed",
+        "entityType": "PRODUCT",
+        "concept": "bed",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "wardrobes",
+        "canonical": "wardrobe",
+        "entityType": "PRODUCT",
+        "concept": "wardrobe",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "dining sets",
+        "canonical": "dining set",
+        "entityType": "PRODUCT",
+        "concept": "dining set",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "furniture repairs",
+        "canonical": "furniture repair service",
+        "entityType": "SERVICE",
+        "concept": "furniture repair service",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_SERVICE"
+      },
+      {
+        "surface": "upholstery",
+        "canonical": "upholstery service",
+        "entityType": "SERVICE",
+        "concept": "upholstery service",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_SERVICE"
+      }
+    ],
+    "gpc": [],
+    "capabilities": [
+      {
+        "name": "Household/Office Sofas (Non Powered)",
+        "domain": "product",
+        "confidence": 0.8436181174781286,
+        "inferred": false,
+        "evidence": 1
+      },
+      {
+        "name": "Complete Beds (Non Powered)",
+        "domain": "product",
+        "confidence": 0.8436181174781286,
+        "inferred": false,
+        "evidence": 1
+      },
+      {
+        "name": "Household/Office Wardrobes/Lockers",
+        "domain": "product",
+        "confidence": 0.8436181174781286,
+        "inferred": false,
+        "evidence": 1
+      },
+      {
+        "name": "Furniture Repair",
+        "domain": "service",
+        "confidence": 0.8183783293299428,
+        "inferred": false,
+        "evidence": 1
+      },
+      {
+        "name": "Upholstery Services",
+        "domain": "service",
+        "confidence": 0.8183783293299428,
+        "inferred": false,
+        "evidence": 1
+      },
+      {
+        "name": "Household/Office Seating",
+        "domain": "product",
+        "confidence": 0.6964392778603236,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Household Beds/Mattresses",
+        "domain": "product",
+        "confidence": 0.6964392778603236,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Household/Office Storage/Display Furniture/Screens",
+        "domain": "product",
+        "confidence": 0.6964392778603236,
+        "inferred": true,
+        "evidence": 1
+      }
+    ],
+    "evidence": {
+      "observations": [
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        }
+      ],
+      "vendorAssertions": [],
+      "phraseAssertions": [
+        {
+          "subject": "beds",
+          "predicate": "mkg:EXPRESSES",
+          "object": "bed",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "upholstery",
+          "predicate": "mkg:EXPRESSES",
+          "object": "upholstery service",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "sofas",
+          "predicate": "mkg:EXPRESSES",
+          "object": "sofa",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "furniture repairs",
+          "predicate": "mkg:EXPRESSES",
+          "object": "furniture repair service",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "wardrobes",
+          "predicate": "mkg:EXPRESSES",
+          "object": "wardrobe",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "dining sets",
+          "predicate": "mkg:EXPRESSES",
+          "object": "dining set",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        }
+      ],
+      "decisions": []
+    }
   },
   {
     "id": "v26",
@@ -1371,8 +2262,263 @@
       "title": "Stationery/Office Machinery",
       "level": "SEGMENT"
     },
-    "ingest": null,
-    "vendor": null
+    "ingest": {
+      "id": "v26",
+      "channel": "web",
+      "businessName": "Scholars Bookshop",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We are a bookshop and stationery store",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 107
+        },
+        {
+          "turn": 2,
+          "sent": "Ilorin, Kwara State",
+          "reply": "What's your business name?",
+          "seconds": 22
+        },
+        {
+          "turn": 3,
+          "sent": "Scholars Bookshop",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 16
+        },
+        {
+          "turn": 4,
+          "sent": "08090000026",
+          "reply": "All set, Scholars Bookshop.\n\nYou're listed in Ilorin, Kwara State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000026.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 18
+        }
+      ],
+      "conversationId": "d1e92758-b916-4ba6-89a1-d2250683ce50",
+      "completed": true,
+      "error": null
+    },
+    "vendor": {
+      "id": "e9cbe2f7-caaa-41b4-a00e-dc373bf7bab7",
+      "status": "active",
+      "businessName": "Scholars Bookshop",
+      "contactPhone": "+08090000026",
+      "city": "Ilorin",
+      "state": "Kwara State",
+      "onboardedAt": "2026-09-24T17:47:13.960Z",
+      "conversationId": "d1e92758-b916-4ba6-89a1-d2250683ce50"
+    },
+    "turns": [
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      }
+    ],
+    "wallet": {
+      "balance": 2000,
+      "grants": 1,
+      "grantAmount": 2000
+    },
+    "csre": [
+      {
+        "surface": "bookshop",
+        "canonical": "bookshop",
+        "entityType": "PLACE",
+        "concept": "bookshop",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "COMMERCIAL_ENTITY"
+      },
+      {
+        "surface": "stationery store",
+        "canonical": "stationery store",
+        "entityType": "PLACE",
+        "concept": "stationery store",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "COMMERCIAL_ENTITY"
+      }
+    ],
+    "gpc": [
+      {
+        "concept": "bookshop",
+        "state": "NOT_APPLICABLE",
+        "code": null,
+        "level": null,
+        "title": null,
+        "confidence": 0
+      },
+      {
+        "concept": "stationery store",
+        "state": "NOT_APPLICABLE",
+        "code": null,
+        "level": null,
+        "title": null,
+        "confidence": 0
+      }
+    ],
+    "capabilities": [
+      {
+        "name": "Exercise Books",
+        "domain": "product",
+        "confidence": 0.6868425418866334,
+        "inferred": false,
+        "evidence": 1
+      },
+      {
+        "name": "Printed Books/Compositions",
+        "domain": "product",
+        "confidence": 0.6591253566795559,
+        "inferred": false,
+        "evidence": 1
+      },
+      {
+        "name": "Stationery Paper/Card/Film",
+        "domain": "product",
+        "confidence": 0.53877174309631,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Books",
+        "domain": "product",
+        "confidence": 0.51522003251046,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Stationery/Office Machinery",
+        "domain": "product",
+        "confidence": 0.4213824048126384,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Printed Periodicals",
+        "domain": "product",
+        "confidence": 0.4137217025042104,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Pencils",
+        "domain": "product",
+        "confidence": 0.4137217025042104,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Stationery Files/Folders/Wallets",
+        "domain": "product",
+        "confidence": 0.4137217025042104,
+        "inferred": true,
+        "evidence": 1
+      }
+    ],
+    "evidence": {
+      "observations": [
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "ENRICHMENT_INSIGHT",
+          "status": "INTERPRETED",
+          "evidence": 6
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "IGNORED",
+          "evidence": 0
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "IGNORED",
+          "evidence": 0
+        },
+        {
+          "type": "VENDOR_STATEMENT",
+          "status": "IGNORED",
+          "evidence": 0
+        }
+      ],
+      "vendorAssertions": [],
+      "phraseAssertions": [
+        {
+          "subject": "bookshop",
+          "predicate": "mkg:EXPRESSES",
+          "object": "bookshop",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "stationery store",
+          "predicate": "mkg:EXPRESSES",
+          "object": "stationery store",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "bookshop",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "bookstore",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "bookshop",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "book retailer",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "bookshop",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "bookshop (Nigeria)",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "stationery store",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "stationery shop",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "stationery store",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "office supply store",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "stationery store",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "stationery store (Nigeria)",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        }
+      ],
+      "decisions": []
+    }
   },
   {
     "id": "v27",
@@ -1386,8 +2532,359 @@
       "level": "BRICK",
       "code": "10000494"
     },
-    "ingest": null,
-    "vendor": null
+    "ingest": {
+      "id": "v27",
+      "channel": "web",
+      "businessName": "Little Ones Baby Store",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell Pampers diapers, baby wipes, feeding bottles and baby formula",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 38
+        },
+        {
+          "turn": 2,
+          "sent": "Calabar, Cross River State",
+          "reply": "What's your business name?",
+          "seconds": 46
+        },
+        {
+          "turn": 3,
+          "sent": "Little Ones Baby Store",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 20
+        },
+        {
+          "turn": 4,
+          "sent": "08090000027",
+          "reply": "All set, Little Ones Baby Store.\n\nYou're listed in Calabar, Cross River State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000027.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 24
+        }
+      ],
+      "conversationId": "6b1adbf6-e242-431f-a442-f1c9a04a54ec",
+      "completed": true,
+      "error": null
+    },
+    "vendor": {
+      "id": "1f0782e6-02d8-47ff-90c7-bf26e91366cf",
+      "status": "active",
+      "businessName": "Little Ones Baby Store",
+      "contactPhone": "+08090000027",
+      "city": "Calabar",
+      "state": "Cross River State",
+      "onboardedAt": "2026-09-24T17:50:42.913Z",
+      "conversationId": "6b1adbf6-e242-431f-a442-f1c9a04a54ec"
+    },
+    "turns": [
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      }
+    ],
+    "wallet": {
+      "balance": 2000,
+      "grants": 1,
+      "grantAmount": 2000
+    },
+    "csre": [
+      {
+        "surface": "Pampers diapers",
+        "canonical": "diapers",
+        "entityType": "PRODUCT",
+        "concept": "diapers",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "baby wipes",
+        "canonical": "baby wipes",
+        "entityType": "PRODUCT",
+        "concept": "baby wipes",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "feeding bottles",
+        "canonical": "feeding bottles",
+        "entityType": "PRODUCT",
+        "concept": "feeding bottles",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "baby formula",
+        "canonical": "baby formula",
+        "entityType": "PRODUCT",
+        "concept": "baby formula",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "Little Ones Baby Store",
+        "canonical": "Little Ones Baby Store",
+        "entityType": "ORGANIZATION",
+        "concept": "Little Ones Baby Store",
+        "status": "PROPOSED",
+        "confidence": 0.6,
+        "relevance": "COMMERCIAL_ENTITY"
+      }
+    ],
+    "gpc": [
+      {
+        "concept": "Little Ones Baby Store",
+        "state": "NOT_APPLICABLE",
+        "code": null,
+        "level": null,
+        "title": null,
+        "confidence": 0
+      }
+    ],
+    "capabilities": [
+      {
+        "name": "Baby/Infant - Formula (Shelf Stable)",
+        "domain": "product",
+        "confidence": 0.6983386116087176,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Baby Feeding - Bottles",
+        "domain": "product",
+        "confidence": 0.6983386116087176,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Baby Diapers (Disposable)",
+        "domain": "product",
+        "confidence": 0.6983386116087176,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Wipes - Personal",
+        "domain": "product",
+        "confidence": 0.6983386116087176,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Baby/Infant - Foods/Beverages",
+        "domain": "product",
+        "confidence": 0.5488187119918829,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Baby Tableware",
+        "domain": "product",
+        "confidence": 0.5488187119918829,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Baby Diapers/Accessories",
+        "domain": "product",
+        "confidence": 0.5488187119918829,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Body Washing",
+        "domain": "product",
+        "confidence": 0.5488187119918829,
+        "inferred": true,
+        "evidence": 1
+      }
+    ],
+    "evidence": {
+      "observations": [
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "ENRICHMENT_INSIGHT",
+          "status": "INTERPRETED",
+          "evidence": 2
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "IGNORED",
+          "evidence": 0
+        },
+        {
+          "type": "VENDOR_STATEMENT",
+          "status": "INTERPRETED",
+          "evidence": 4
+        }
+      ],
+      "vendorAssertions": [
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "Pampers diapers",
+          "belief": 0.535,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "baby wipes",
+          "belief": 0.535,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "feeding bottles",
+          "belief": 0.535,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "baby formula",
+          "belief": 0.535,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        }
+      ],
+      "phraseAssertions": [
+        {
+          "subject": "Pampers diapers",
+          "predicate": "mkg:EXPRESSES",
+          "object": "diapers",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "baby wipes",
+          "predicate": "mkg:EXPRESSES",
+          "object": "baby wipes",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "feeding bottles",
+          "predicate": "mkg:EXPRESSES",
+          "object": "feeding bottles",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "baby formula",
+          "predicate": "mkg:EXPRESSES",
+          "object": "baby formula",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Little Ones Baby Store",
+          "predicate": "mkg:EXPRESSES",
+          "object": "Little Ones Baby Store",
+          "belief": 0.14,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Little Ones Baby Store",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Baby product retailer",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Little Ones Baby Store",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Infant care store",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        }
+      ],
+      "decisions": [
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:Pampers diapers",
+          "belief": 0.535,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:baby wipes",
+          "belief": 0.535,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:feeding bottles",
+          "belief": 0.535,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:baby formula",
+          "belief": 0.535,
+          "status": "PENDING"
+        }
+      ]
+    }
   },
   {
     "id": "v28",
@@ -1401,7 +2898,22 @@
       "level": "BRICK",
       "code": "10000424"
     },
-    "ingest": null,
+    "ingest": {
+      "id": "v28",
+      "channel": "web",
+      "businessName": "Sparkle Cleaning Supplies",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Cleaning supplies: detergents, bleach, iron sponge, mops and toilet paper in bulk",
+          "reply": "We're checking across our seller network for *detergents* and will notify you the moment a supplier is ready.",
+          "seconds": 93
+        }
+      ],
+      "conversationId": "e975dd75-ec99-4a18-ba0c-42544da382d8",
+      "completed": false,
+      "error": "No scripted answer for reply: We're checking across our seller network for *detergents* and will notify you the moment a supplier is ready."
+    },
     "vendor": null
   },
   {
@@ -1415,8 +2927,398 @@
       "title": "Event services",
       "level": "SERVICE (not in GPC)"
     },
-    "ingest": null,
-    "vendor": null
+    "ingest": {
+      "id": "v29",
+      "channel": "web",
+      "businessName": "Royal Events Rentals",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We rent canopies, chairs and tables for events and we also provide catering and decoration services",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 40
+        },
+        {
+          "turn": 2,
+          "sent": "Yenagoa, Bayelsa State",
+          "reply": "What's your business name?",
+          "seconds": 46
+        },
+        {
+          "turn": 3,
+          "sent": "Royal Events Rentals",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 18
+        },
+        {
+          "turn": 4,
+          "sent": "08090000029",
+          "reply": "All set, Royal Events Rentals.\n\nYou're listed in Yenagoa, Bayelsa State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000029.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 28
+        }
+      ],
+      "conversationId": "fd5808f5-c5b0-4844-9d86-750c3aac130b",
+      "completed": true,
+      "error": null
+    },
+    "vendor": {
+      "id": "e101a736-858a-4a36-808a-0cdd93aad530",
+      "status": "active",
+      "businessName": "Royal Events Rentals",
+      "contactPhone": "+08090000029",
+      "city": "Yenagoa",
+      "state": "Bayelsa State",
+      "onboardedAt": "2026-09-24T17:50:45.367Z",
+      "conversationId": "fd5808f5-c5b0-4844-9d86-750c3aac130b"
+    },
+    "turns": [
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      }
+    ],
+    "wallet": {
+      "balance": 2000,
+      "grants": 1,
+      "grantAmount": 2000
+    },
+    "csre": [
+      {
+        "surface": "canopies",
+        "canonical": "canopy",
+        "entityType": "PRODUCT",
+        "concept": "canopy",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "chairs",
+        "canonical": "chair",
+        "entityType": "PRODUCT",
+        "concept": "chair",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "tables",
+        "canonical": "table",
+        "entityType": "PRODUCT",
+        "concept": "table",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "catering",
+        "canonical": "catering service",
+        "entityType": "SERVICE",
+        "concept": "catering service",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_SERVICE"
+      },
+      {
+        "surface": "decoration services",
+        "canonical": "event decoration service",
+        "entityType": "SERVICE",
+        "concept": "event decoration service",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_SERVICE"
+      },
+      {
+        "surface": "Royal Events Rentals",
+        "canonical": "Royal Events Rentals",
+        "entityType": "ORGANIZATION",
+        "concept": "Royal Events Rentals",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "COMMERCIAL_ENTITY"
+      }
+    ],
+    "gpc": [
+      {
+        "concept": "Royal Events Rentals",
+        "state": "NOT_APPLICABLE",
+        "code": null,
+        "level": null,
+        "title": null,
+        "confidence": 0
+      }
+    ],
+    "capabilities": [
+      {
+        "name": "Canopies/Tarpaulins (Lawn/Garden)",
+        "domain": "product",
+        "confidence": 0.8436181174979626,
+        "inferred": false,
+        "evidence": 1
+      },
+      {
+        "name": "Garden Chairs",
+        "domain": "product",
+        "confidence": 0.8436181174979626,
+        "inferred": false,
+        "evidence": 1
+      },
+      {
+        "name": "Household/Office Tables",
+        "domain": "product",
+        "confidence": 0.8436181174979626,
+        "inferred": false,
+        "evidence": 1
+      },
+      {
+        "name": "Catering Services",
+        "domain": "service",
+        "confidence": 0.8183783293511124,
+        "inferred": false,
+        "evidence": 1
+      },
+      {
+        "name": "Lawn/Garden Furniture/Furnishings",
+        "domain": "product",
+        "confidence": 0.6964392778841613,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Household/Office Tables/Desks",
+        "domain": "product",
+        "confidence": 0.6964392778841613,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Event Decoration",
+        "domain": "service",
+        "confidence": 0.5610437022041089,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Lawn/Garden Supplies",
+        "domain": "product",
+        "confidence": 0.5471467544466526,
+        "inferred": true,
+        "evidence": 1
+      }
+    ],
+    "evidence": {
+      "observations": [
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "ENRICHMENT_INSIGHT",
+          "status": "INTERPRETED",
+          "evidence": 2
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "IGNORED",
+          "evidence": 0
+        },
+        {
+          "type": "VENDOR_STATEMENT",
+          "status": "INTERPRETED",
+          "evidence": 5
+        }
+      ],
+      "vendorAssertions": [
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "tables",
+          "belief": 0.535,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "canopies",
+          "belief": 0.535,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "chairs",
+          "belief": 0.535,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "catering services",
+          "belief": 0.535,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "decoration services",
+          "belief": 0.535,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        }
+      ],
+      "phraseAssertions": [
+        {
+          "subject": "tables",
+          "predicate": "mkg:EXPRESSES",
+          "object": "table",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "catering",
+          "predicate": "mkg:EXPRESSES",
+          "object": "catering service",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "canopies",
+          "predicate": "mkg:EXPRESSES",
+          "object": "canopy",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "chairs",
+          "predicate": "mkg:EXPRESSES",
+          "object": "chair",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "decoration services",
+          "predicate": "mkg:EXPRESSES",
+          "object": "event decoration service",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Royal Events Rentals",
+          "predicate": "mkg:EXPRESSES",
+          "object": "Royal Events Rentals",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Royal Events Rentals",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Event rental company",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Royal Events Rentals",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Event service provider",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        }
+      ],
+      "decisions": [
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:canopies",
+          "belief": 0.535,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:chairs",
+          "belief": 0.535,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:tables",
+          "belief": 0.535,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:catering services",
+          "belief": 0.535,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:decoration services",
+          "belief": 0.535,
+          "status": "PENDING"
+        }
+      ]
+    }
   },
   {
     "id": "v30",
@@ -1430,7 +3332,306 @@
       "level": "BRICK",
       "code": "10005894"
     },
-    "ingest": null,
-    "vendor": null
+    "ingest": {
+      "id": "v30",
+      "channel": "whatsapp",
+      "businessName": "SafeGuard PPE Warri",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v30"
+    },
+    "vendor": {
+      "id": "2d8e78c9-ba27-4f73-9f1c-1f3cb4acf2d0",
+      "status": "onboarding",
+      "businessName": "",
+      "contactPhone": null,
+      "city": null,
+      "state": null,
+      "onboardedAt": null,
+      "conversationId": "67ce8daa-4e01-4d46-81dc-101222150de3"
+    },
+    "turns": [
+      {
+        "status": "COMMITTED",
+        "channel": "whatsapp"
+      }
+    ],
+    "wallet": null,
+    "csre": [
+      {
+        "surface": "safety gloves",
+        "canonical": "safety gloves",
+        "entityType": "PRODUCT",
+        "concept": "safety gloves",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "safety boots",
+        "canonical": "safety boots",
+        "entityType": "PRODUCT",
+        "concept": "safety boots",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "helmets",
+        "canonical": "helmets",
+        "entityType": "PRODUCT",
+        "concept": "helmets",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "reflective jackets",
+        "canonical": "reflective jackets",
+        "entityType": "PRODUCT",
+        "concept": "reflective jackets",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "goggles",
+        "canonical": "goggles",
+        "entityType": "PRODUCT",
+        "concept": "goggles",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      }
+    ],
+    "gpc": [
+      {
+        "concept": "safety gloves",
+        "state": "MAPPED",
+        "code": "10001395",
+        "level": "BRICK",
+        "title": "Protective Handwear",
+        "confidence": 0.95
+      },
+      {
+        "concept": "safety boots",
+        "state": "MAPPED",
+        "code": "10001080",
+        "level": "BRICK",
+        "title": "Safety/Protective/Occupational Boots",
+        "confidence": 0.95
+      },
+      {
+        "concept": "helmets",
+        "state": "MAPPED",
+        "code": "10005110",
+        "level": "BRICK",
+        "title": "Helmets - Non Powered",
+        "confidence": 0.95
+      },
+      {
+        "concept": "reflective jackets",
+        "state": "MAPPED",
+        "code": "10001398",
+        "level": "BRICK",
+        "title": "Protective Upper Body Wear",
+        "confidence": 0.95
+      },
+      {
+        "concept": "goggles",
+        "state": "MAPPED",
+        "code": "10003586",
+        "level": "BRICK",
+        "title": "Safety Glasses/Goggles",
+        "confidence": 0.95
+      }
+    ],
+    "capabilities": [
+      {
+        "name": "Safety Glasses/Goggles",
+        "domain": "product",
+        "confidence": 0.8436181174781286,
+        "inferred": false,
+        "evidence": 1
+      },
+      {
+        "name": "Protective Wear",
+        "domain": "product",
+        "confidence": 0.6964392778603236,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Hard Hats/Caps",
+        "domain": "product",
+        "confidence": 0.5610437021826734,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Protective Handwear",
+        "domain": "product",
+        "confidence": 0.5610437021826734,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Overalls/Bodysuits",
+        "domain": "product",
+        "confidence": 0.5610437021826734,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Protective Upper Body Wear",
+        "domain": "product",
+        "confidence": 0.5610437021826734,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Face Shields/Guards",
+        "domain": "product",
+        "confidence": 0.5610437021826734,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Safety/Protective/Occupational Boots",
+        "domain": "product",
+        "confidence": 0.5610437021826734,
+        "inferred": true,
+        "evidence": 1
+      }
+    ],
+    "evidence": {
+      "observations": [
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "INTERPRETED",
+          "evidence": 1
+        }
+      ],
+      "vendorAssertions": [],
+      "phraseAssertions": [
+        {
+          "subject": "safety gloves",
+          "predicate": "mkg:EXPRESSES",
+          "object": "safety gloves",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "safety boots",
+          "predicate": "mkg:EXPRESSES",
+          "object": "safety boots",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "helmets",
+          "predicate": "mkg:MAPPED_TO_GPC",
+          "object": "Helmets - Non Powered [10005110]",
+          "belief": 0.283,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "safety boots",
+          "predicate": "mkg:MAPPED_TO_GPC",
+          "object": "Safety/Protective/Occupational Boots [10001080]",
+          "belief": 0.283,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "helmets",
+          "predicate": "mkg:EXPRESSES",
+          "object": "helmets",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "reflective jackets",
+          "predicate": "mkg:EXPRESSES",
+          "object": "reflective jackets",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "goggles",
+          "predicate": "mkg:EXPRESSES",
+          "object": "goggles",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "goggles",
+          "predicate": "mkg:MAPPED_TO_GPC",
+          "object": "Safety Glasses/Goggles [10003586]",
+          "belief": 0.283,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "safety gloves",
+          "predicate": "mkg:MAPPED_TO_GPC",
+          "object": "Protective Handwear [10001395]",
+          "belief": 0.283,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "reflective jackets",
+          "predicate": "mkg:MAPPED_TO_GPC",
+          "object": "Protective Upper Body Wear [10001398]",
+          "belief": 0.283,
+          "state": "CANDIDATE"
+        }
+      ],
+      "decisions": []
+    }
   }
 ]

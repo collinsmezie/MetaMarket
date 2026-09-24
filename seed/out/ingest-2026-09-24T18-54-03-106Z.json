@@ -1,0 +1,1223 @@
+{
+  "base": "http://localhost:4000",
+  "startedAt": "2026-09-24T18:54:03.107Z",
+  "results": [
+    {
+      "id": "v01",
+      "channel": "web",
+      "businessName": "Okonkwo Cement Depot",
+      "turns": [],
+      "conversationId": null,
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v02",
+      "channel": "web",
+      "businessName": "Musa Electricals Alaba",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We deal in electrical materials: wall sockets, switches, 2.5mm cables, circuit breakers and energy bulbs",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 58
+        },
+        {
+          "turn": 2,
+          "sent": "Ojo, Lagos State",
+          "reply": "What's your business name?",
+          "seconds": 58
+        },
+        {
+          "turn": 3,
+          "sent": "Musa Electricals Alaba",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 26
+        },
+        {
+          "turn": 4,
+          "sent": "08090000002",
+          "reply": "All set, Musa Electricals Alaba.\n\nYou're listed in Ojo, Lagos State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000002.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 46
+        }
+      ],
+      "conversationId": "9d5aee40-1085-4dd5-9faf-f9da867759bf",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v03",
+      "channel": "web",
+      "businessName": "Chidi Plumbing Works",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell PVC pipes, taps, water closets and fittings, and I also do plumbing installation and repairs",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 58
+        },
+        {
+          "turn": 2,
+          "sent": "Enugu, Enugu State",
+          "reply": "What's your business name?",
+          "seconds": 60
+        },
+        {
+          "turn": 3,
+          "sent": "Chidi Plumbing Works",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 24
+        },
+        {
+          "turn": 4,
+          "sent": "08090000003",
+          "reply": "All set, Chidi Plumbing Works.\n\nYou're listed in Enugu, Enugu State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000003.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 44
+        }
+      ],
+      "conversationId": "eb338ee2-4324-40f7-8eae-339172152f73",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v04",
+      "channel": "web",
+      "businessName": "Rainbow Paints Ilorin",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We are a paint and coatings shop",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 93
+        },
+        {
+          "turn": 2,
+          "sent": "Ilorin, Kwara State",
+          "reply": "What's your business name?",
+          "seconds": 22
+        },
+        {
+          "turn": 3,
+          "sent": "Rainbow Paints Ilorin",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 32
+        },
+        {
+          "turn": 4,
+          "sent": "08090000004",
+          "reply": "All set, Rainbow Paints.\n\nYou're listed in Ilorin, Kwara State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000004.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 40
+        }
+      ],
+      "conversationId": "6050fa42-626d-403d-a369-4ac69cf4dec1",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v05",
+      "channel": "web",
+      "businessName": "Gbenga Roofing",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Aluminium roofing sheets, stone-coated roofing tiles and long span, plus roof installation and leak repairs",
+          "reply": "We found a match for *Aluminium roofing sheets*:\n\n*Okonkwo Cement Depot*\nAba, Abia\n⭐⭐⭐⭐⭐\nOkonkwo specializes in building materials shop.\n\nChat Okonkwo - 08090000001\n\n*Rainbow Paints*\nIlorin, Kwara\n⭐⭐⭐⭐⭐\nRainbow specializes in paint and coatings shop.\n\nChat Rainbow - 08090000004\n\nReply with 1 or 2 to connect with a supplier.",
+          "seconds": 113
+        }
+      ],
+      "conversationId": "c2d14ed0-ebd1-422d-b938-116daf1e0976",
+      "completed": false,
+      "error": "No scripted answer for reply: We found a match for *Aluminium roofing sheets*:\n\n*Okonkwo Cement Depot*\nAba, Abia\n⭐⭐⭐⭐⭐\nOkonkwo specializes in building materials shop.\n\nChat Okonkwo - 0809000"
+    },
+    {
+      "id": "v06",
+      "channel": "web",
+      "businessName": "PowerHouse Generators",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell Elepaq and Sumec Firman generators and I repair generators of all sizes",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 56
+        },
+        {
+          "turn": 2,
+          "sent": "Port Harcourt, Rivers State",
+          "reply": "What's your business name?",
+          "seconds": 68
+        },
+        {
+          "turn": 3,
+          "sent": "PowerHouse Generators",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 22
+        },
+        {
+          "turn": 4,
+          "sent": "08090000006",
+          "reply": "All set, PowerHouse Generators.\n\nYou're listed in Port Harcourt, Rivers State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000006.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 44
+        }
+      ],
+      "conversationId": "035e5fbb-cfdd-4e21-9be9-cf9e220bb9fc",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v07",
+      "channel": "web",
+      "businessName": "SunLite Solar Kano",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell 550W mono solar panels, 5kVA inverters and 200Ah tubular batteries",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 40
+        },
+        {
+          "turn": 2,
+          "sent": "Kano, Kano State",
+          "reply": "What's your business name?",
+          "seconds": 56
+        },
+        {
+          "turn": 3,
+          "sent": "SunLite Solar Kano",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 22
+        },
+        {
+          "turn": 4,
+          "sent": "08090000007",
+          "reply": "All set, SunLite Solar Kano.\n\nYou're listed in Kano, Kano State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000007.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 48
+        }
+      ],
+      "conversationId": "ba5e1b3e-3a2e-4326-8c9b-d10428702569",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v08",
+      "channel": "web",
+      "businessName": "Computer Village Phones",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I have a shop in Computer Village Ikeja where I sell phones, chargers and earpieces",
+          "reply": "That's Ikeja in Lagos State, right?",
+          "seconds": 80
+        },
+        {
+          "turn": 2,
+          "sent": "Yes",
+          "reply": "Hello! Welcome to MetaMarket. I connect you with trusted sellers across Nigeria.\n\nTell me what you're looking to buy, or say \"I sell …\" to list your business so buyers can find you.",
+          "seconds": 30
+        },
+        {
+          "turn": 3,
+          "sent": "I want to sell I have a shop in Computer Village Ikeja where I sell phones, chargers and earpieces",
+          "reply": "What's your business name?",
+          "seconds": 34
+        },
+        {
+          "turn": 4,
+          "sent": "Computer Village Phones",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 64
+        },
+        {
+          "turn": 5,
+          "sent": "08090000008",
+          "reply": "All set, Computer Village Phones.\n\nYou're listed in Ikeja, Lagos State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000008.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 62
+        }
+      ],
+      "conversationId": "8b664e74-dd59-440e-a9a8-90609405a461",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v09",
+      "channel": "web",
+      "businessName": "ByteWorks Abuja",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We sell UK-used laptops and desktops and we fix laptops, replace screens and install software",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 48
+        },
+        {
+          "turn": 2,
+          "sent": "Wuse, Abuja",
+          "reply": "What's your business name?",
+          "seconds": 74
+        },
+        {
+          "turn": 3,
+          "sent": "ByteWorks Abuja",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 26
+        },
+        {
+          "turn": 4,
+          "sent": "08090000009",
+          "reply": "All set, ByteWorks Abuja.\n\nYou're listed in Wuse, Abuja State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000009.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 40
+        }
+      ],
+      "conversationId": "65d8f090-d665-422c-9837-c919061e0c15",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v10",
+      "channel": "web",
+      "businessName": "Coolzone Appliances",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Home appliances dealer: fridges, deep freezers, air conditioners, washing machines and standing fans",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 16
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell Home appliances dealer: fridges, deep freezers, air conditioners, washing machines and standing fans",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 95
+        },
+        {
+          "turn": 3,
+          "sent": "Benin City, Edo State",
+          "reply": "What's your business name?",
+          "seconds": 58
+        },
+        {
+          "turn": 4,
+          "sent": "Coolzone Appliances",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 56
+        },
+        {
+          "turn": 5,
+          "sent": "08090000010",
+          "reply": "All set, Coolzone Appliances.\n\nYou're listed in Benin City, Edo State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000010.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 44
+        }
+      ],
+      "conversationId": "19480654-f12e-4664-9268-7b99bb039374",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v11",
+      "channel": "web",
+      "businessName": "Ladipo Auto Parts",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell at Ladipo market — tyres, brake pads, shock absorbers and Toyota spare parts",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 72
+        },
+        {
+          "turn": 2,
+          "sent": "Mushin, Lagos State",
+          "reply": "What's your business name?",
+          "seconds": 58
+        },
+        {
+          "turn": 3,
+          "sent": "Ladipo Auto Parts",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 56
+        },
+        {
+          "turn": 4,
+          "sent": "08090000011",
+          "reply": "All set, Ladipo Auto Parts.\n\nYou're listed in Mushin, Lagos State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000011.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 22
+        }
+      ],
+      "conversationId": "ef99ac26-fbc7-4dd0-a605-8e97b4d15a39",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v12",
+      "channel": "web",
+      "businessName": "Baba Tunde Mechanic Workshop",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I am a mechanic. I do engine repairs, servicing, brake work and AC repair for cars",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 38
+        },
+        {
+          "turn": 2,
+          "sent": "Ibadan, Oyo State",
+          "reply": "What's your business name?",
+          "seconds": 64
+        },
+        {
+          "turn": 3,
+          "sent": "Baba Tunde Mechanic Workshop",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 24
+        },
+        {
+          "turn": 4,
+          "sent": "08090000012",
+          "reply": "All set, Baba Tunde Mechanic Workshop.\n\nYou're listed in Ibadan, Oyo State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000012.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 50
+        }
+      ],
+      "conversationId": "26e0b52d-f245-402d-bd38-477846ca1490",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v13",
+      "channel": "web",
+      "businessName": "Amaka's Boutique",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We run a ladies' boutique for clothing and fashion accessories",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 99
+        },
+        {
+          "turn": 2,
+          "sent": "Owerri, Imo State",
+          "reply": "What's your business name?",
+          "seconds": 24
+        },
+        {
+          "turn": 3,
+          "sent": "Amaka's Boutique",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 42
+        },
+        {
+          "turn": 4,
+          "sent": "08090000013",
+          "reply": "All set, Amaka's Boutique.\n\nYou're listed in Owerri, Imo State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000013.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 50
+        }
+      ],
+      "conversationId": "577c4738-19a9-4b33-a6a6-17ef2cda9229",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v14",
+      "channel": "web",
+      "businessName": "Aba Made Shoes",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I make and sell leather sandals, men's loafers and school shoes",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 42
+        },
+        {
+          "turn": 2,
+          "sent": "Aba, Abia State",
+          "reply": "What's your business name?",
+          "seconds": 62
+        },
+        {
+          "turn": 3,
+          "sent": "Aba Made Shoes",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 24
+        },
+        {
+          "turn": 4,
+          "sent": "08090000014",
+          "reply": "All set, Aba Made Shoes.\n\nYou're listed in Aba, Abia State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000014.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 54
+        }
+      ],
+      "conversationId": "a5c064e8-03b0-4e86-a1d8-5e23c908dd75",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v15",
+      "channel": "web",
+      "businessName": "Balogun Fabrics",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "My shop is in Balogun market, I sell ankara, lace, aso-oke and senator materials",
+          "reply": "Which state is that in?",
+          "seconds": 60
+        },
+        {
+          "turn": 2,
+          "sent": "Lagos Island, Lagos State",
+          "reply": "What's your business name?",
+          "seconds": 60
+        },
+        {
+          "turn": 3,
+          "sent": "Balogun Fabrics",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 48
+        },
+        {
+          "turn": 4,
+          "sent": "08090000015",
+          "reply": "All set, Balogun Fabrics.\n\nYou're listed in Balogun market, Lagos State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000015.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 40
+        }
+      ],
+      "conversationId": "e2ba74b2-9d03-48f8-aad6-02d11fd1c504",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v16",
+      "channel": "web",
+      "businessName": "Stitches by Halima",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I am a tailor and fashion designer. I sew native wears, kaftans and wedding outfits",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 44
+        },
+        {
+          "turn": 2,
+          "sent": "Kaduna, Kaduna State",
+          "reply": "What's your business name?",
+          "seconds": 62
+        },
+        {
+          "turn": 3,
+          "sent": "Stitches by Halima",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 24
+        },
+        {
+          "turn": 4,
+          "sent": "08090000016",
+          "reply": "All set, Stitches by Halima.\n\nYou're listed in Kaduna, Kaduna State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000016.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 46
+        }
+      ],
+      "conversationId": "e4418736-a69b-4658-9b09-1aeefd40c028",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v17",
+      "channel": "web",
+      "businessName": "Glow Beauty Store",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Cosmetics and skincare: body lotions, perfumes, human hair wigs and makeup kits",
+          "reply": "Could you clarify what you want to do with these products?",
+          "seconds": 14
+        }
+      ],
+      "conversationId": "ff81d1bc-804f-443e-bee4-178449ff7036",
+      "completed": false,
+      "error": "No scripted answer for reply: Could you clarify what you want to do with these products?"
+    },
+    {
+      "id": "v18",
+      "channel": "web",
+      "businessName": "Kings Cut Barbershop",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We are a barbing salon offering haircuts, beard grooming and hair dye",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 32
+        },
+        {
+          "turn": 2,
+          "sent": "Lekki, Lagos State",
+          "reply": "What's your business name?",
+          "seconds": 36
+        },
+        {
+          "turn": 3,
+          "sent": "Kings Cut Barbershop",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 14
+        },
+        {
+          "turn": 4,
+          "sent": "08090000018",
+          "reply": "All set, Kings Cut Barbershop.\n\nYou're listed in Lekki, Lagos State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000018.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 50
+        }
+      ],
+      "conversationId": "346da6e4-88a1-4d7a-bb16-99a532b9b977",
+      "completed": true,
+      "error": null
+    },
+    {
+      "id": "v19",
+      "channel": "web",
+      "businessName": "Onitsha Central Pharmacy",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Pharmacy and medical supplies — drugs, blood pressure monitors, glucose strips, surgical gloves and face masks",
+          "reply": "Are you looking to find these products or inquire about their availability or pricing?",
+          "seconds": 18
+        }
+      ],
+      "conversationId": "f899f862-94ee-4c73-a9fa-317c0d71f5b2",
+      "completed": false,
+      "error": "No scripted answer for reply: Are you looking to find these products or inquire about their availability or pricing?"
+    },
+    {
+      "id": "v20",
+      "channel": "web",
+      "businessName": "Mile 12 Foodstuff",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell foodstuff in Mile 12 market: bags of rice, beans, garri, palm oil and yam",
+          "reply": "Which state is that in?",
+          "seconds": 74
+        },
+        {
+          "turn": 2,
+          "sent": "Ketu, Lagos State",
+          "reply": "Which state is that in?",
+          "seconds": 58
+        },
+        {
+          "turn": 3,
+          "sent": "Ketu, Lagos State",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 30
+        },
+        {
+          "turn": 4,
+          "sent": "I want to sell I sell foodstuff in Mile 12 market: bags of rice, beans, garri, palm oil and yam",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 20
+        },
+        {
+          "turn": 5,
+          "sent": "I want to sell I sell foodstuff in Mile 12 market: bags of rice, beans, garri, palm oil and yam",
+          "reply": "Which state is that in?",
+          "seconds": 30
+        },
+        {
+          "turn": 6,
+          "sent": "Ketu, Lagos State",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 14
+        },
+        {
+          "turn": 7,
+          "sent": "I want to sell I sell foodstuff in Mile 12 market: bags of rice, beans, garri, palm oil and yam",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 12
+        },
+        {
+          "turn": 8,
+          "sent": "I want to sell I sell foodstuff in Mile 12 market: bags of rice, beans, garri, palm oil and yam",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 8
+        }
+      ],
+      "conversationId": "cd27a1a5-612f-412d-a3f2-80a28268d809",
+      "completed": false,
+      "error": null
+    },
+    {
+      "id": "v21",
+      "channel": "web",
+      "businessName": "Mama Nkechi Provisions",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I run a provisions store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 6
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell I run a provisions store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 3,
+          "sent": "I want to sell I run a provisions store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 4,
+          "sent": "I want to sell I run a provisions store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 5,
+          "sent": "I want to sell I run a provisions store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 6,
+          "sent": "I want to sell I run a provisions store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 7,
+          "sent": "I want to sell I run a provisions store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 8,
+          "sent": "I want to sell I run a provisions store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        }
+      ],
+      "conversationId": "3882edef-d2a3-4f0e-9ef8-0f7400ff8dfc",
+      "completed": false,
+      "error": null
+    },
+    {
+      "id": "v22",
+      "channel": "web",
+      "businessName": "Iceberg Frozen Foods",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell frozen chicken, turkey wings, titus fish and croaker",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 6
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell I sell frozen chicken, turkey wings, titus fish and croaker",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 3,
+          "sent": "I want to sell I sell frozen chicken, turkey wings, titus fish and croaker",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 4,
+          "sent": "I want to sell I sell frozen chicken, turkey wings, titus fish and croaker",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 5,
+          "sent": "I want to sell I sell frozen chicken, turkey wings, titus fish and croaker",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 6,
+          "sent": "I want to sell I sell frozen chicken, turkey wings, titus fish and croaker",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 7,
+          "sent": "I want to sell I sell frozen chicken, turkey wings, titus fish and croaker",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 8,
+          "sent": "I want to sell I sell frozen chicken, turkey wings, titus fish and croaker",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        }
+      ],
+      "conversationId": "4a5ba1d0-d7b1-4cf5-9d5a-30d1efbd463e",
+      "completed": false,
+      "error": null
+    },
+    {
+      "id": "v23",
+      "channel": "web",
+      "businessName": "Aqua Fresh Table Water",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We produce and supply sachet water and bottled water, and we deliver to shops and events",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell We produce and supply sachet water and bottled water, and we deliver to shops and events",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 3,
+          "sent": "I want to sell We produce and supply sachet water and bottled water, and we deliver to shops and events",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 4,
+          "sent": "I want to sell We produce and supply sachet water and bottled water, and we deliver to shops and events",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 5,
+          "sent": "I want to sell We produce and supply sachet water and bottled water, and we deliver to shops and events",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 6,
+          "sent": "I want to sell We produce and supply sachet water and bottled water, and we deliver to shops and events",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 7,
+          "sent": "I want to sell We produce and supply sachet water and bottled water, and we deliver to shops and events",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 8,
+          "sent": "I want to sell We produce and supply sachet water and bottled water, and we deliver to shops and events",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        }
+      ],
+      "conversationId": "fc4edd5e-8d5f-4b8a-9908-8b993098109c",
+      "completed": false,
+      "error": null
+    },
+    {
+      "id": "v24",
+      "channel": "web",
+      "businessName": "Green Harvest Agro",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Agro inputs dealer: NPK fertiliser, urea, herbicides, knapsack sprayers and hybrid maize seed",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell Agro inputs dealer: NPK fertiliser, urea, herbicides, knapsack sprayers and hybrid maize seed",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 3,
+          "sent": "I want to sell Agro inputs dealer: NPK fertiliser, urea, herbicides, knapsack sprayers and hybrid maize seed",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 4,
+          "sent": "I want to sell Agro inputs dealer: NPK fertiliser, urea, herbicides, knapsack sprayers and hybrid maize seed",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 5,
+          "sent": "I want to sell Agro inputs dealer: NPK fertiliser, urea, herbicides, knapsack sprayers and hybrid maize seed",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 6,
+          "sent": "I want to sell Agro inputs dealer: NPK fertiliser, urea, herbicides, knapsack sprayers and hybrid maize seed",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 7,
+          "sent": "I want to sell Agro inputs dealer: NPK fertiliser, urea, herbicides, knapsack sprayers and hybrid maize seed",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 8,
+          "sent": "I want to sell Agro inputs dealer: NPK fertiliser, urea, herbicides, knapsack sprayers and hybrid maize seed",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        }
+      ],
+      "conversationId": "490d5faf-4cab-4c42-a30e-90a3abfbfba2",
+      "completed": false,
+      "error": null
+    },
+    {
+      "id": "v25",
+      "channel": "web",
+      "businessName": "Oga Carpenter Furniture",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I make sofas, beds, wardrobes and dining sets, and I also do furniture repairs and upholstery",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell I make sofas, beds, wardrobes and dining sets, and I also do furniture repairs and upholstery",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 3,
+          "sent": "I want to sell I make sofas, beds, wardrobes and dining sets, and I also do furniture repairs and upholstery",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 4,
+          "sent": "I want to sell I make sofas, beds, wardrobes and dining sets, and I also do furniture repairs and upholstery",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 5,
+          "sent": "I want to sell I make sofas, beds, wardrobes and dining sets, and I also do furniture repairs and upholstery",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 4
+        },
+        {
+          "turn": 6,
+          "sent": "I want to sell I make sofas, beds, wardrobes and dining sets, and I also do furniture repairs and upholstery",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 7,
+          "sent": "I want to sell I make sofas, beds, wardrobes and dining sets, and I also do furniture repairs and upholstery",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 8,
+          "sent": "I want to sell I make sofas, beds, wardrobes and dining sets, and I also do furniture repairs and upholstery",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        }
+      ],
+      "conversationId": "b32dbfd2-0753-44a6-990c-23f630a8ca08",
+      "completed": false,
+      "error": null
+    },
+    {
+      "id": "v26",
+      "channel": "web",
+      "businessName": "Scholars Bookshop",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We are a bookshop and stationery store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell We are a bookshop and stationery store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 3,
+          "sent": "I want to sell We are a bookshop and stationery store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 4,
+          "sent": "I want to sell We are a bookshop and stationery store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 5,
+          "sent": "I want to sell We are a bookshop and stationery store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 6,
+          "sent": "I want to sell We are a bookshop and stationery store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 7,
+          "sent": "I want to sell We are a bookshop and stationery store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 8,
+          "sent": "I want to sell We are a bookshop and stationery store",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        }
+      ],
+      "conversationId": "1f1d8072-2fbb-4681-ab16-290b8b2a686d",
+      "completed": false,
+      "error": null
+    },
+    {
+      "id": "v27",
+      "channel": "web",
+      "businessName": "Little Ones Baby Store",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I sell Pampers diapers, baby wipes, feeding bottles and baby formula",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell I sell Pampers diapers, baby wipes, feeding bottles and baby formula",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 3,
+          "sent": "I want to sell I sell Pampers diapers, baby wipes, feeding bottles and baby formula",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 4,
+          "sent": "I want to sell I sell Pampers diapers, baby wipes, feeding bottles and baby formula",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 5,
+          "sent": "I want to sell I sell Pampers diapers, baby wipes, feeding bottles and baby formula",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 6,
+          "sent": "I want to sell I sell Pampers diapers, baby wipes, feeding bottles and baby formula",
+          "reply": "What do you sell or what service do you provide?",
+          "seconds": 26
+        },
+        {
+          "turn": 7,
+          "sent": "I sell Pampers diapers, baby wipes, feeding bottles and baby formula. That is all.",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 16
+        },
+        {
+          "turn": 8,
+          "sent": "I want to sell I sell Pampers diapers, baby wipes, feeding bottles and baby formula",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 10
+        }
+      ],
+      "conversationId": "53761ca1-01d4-4b2b-944f-16b71740c422",
+      "completed": false,
+      "error": null
+    },
+    {
+      "id": "v28",
+      "channel": "web",
+      "businessName": "Sparkle Cleaning Supplies",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Cleaning supplies: detergents, bleach, iron sponge, mops and toilet paper in bulk",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell Cleaning supplies: detergents, bleach, iron sponge, mops and toilet paper in bulk",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 3,
+          "sent": "I want to sell Cleaning supplies: detergents, bleach, iron sponge, mops and toilet paper in bulk",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 4,
+          "sent": "I want to sell Cleaning supplies: detergents, bleach, iron sponge, mops and toilet paper in bulk",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 5,
+          "sent": "I want to sell Cleaning supplies: detergents, bleach, iron sponge, mops and toilet paper in bulk",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 6,
+          "sent": "I want to sell Cleaning supplies: detergents, bleach, iron sponge, mops and toilet paper in bulk",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 7,
+          "sent": "I want to sell Cleaning supplies: detergents, bleach, iron sponge, mops and toilet paper in bulk",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 8,
+          "sent": "I want to sell Cleaning supplies: detergents, bleach, iron sponge, mops and toilet paper in bulk",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        }
+      ],
+      "conversationId": "17fd941e-27f4-49e0-9a87-b4f0621a5791",
+      "completed": false,
+      "error": null
+    },
+    {
+      "id": "v29",
+      "channel": "web",
+      "businessName": "Royal Events Rentals",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We rent canopies, chairs and tables for events and we also provide catering and decoration services",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 6
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell We rent canopies, chairs and tables for events and we also provide catering and decoration services",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 3,
+          "sent": "I want to sell We rent canopies, chairs and tables for events and we also provide catering and decoration services",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 4,
+          "sent": "I want to sell We rent canopies, chairs and tables for events and we also provide catering and decoration services",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 5,
+          "sent": "I want to sell We rent canopies, chairs and tables for events and we also provide catering and decoration services",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 6,
+          "sent": "I want to sell We rent canopies, chairs and tables for events and we also provide catering and decoration services",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 7,
+          "sent": "I want to sell We rent canopies, chairs and tables for events and we also provide catering and decoration services",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 8,
+          "sent": "I want to sell We rent canopies, chairs and tables for events and we also provide catering and decoration services",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        }
+      ],
+      "conversationId": "9c0b8cf2-8e28-4bd2-8dce-bc4c9cd64d48",
+      "completed": false,
+      "error": null
+    },
+    {
+      "id": "v30",
+      "channel": "web",
+      "businessName": "SafeGuard PPE Warri",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "I supply safety gloves, safety boots, helmets, reflective jackets and goggles to oil companies",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 8
+        },
+        {
+          "turn": 2,
+          "sent": "I want to sell I supply safety gloves, safety boots, helmets, reflective jackets and goggles to oil companies",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 3,
+          "sent": "I want to sell I supply safety gloves, safety boots, helmets, reflective jackets and goggles to oil companies",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 4,
+          "sent": "I want to sell I supply safety gloves, safety boots, helmets, reflective jackets and goggles to oil companies",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 5,
+          "sent": "I want to sell I supply safety gloves, safety boots, helmets, reflective jackets and goggles to oil companies",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 6,
+          "sent": "I want to sell I supply safety gloves, safety boots, helmets, reflective jackets and goggles to oil companies",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 7,
+          "sent": "I want to sell I supply safety gloves, safety boots, helmets, reflective jackets and goggles to oil companies",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        },
+        {
+          "turn": 8,
+          "sent": "I want to sell I supply safety gloves, safety boots, helmets, reflective jackets and goggles to oil companies",
+          "reply": "Hello! Welcome to MetaMarket. I want to make sure I help you with the right thing.\n\nAre you looking to buy something, or do you want to list your business so buyers can find you?",
+          "seconds": 2
+        }
+      ],
+      "conversationId": "b8ebfd12-aabf-4efc-b81e-3db206b07afc",
+      "completed": false,
+      "error": null
+    }
+  ]
+}
