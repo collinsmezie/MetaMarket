@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/csre-service-request-v5.1.json",
+  "title": "CSRE Service Request v5.1",
+  "description": "Canonical MCOS/LangGraph → CSRE request (CSRE TDR v5.4 §29.2, §31.1). snake_case wire format; component_version is the deployed CSRE version.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "component",
+    "component_version",
+    "conversation_id",
+    "turn_id",
+    "context_snapshot_id",
+    "message",
+    "current_messages",
+    "conversation_context",
+    "regional_context",
+    "commercial_context",
+    "lexicon_evidence",
+    "external_evidence",
+    "clarification_answers",
+    "policy_version"
+  ],
+  "properties": {
+    "schema_version": { "const": "5.1" },
+    "request_id": { "type": "string", "minLength": 1 },
+    "component": { "const": "CSRE" },
+    "component_version": { "const": "5.4" },
+    "conversation_id": { "type": "string", "minLength": 1 },
+    "turn_id": { "type": "string", "minLength": 1 },
+    "context_snapshot_id": { "type": "string", "minLength": 1 },
+    "message": { "type": "string" },
+    "current_messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["message_id", "text", "received_at"],
+        "properties": {
+          "message_id": { "type": "string", "minLength": 1 },
+          "text": { "type": "string" },
+          "received_at": { "type": "string" },
+          "interactive_payload": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "conversation_context": { "type": "object" },
+    "regional_context": { "type": "object" },
+    "commercial_context": { "type": "object" },
+    "lexicon_evidence": { "type": "array", "items": { "type": "object" } },
+    "external_evidence": { "type": "array", "items": { "type": "object" } },
+    "clarification_answers": { "type": "array", "items": { "type": "object" } },
+    "policy_version": { "type": "string", "minLength": 1 }
+  }
+}

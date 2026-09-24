@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { TraceRecorderPort } from '../../../platform/observability/trace.port';
 import type { AppConfigService } from '../../../config/app-config.service';
 import type {
   LlmProviderName,
@@ -83,6 +84,8 @@ function buildService(providers: {
     providers.openai as unknown as OpenAiLlmAdapter,
     providers.gemini as unknown as GeminiLlmAdapter,
     providers.anthropic as unknown as AnthropicLlmAdapter,
+    // Trace persistence is a side effect the unit suite does not exercise.
+    { recordPromptExecution: async () => undefined } as unknown as TraceRecorderPort,
   );
 }
 

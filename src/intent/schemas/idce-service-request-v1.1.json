@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/idce-service-request-v1.1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "component",
+    "component_version",
+    "conversation_id",
+    "turn_id",
+    "run_id",
+    "context_snapshot_id",
+    "logical_turn",
+    "policy_version"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.1" },
+    "request_id": { "type": "string", "minLength": 1 },
+    "component": { "const": "IDCE" },
+    "component_version": { "type": "string", "pattern": "^1\\.[0-9]+$" },
+    "conversation_id": { "type": "string", "minLength": 1 },
+    "turn_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "context_snapshot_id": { "type": "string", "minLength": 1 },
+    "logical_turn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conversation_id",
+        "turn_id",
+        "message_ids",
+        "current_messages",
+        "assembled_text",
+        "assembly_reason",
+        "previous_turn_summary",
+        "context_snapshot"
+      ],
+      "properties": {
+        "conversation_id": { "type": "string", "minLength": 1 },
+        "turn_id": { "type": "string", "minLength": 1 },
+        "message_ids": { "type": "array", "items": { "type": "string" } },
+        "current_messages": { "type": "array" },
+        "assembled_text": { "type": "string" },
+        "assembly_reason": {
+          "enum": ["SINGLE_MESSAGE", "COALESCED_MESSAGES", "CONTINUATION_WINDOW", "EXPLICIT_USER_BATCH"]
+        },
+        "previous_turn_summary": { "type": ["object", "null"] },
+        "context_snapshot": { "type": "object" }
+      }
+    },
+    "policy_version": { "type": "string", "minLength": 1 }
+  }
+}

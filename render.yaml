@@ -19,6 +19,10 @@ services:
         value: "false"
       - key: PORT
         value: "3000"
+      # The /dev inspection API is unauthenticated; configuration validation refuses to boot in
+      # production when this is not false.
+      - key: DEV_TRACE_API_ENABLED
+        value: "false"
       - key: DATABASE_URL
         fromDatabase:
           name: metamarket-db

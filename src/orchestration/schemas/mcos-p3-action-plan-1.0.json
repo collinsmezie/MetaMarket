@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mcos-p3-action-plan-1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["actions", "edges", "status"],
+  "properties": {
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action_id", "intent_id", "workflow_type", "operation", "scope", "dependencies", "concurrency_key", "state_conflict_keys", "prerequisites", "priority", "status", "needs_user"],
+        "properties": {
+          "action_id": { "type": "string", "minLength": 1 },
+          "intent_id": { "type": "string", "minLength": 1 },
+          "workflow_type": { "type": ["string", "null"] },
+          "operation": { "type": "string", "minLength": 1 },
+          "scope": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "object_ids", "workflow_ids"],
+            "properties": {
+              "type": { "type": "string", "minLength": 1 },
+              "object_ids": { "type": "array", "items": { "type": "string" } },
+              "workflow_ids": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "dependencies": { "type": "array", "items": { "type": "string" } },
+          "concurrency_key": { "type": ["string", "null"] },
+          "state_conflict_keys": { "type": "array", "items": { "type": "string" } },
+          "prerequisites": { "type": "array", "items": { "type": "string" } },
+          "priority": { "type": "number", "minimum": 0, "maximum": 1 },
+          "status": { "enum": ["READY", "BLOCKED", "NEEDS_USER", "UNSUPPORTED"] },
+          "needs_user": { "type": "boolean" }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "type", "to"],
+        "properties": {
+          "from": { "type": "string" },
+          "type": { "enum": ["DEPENDS_ON", "PRECEDES", "BLOCKED_BY"] },
+          "to": { "type": "string" }
+        }
+      }
+    },
+    "status": { "enum": ["DRAFT", "READY", "BLOCKED"] }
+  }
+}

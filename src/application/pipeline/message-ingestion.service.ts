@@ -2,23 +2,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { Artifact } from '../../domain/models/artifact';
 import { collectText } from '../../domain/models/artifact';
 import type { IncomingMessage } from '../../domain/models/incoming-message';
-import {
-  isInteractiveReplyPart,
-  PROVIDER_MESSAGE_ID_KEY,
-  requiresMediaProcessing,
-} from '../../domain/models/incoming-message';
-import type { Response } from '../../domain/models/response';
-import { fallbackWithReason } from '../../domain/models/response';
+import { PROVIDER_MESSAGE_ID_KEY, requiresMediaProcessing } from '../../domain/models/incoming-message';
 import type {
   HandleIncomingMessagePort,
   HandleIncomingMessageResult,
 } from '../../domain/ports/inbound/handle-incoming-message.port';
-import {
-  ConversationEvents,
-  EVENT_PUBLISHER,
-  type DomainEvent,
-  type EventPublisherPort,
-} from '../../domain/ports/outbound/event-publisher.port';
+import { EVENT_PUBLISHER, type EventPublisherPort } from '../../domain/ports/outbound/event-publisher.port';
 import {
   MEDIA_PROCESSING_QUEUE,
   type MediaProcessingQueuePort,
@@ -27,10 +16,6 @@ import {
   MESSAGE_REPOSITORY,
   type MessageRepositoryPort,
 } from '../../domain/ports/outbound/message-repository.port';
-import {
-  OUTBOUND_MESSAGE_REPOSITORY,
-  type OutboundMessageRepositoryPort,
-} from '../../domain/ports/outbound/outbound-message-repository.port';
 import { STAGE_LOGGER, type StageLoggerPort } from '../../domain/ports/outbound/stage-logger.port';
 import {
   CLOCK,
@@ -38,29 +23,30 @@ import {
   ID_GENERATOR,
   type IdGeneratorPort,
 } from '../../domain/ports/outbound/system.port';
-import { decodeReplayPayload } from '../../domain/workflows/action-payload';
+import { TurnAssemblyService } from '../../conversation/application/turn-assembly.service';
+import { RequestContextStore } from '../../platform/correlation/request-context';
+import { correlatedEvent, PlatformEvents } from '../../platform/events/domain-event';
 import { ConversationContextManager } from '../conversation/conversation-context.manager';
 import { MediaProcessingService } from '../media/media-processing.service';
-import {
-  CONVERSATION_CORE,
-  type ConversationCorePort,
-} from '../../domain/ports/inbound/conversation-core.port';
 
 const COMPONENT = 'MCOS';
 const STAGE = 'MessageIngestion';
 
 /**
- * Entry point for every inbound message, on every channel (MCOS §14).
+ * Entry point for every inbound message, on every channel (MCOS TDR v4.4 §4, §5A.2, §18.2).
  *
- * Responsibilities are deliberately narrow: deduplicate, persist, decide whether the turn
- * can run now or must wait for media, and hand off to the conversation core under the
- * conversation lock.
+ *   provider event → canonical message → durable insert → idempotency → inline artifacts →
+ *   (media queue) → Turn Assembly
+ *
+ * Ingestion never runs the conversation: a transport message is not a turn. It persists,
+ * deduplicates and hands the message to Turn Assembly, which decides the logical-turn boundary
+ * and enqueues sealed turns for the queue worker. The reply reaches the user through durable
+ * delivery, never through this call's return value.
  */
 @Injectable()
 export class MessageIngestionService implements HandleIncomingMessagePort {
   constructor(
     @Inject(MESSAGE_REPOSITORY) private readonly messages: MessageRepositoryPort,
-    @Inject(OUTBOUND_MESSAGE_REPOSITORY) private readonly outbound: OutboundMessageRepositoryPort,
     @Inject(MEDIA_PROCESSING_QUEUE) private readonly mediaQueue: MediaProcessingQueuePort,
     @Inject(EVENT_PUBLISHER) private readonly events: EventPublisherPort,
     @Inject(STAGE_LOGGER) private readonly logger: StageLoggerPort,
@@ -68,14 +54,14 @@ export class MessageIngestionService implements HandleIncomingMessagePort {
     @Inject(ID_GENERATOR) private readonly ids: IdGeneratorPort,
     private readonly context: ConversationContextManager,
     private readonly media: MediaProcessingService,
-    @Inject(CONVERSATION_CORE) private readonly core: ConversationCorePort,
+    private readonly assembly: TurnAssemblyService,
   ) {}
 
   async handle(incoming: IncomingMessage): Promise<HandleIncomingMessageResult> {
     const startedAt = Date.now();
 
-    // Adapters know a phone number, not a conversation id, so the platform resolves it here
-    // before anything is persisted against it.
+    // Adapters know a phone number or session, not a conversation id, so the platform resolves
+    // it here before anything is persisted against it.
     const conversationId = await this.context.resolveConversationId({
       userId: incoming.userId,
       channel: incoming.channel,
@@ -83,82 +69,73 @@ export class MessageIngestionService implements HandleIncomingMessagePort {
 
     const message: IncomingMessage = { ...incoming, conversationId };
 
-    const stored = await this.messages.saveIncoming(message);
+    return RequestContextStore.extend(
+      { conversationId, messageId: message.id, component: 'MCOS' },
+      async () => {
+        const stored = await this.messages.saveIncoming(message);
 
-    if (!stored) {
-      // Meta retries webhooks it believes were not acknowledged. Re-running the turn could
-      // duplicate a workflow or double-charge a vendor, so a duplicate is a no-op.
-      this.logger.stage({
-        component: COMPONENT,
-        stage: STAGE,
-        input: { providerMessageId: message.metadata[PROVIDER_MESSAGE_ID_KEY] },
-        action: 'Ignored a duplicate webhook delivery for a message already recorded',
-        output: { deduplicated: true },
-        durationMs: Date.now() - startedAt,
-      });
+        if (!stored) {
+          // Meta retries webhooks it believes were not acknowledged. Re-assembling the message
+          // could duplicate a turn, so a duplicate delivery is a recorded no-op (§18.2, §47).
+          this.logger.stage({
+            component: COMPONENT,
+            stage: STAGE,
+            input: { providerMessageId: message.metadata[PROVIDER_MESSAGE_ID_KEY] },
+            action: 'Ignored a duplicate provider delivery for a message already recorded',
+            output: { deduplicated: true },
+            durationMs: Date.now() - startedAt,
+          });
+          return this.result(conversationId, { deduplicated: true, deferred: false, turnId: null });
+        }
 
-      return {
-        conversationId: message.conversationId,
-        response: null,
-        workflowId: null,
-        deduplicated: true,
-        deferred: false,
-      };
-    }
+        await this.events.publish(
+          correlatedEvent({
+            eventId: this.ids.uuid(),
+            eventType: PlatformEvents.MessageReceived,
+            producer: 'MCOS',
+            occurredAt: this.clock.now(),
+            payload: {
+              messageId: message.id,
+              channel: message.channel,
+              partTypes: message.parts.map((part) => part.type),
+            },
+            conversationId,
+            aggregate: { type: 'Conversation', id: conversationId },
+          }),
+        );
 
-    await this.publish({
-      eventType: ConversationEvents.MessageReceived,
-      conversationId: message.conversationId,
-      payload: {
-        messageId: message.id,
-        channel: message.channel,
-        partTypes: message.parts.map((part) => part.type),
+        const inlineArtifacts = this.media.extractInlineArtifacts(message);
+        await this.messages.appendArtifacts(message.id, inlineArtifacts);
+
+        this.logger.stage({
+          component: COMPONENT,
+          stage: STAGE,
+          input: {
+            messageId: message.id,
+            channel: message.channel,
+            parts: message.parts.map((part) => part.type),
+          },
+          action: 'Persisted the canonical message and extracted inline artifacts',
+          output: {
+            inlineArtifacts: inlineArtifacts.length,
+            requiresMedia: requiresMediaProcessing(message),
+          },
+          durationMs: Date.now() - startedAt,
+        });
+
+        // Heavy media work must not block the webhook (§31). The message joins a logical turn in
+        // `resumeAfterMedia`, once its transcript/visual artifacts exist.
+        if (requiresMediaProcessing(message)) {
+          for (const job of this.media.mediaJobsFor(message)) await this.mediaQueue.enqueue(job);
+          return this.result(conversationId, { deduplicated: false, deferred: true, turnId: null });
+        }
+
+        return this.assemble(message, inlineArtifacts);
       },
-    });
-
-    const inlineArtifacts = this.media.extractInlineArtifacts(message);
-    await this.messages.appendArtifacts(message.id, inlineArtifacts);
-
-    this.logger.stage({
-      component: COMPONENT,
-      stage: STAGE,
-      input: {
-        messageId: message.id,
-        channel: message.channel,
-        parts: message.parts.map((part) => part.type),
-      },
-      action: 'Persisted the canonical message and extracted inline artifacts',
-      output: {
-        inlineArtifacts: inlineArtifacts.length,
-        requiresMedia: requiresMediaProcessing(message),
-      },
-      durationMs: Date.now() - startedAt,
-    });
-
-    // Heavy media work must not block the webhook (MCOS §20). The turn resumes in
-    // `resumeAfterMedia` once every media part has produced its artifacts.
-    if (requiresMediaProcessing(message)) {
-      for (const job of this.media.mediaJobsFor(message)) {
-        await this.mediaQueue.enqueue(job);
-      }
-
-      return {
-        conversationId: message.conversationId,
-        response: null,
-        workflowId: null,
-        deduplicated: false,
-        deferred: true,
-      };
-    }
-
-    return this.runTurn(message, inlineArtifacts);
+    );
   }
 
-  /**
-   * Continues a turn that was parked awaiting media processing.
-   *
-   * Called by the media worker once the last outstanding job for the message completes.
-   */
+  /** Continues a message that was parked awaiting media processing. */
   async resumeAfterMedia(messageId: string): Promise<HandleIncomingMessageResult | null> {
     const message = await this.messages.findById(messageId);
 
@@ -167,176 +144,42 @@ export class MessageIngestionService implements HandleIncomingMessagePort {
         component: COMPONENT,
         stage: `${STAGE}:ResumeAfterMedia`,
         input: { messageId },
-        action: 'Cannot resume a turn for a message that is no longer stored',
+        action: 'Cannot resume a message that is no longer stored',
         error: new Error(`Message ${messageId} not found`),
       });
       return null;
     }
 
-    // Guards against two media jobs finishing simultaneously and both resuming the turn.
+    // Guards against two media jobs finishing simultaneously and both assembling the message.
     if (await this.messages.isProcessed(messageId)) return null;
+    const existing = await this.assembly.turnOf(messageId);
+    if (existing !== null)
+      return this.result(message.conversationId, { deduplicated: true, deferred: false, turnId: existing });
 
     const artifacts = await this.messages.loadArtifacts(messageId);
 
-    await this.publish({
-      eventType: ConversationEvents.MediaProcessed,
-      conversationId: message.conversationId,
-      payload: { messageId, artifactCount: artifacts.length },
-    });
-
-    return this.runTurn(message, artifacts);
+    return RequestContextStore.extend(
+      { conversationId: message.conversationId, messageId, component: 'MCOS' },
+      () => this.assemble(message, artifacts),
+    );
   }
 
-  /**
-   * Runs the conversation turn under the conversation lock.
-   *
-   * The lock guarantees a single worker owns the conversation for the duration, which is
-   * what makes horizontal scaling safe (MCOS §20).
-   */
-  private async runTurn(
+  private async assemble(
     message: IncomingMessage,
     artifacts: readonly Artifact[],
   ): Promise<HandleIncomingMessageResult> {
-    const chosen = await this.resolveChoice(message, collectText(artifacts));
-
-    const outcome = await this.context.withLock(message.conversationId, async () =>
-      this.core.handleTurn({
-        message,
-        artifacts,
-        text: chosen.text,
-        interactivePayload: chosen.interactivePayload,
-      }),
-    );
-
-    if (outcome === null) {
-      // Another worker holds this conversation. Telling the user to retry is honest and
-      // avoids interleaving two half-processed turns.
-      const response = fallbackWithReason('conversation_locked');
-
-      await this.deliverLockFailure(message, response);
-
-      return {
-        conversationId: message.conversationId,
-        response,
-        workflowId: null,
-        deduplicated: false,
-        deferred: false,
-      };
-    }
-
-    await this.messages.markProcessed(message.id, this.clock.now());
-
-    return {
-      conversationId: message.conversationId,
-      response: outcome.response,
-      workflowId: outcome.workflowId,
+    const outcome = await this.assembly.accept({ message, text: collectText(artifacts) });
+    return this.result(message.conversationId, {
       deduplicated: false,
       deferred: false,
-    };
-  }
-
-  private async deliverLockFailure(message: IncomingMessage, response: Response): Promise<void> {
-    this.logger.stageFailed({
-      component: COMPONENT,
-      stage: STAGE,
-      input: { conversationId: message.conversationId, messageId: message.id },
-      action: 'Could not obtain the conversation lock; asking the user to retry shortly',
-      error: new Error('Conversation lock unavailable'),
+      turnId: outcome.turn.turnId,
     });
-
-    await this.core.deliver(message, response, null);
   }
 
-  /**
-   * Resolves an answer that names one of the options the platform last offered.
-   *
-   * Two shapes reach here. A *tapped* suggestion carries a replay payload, which grants no
-   * authority over any workflow — the option's words are the whole message, so the payload is
-   * dropped and the text routes normally. A *typed* answer may be just a number, because on
-   * WhatsApp the options are numbered in the message body and replying "2" is the natural thing
-   * to do.
-   *
-   * Resolution is deliberately narrow: only a bare number, and only within the range actually
-   * offered. "2" on its own is a choice; "2 cartons" is a quantity, and treating it as a menu
-   * selection would silently answer a question the user was not answering.
-   */
-  private async resolveChoice(
-    message: IncomingMessage,
-    text: string,
-  ): Promise<{ text: string; interactivePayload: string | null }> {
-    const payload = this.interactivePayloadOf(message);
-
-    const replayed = payload === null ? null : decodeReplayPayload(payload);
-    if (replayed !== null) {
-      // The button title already arrived as the message text; prefer the payload only if the
-      // channel sent no title with it.
-      return { text: text.trim().length > 0 ? text : replayed, interactivePayload: null };
-    }
-
-    if (payload !== null) return { text, interactivePayload: payload };
-
-    const choice = await this.resolveNumberedChoice(message.conversationId, text);
-    return choice === null ? { text, interactivePayload: null } : { text: choice, interactivePayload: null };
-  }
-
-  /** The label the user's number refers to, or null when the reply is not a bare choice. */
-  private async resolveNumberedChoice(conversationId: string, text: string): Promise<string | null> {
-    const trimmed = text.trim();
-    if (!/^\d{1,2}[.)]?$/.test(trimmed)) return null;
-
-    const index = Number.parseInt(trimmed, 10) - 1;
-    if (index < 0) return null;
-
-    let last;
-    try {
-      last = await this.outbound.latestForConversation(conversationId);
-    } catch (error) {
-      // A lookup failure must not swallow the user's message: it simply goes through as typed.
-      this.logger.stageFailed({
-        component: COMPONENT,
-        stage: `${STAGE}:Choice`,
-        input: { conversationId, reply: trimmed },
-        action: 'Could not read the last offered options; treating the reply as plain text',
-        error,
-      });
-      return null;
-    }
-
-    const options = last?.response.actions ?? [];
-    const option = options[index];
-
-    if (option === undefined) return null;
-
-    this.logger.stage({
-      component: COMPONENT,
-      stage: `${STAGE}:Choice`,
-      input: { conversationId, reply: trimmed },
-      action: `Read "${trimmed}" as the offered option "${option.title}"`,
-      output: { option: option.title, offered: options.length },
-    });
-
-    return option.title;
-  }
-
-  private interactivePayloadOf(message: IncomingMessage): string | null {
-    const part = message.parts.find(isInteractiveReplyPart);
-    return part === undefined ? null : part.payload;
-  }
-
-  private async publish(params: {
-    eventType: string;
-    conversationId: string;
-    payload: Record<string, unknown>;
-  }): Promise<void> {
-    const event: DomainEvent = {
-      eventId: this.ids.uuid(),
-      eventType: params.eventType,
-      timestamp: this.clock.now(),
-      producer: 'ConversationOS',
-      conversationId: params.conversationId,
-      payload: params.payload,
-    };
-
-    await this.events.publish(event);
+  private result(
+    conversationId: string,
+    flags: { deduplicated: boolean; deferred: boolean; turnId: string | null },
+  ): HandleIncomingMessageResult {
+    return { conversationId, response: null, workflowId: null, ...flags };
   }
 }

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mcos-p4-clarification-1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["required", "target_action_ids", "question", "reason", "expected_resolution"],
+  "properties": {
+    "required": { "type": "boolean" },
+    "target_action_ids": { "type": "array", "items": { "type": "string" } },
+    "question": { "type": ["string", "null"] },
+    "reason": { "type": "string" },
+    "expected_resolution": { "type": ["string", "null"] }
+  }
+}

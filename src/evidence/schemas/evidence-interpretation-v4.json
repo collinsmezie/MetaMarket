@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/evidence-interpretation-v4.json",
+  "title": "Evidence Interpretation v4",
+  "description": "Structured output of the Evidence Interpretation Agent (Evidence TDR v4.4 §32, §51.1). Extends §51.1's item with `claim`, `kind`, `subject_label`, `object_label`, `supports` and `contradicts` so the record answers §13 provenance question 'how was it interpreted'; every §51.1-required field is preserved with its exact meaning.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence"],
+  "properties": {
+    "schema_version": { "const": "4.0" },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["evidence_id", "observation_id", "assertion", "polarity", "strength", "provenance", "independence_key", "claim", "kind", "subject_label", "object_label", "supports", "contradicts"],
+        "properties": {
+          "evidence_id": { "type": "string", "minLength": 1 },
+          "observation_id": { "type": "string", "minLength": 1 },
+          "assertion": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["subject", "predicate", "object"],
+            "properties": {
+              "subject": { "type": "string", "minLength": 1 },
+              "predicate": { "type": "string", "minLength": 1 },
+              "object": { "type": "string", "minLength": 1 }
+            }
+          },
+          "polarity": { "enum": ["POSITIVE", "NEGATIVE", "NEUTRAL", "CONTRADICTORY"] },
+          "strength": { "type": "number", "minimum": 0, "maximum": 1 },
+          "provenance": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source_type", "directness", "quote"],
+            "properties": {
+              "source_type": { "type": "string", "minLength": 1 },
+              "directness": { "enum": ["DIRECT", "INFERRED", "CONTEXTUAL"] },
+              "quote": { "type": ["string", "null"] }
+            }
+          },
+          "independence_key": { "type": "string", "minLength": 1 },
+          "claim": { "type": "string", "minLength": 1 },
+          "kind": { "enum": ["DIRECT", "INFERRED", "CONTEXTUAL"] },
+          "subject_label": { "type": "string", "minLength": 1 },
+          "object_label": { "type": "string", "minLength": 1 },
+          "supports": { "type": "array", "items": { "type": "string" } },
+          "contradicts": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

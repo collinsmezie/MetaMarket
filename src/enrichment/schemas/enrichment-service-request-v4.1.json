@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/enrichment-service-request-v4.1.json",
+  "title": "Enrichment Service Request v4.1",
+  "description": "Canonical LangGraph → Enrichment request (Enrichment TDR v4.4 §28.2, §29.1–§29.2). source_resolution.component_version accepts the deployed CSRE component version (gap analysis contract lock).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "component",
+    "component_version",
+    "conversation_id",
+    "turn_id",
+    "context_snapshot_id",
+    "source_resolution",
+    "objects",
+    "relationships",
+    "message_context",
+    "downstream_purpose",
+    "policy_version"
+  ],
+  "properties": {
+    "schema_version": { "const": "4.1" },
+    "request_id": { "type": "string", "minLength": 1 },
+    "component": { "const": "ENRICHMENT" },
+    "component_version": { "const": "4.4" },
+    "conversation_id": { "type": "string", "minLength": 1 },
+    "turn_id": { "type": "string", "minLength": 1 },
+    "context_snapshot_id": { "type": "string", "minLength": 1 },
+    "source_resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolver", "component_version", "wire_schema_version", "resolution_request_id"],
+      "properties": {
+        "resolver": { "const": "CSRE" },
+        "component_version": { "enum": ["5.4"] },
+        "wire_schema_version": { "const": "5.0" },
+        "resolution_request_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "objects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["object_id", "semantic_origin", "canonical_form", "entity_type"],
+        "properties": {
+          "object_id": { "type": "string", "minLength": 1 },
+          "semantic_origin": {
+            "type": "object",
+            "required": ["phrase", "concept", "market_concept_id", "concept_status", "relationship", "origin", "request_id", "semantic_confidence"],
+            "properties": {
+              "phrase": { "type": "string" },
+              "concept": { "type": "string" },
+              "market_concept_id": { "type": ["string", "null"] },
+              "concept_status": { "enum": ["KNOWN", "PROPOSED"] },
+              "relationship": { "const": "EXPRESSES" },
+              "origin": { "const": "CSRE" },
+              "request_id": { "type": "string" },
+              "semantic_confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          },
+          "canonical_form": { "type": "string", "minLength": 1 },
+          "entity_type": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "relationships": { "type": "array", "items": { "type": "object" } },
+    "message_context": { "type": "object" },
+    "downstream_purpose": { "enum": ["GPC_CLASSIFICATION", "SEMANTIC_SEARCH", "CAPABILITY_MATCHING", "OTHER"] },
+    "policy_version": { "type": "string", "minLength": 1 }
+  }
+}

@@ -109,7 +109,7 @@ model InboundMessage {
   providerMessageId String? @unique @map("provider_message_id")
 
   /// Canonical `MessagePart[]`, retained verbatim for replay and debugging.
-  parts Json
+  parts    Json
   /// Channel-specific detail kept for audit only; business logic must not read it.
   metadata Json @default("{}")
 
@@ -117,12 +117,17 @@ model InboundMessage {
   /// distinguishable from a duplicate delivery.
   processedAt DateTime? @map("processed_at")
 
+  /// The logical turn this transport message was assembled into (MCOS v4.4 §5A). Null until
+  /// Turn Assembly accepts it (media messages join once their artifacts exist).
+  turnId String? @map("turn_id") @db.Uuid
+
   receivedAt DateTime @default(now()) @map("received_at")
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   artifacts    Artifact[]
 
   @@index([conversationId, receivedAt])
+  @@index([turnId])
   @@map("inbound_messages")
 }
 
@@ -133,9 +138,9 @@ model Artifact {
   messageId String @map("message_id") @db.Uuid
 
   /// `text`, `location`, `contact`, `media_reference`.
-  type String
+  type       String
   /// `speech_to_text`, `ocr`, `user_text`, …
-  source String
+  source     String
   /// Extraction confidence in [0,1]; 1 for text the user literally typed.
   confidence Float
 
@@ -155,13 +160,13 @@ model Artifact {
 
 /// Stored media bytes in object storage, retained so evidence can point at the original.
 model MediaAsset {
-  id             String  @id @default(uuid()) @db.Uuid
-  conversationId String  @map("conversation_id") @db.Uuid
+  id              String @id @default(uuid()) @db.Uuid
+  conversationId  String @map("conversation_id") @db.Uuid
   /// Provider media handle the file was fetched with.
   providerMediaId String @map("provider_media_id")
-  storageKey     String  @unique @map("storage_key")
-  mimeType       String  @map("mime_type")
-  byteSize       Int     @map("byte_size")
+  storageKey      String @unique @map("storage_key")
+  mimeType        String @map("mime_type")
+  byteSize        Int    @map("byte_size")
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -263,12 +268,12 @@ model TaxonomyNode {
   code String @id
 
   /// 1..6 per the hierarchy above.
-  level Int
-  title String
-  definition         String @default("")
+  level              Int
+  title              String
+  definition         String  @default("")
   definitionExcludes String? @map("definition_excludes")
   /// GS1 retires codes rather than deleting them; inactive nodes stay for historical lookups.
-  active Boolean @default(true)
+  active             Boolean @default(true)
 
   parentCode String? @map("parent_code")
 
@@ -316,11 +321,11 @@ model TaxonomyNode {
 /// Stored once per code rather than once per occurrence: "YES" (30002654) is one concept
 /// shared by 500 bricks, not 500 concepts.
 model TaxonomyAttribute {
-  code String @id
+  code       String  @id
   /// 5 = attribute type, 6 = attribute value.
   level      Int
   title      String
-  definition String @default("")
+  definition String  @default("")
   active     Boolean @default(true)
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -379,10 +384,10 @@ model TaxonomyImport {
   /// SHA-256 of the source file, so an identical re-import is recognisable.
   sourceSha256 String @map("source_sha256")
 
-  nodesImported Int @map("nodes_imported")
-  nodesEmbedded Int @map("nodes_embedded")
+  nodesImported   Int    @map("nodes_imported")
+  nodesEmbedded   Int    @map("nodes_embedded")
   /// Deepest level that received embeddings, e.g. 4 when only Brick and above are embedded.
-  embeddedToLevel Int @map("embedded_to_level")
+  embeddedToLevel Int    @map("embedded_to_level")
   embeddingModel  String @map("embedding_model")
 
   startedAt   DateTime  @default(now()) @map("started_at")
@@ -417,12 +422,12 @@ model Vendor {
 
   /// Normalised location. The state is usually inferred from the city and then confirmed, so
   /// the confidence is retained rather than discarded.
-  city              String?
-  state             String?
-  country           String? @default("Nigeria")
+  city               String?
+  state              String?
+  country            String? @default("Nigeria")
   locationConfidence Float?  @map("location_confidence")
-  latitude          Float?
-  longitude         Float?
+  latitude           Float?
+  longitude          Float?
 
   /// onboarding | active | suspended
   status String @default("onboarding")
@@ -468,7 +473,7 @@ model VendorCapability {
   logOdds    Float @map("log_odds")
   confidence Float
 
-  evidenceCount Int  @default(0) @map("evidence_count")
+  evidenceCount Int     @default(0) @map("evidence_count")
   /// True while the capability comes only from expansion, never direct observation.
   inferred      Boolean @default(true)
 
@@ -493,11 +498,11 @@ model CapabilityEvidence {
   id       String @id @default(uuid()) @db.Uuid
   vendorId String @map("vendor_id") @db.Uuid
 
-  source String
+  source             String
   /// Exactly what the vendor said or did.
-  originalText String @map("original_text")
+  originalText       String @map("original_text")
   /// The interpreted meaning, before resolution to canonical identifiers.
-  normalizedMeaning String @map("normalized_meaning")
+  normalizedMeaning  String @map("normalized_meaning")
   /// very_low | low | medium | high | very_high
   informationDensity String @map("information_density")
 
@@ -570,13 +575,13 @@ model MarketplaceEvent {
   conversationId String? @map("conversation_id") @db.Uuid
 
   /// Free-text product term the event concerned, e.g. "Hammer".
-  product String?
+  product    String?
   /// Canonical capability the event concerned, e.g. a GPC brick code.
   capability String?
 
   metadata Json @default("{}")
 
-  occurredAt DateTime @default(now()) @map("occurred_at")
+  occurredAt  DateTime  @default(now()) @map("occurred_at")
   /// Null until the Evidence Processor has turned it into evidence records.
   processedAt DateTime? @map("processed_at")
 
@@ -615,7 +620,7 @@ model EvidenceRecord {
   /// Response latency in milliseconds, when the signal carries one.
   responseTimeMs Int? @map("response_time_ms")
   /// Customer rating 1-5, when the signal carries one.
-  rating Int?
+  rating         Int?
 
   observedAt DateTime @map("observed_at")
   createdAt  DateTime @default(now()) @map("created_at")
@@ -648,13 +653,13 @@ model EvidenceAggregate {
   cancelled  Int @default(0)
 
   /// Running totals, so the mean is derivable without storing every sample.
-  responseTimeSumMs   BigInt @default(0) @map("response_time_sum_ms")
-  responseTimeCount   Int    @default(0) @map("response_time_count")
-  ratingSum           Int    @default(0) @map("rating_sum")
-  ratingCount         Int    @default(0) @map("rating_count")
+  responseTimeSumMs BigInt @default(0) @map("response_time_sum_ms")
+  responseTimeCount Int    @default(0) @map("response_time_count")
+  ratingSum         Int    @default(0) @map("rating_sum")
+  ratingCount       Int    @default(0) @map("rating_count")
 
   /// Composite score in [0,1] consumed by ranking. Small-sample corrected.
-  evidenceScore Float @default(0) @map("evidence_score")
+  evidenceScore   Float @default(0) @map("evidence_score")
   /// Confidence in the score itself, driven by how much evidence exists.
   scoreConfidence Float @default(0) @map("score_confidence")
 
@@ -685,12 +690,12 @@ model CustomerRequest {
   customerId     String @map("customer_id")
 
   /// What the customer asked for, in their words.
-  query String
+  query          String
   /// Canonical capability the request resolved to; the subject evidence accrues against.
   capabilityId   String? @map("capability_id")
   capabilityName String? @map("capability_name")
   /// Normalised product term, for product-level evidence.
-  product String?
+  product        String?
 
   customerCity String? @map("customer_city")
 
@@ -735,10 +740,10 @@ model RequestDelivery {
   /// Whether the vendor's credit was deducted for this delivery, so a retry cannot double-charge.
   creditDeducted Boolean @default(false) @map("credit_deducted")
 
-  deliveredAt DateTime  @default(now()) @map("delivered_at")
-  respondedAt DateTime? @map("responded_at")
+  deliveredAt    DateTime  @default(now()) @map("delivered_at")
+  respondedAt    DateTime? @map("responded_at")
   /// Latency in milliseconds, denormalised for the Evidence Service.
-  responseTimeMs Int? @map("response_time_ms")
+  responseTimeMs Int?      @map("response_time_ms")
 
   request CustomerRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
@@ -755,14 +760,14 @@ model RequestDelivery {
 /// One credit wallet per user (normalised E.164). The root of the credit aggregate.
 /// "One User → One Konnet Account → One Virtual Account → One Wallet."
 model CreditWallet {
-  id String @id @default(uuid()) @db.Uuid
+  id                   String  @id @default(uuid()) @db.Uuid
   /// Platform identity — the normalised E.164 number, same key the Conversation uses.
-  userId String @unique @map("user_id")
+  userId               String  @unique @map("user_id")
   /// The conversation that first provisioned the wallet, used for outbound pushes.
-  conversationId String @map("conversation_id") @db.Uuid
-  currency       String @default("NGN")
+  conversationId       String  @map("conversation_id") @db.Uuid
+  currency             String  @default("NGN")
   /// Whole credits only; conversion floors (see NAIRA_PER_CREDIT). Never negative.
-  balanceCredits Int    @default(0) @map("balance_credits")
+  balanceCredits       Int     @default(0) @map("balance_credits")
   /// Paystack customer code, cached after first provisioning.
   providerCustomerCode String? @map("provider_customer_code")
 
@@ -777,9 +782,9 @@ model CreditWallet {
 
 /// The user's permanent dedicated virtual account.
 model VirtualAccount {
-  id       String @id @default(uuid()) @db.Uuid
-  walletId String @map("wallet_id") @db.Uuid
-  provider String @default("paystack")
+  id                String  @id @default(uuid()) @db.Uuid
+  walletId          String  @map("wallet_id") @db.Uuid
+  provider          String  @default("paystack")
   /// Paystack DVA id from the provisioning response.
   providerAccountId String? @map("provider_account_id")
   accountNumber     String  @unique @map("account_number")
@@ -788,7 +793,7 @@ model VirtualAccount {
   /// Idempotency key: one provisioning call, one DVA. Prevents double-provisioning.
   providerReference String? @unique @map("provider_reference")
   /// active | failed | deactivated
-  status String @default("active")
+  status            String  @default("active")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -802,25 +807,25 @@ model VirtualAccount {
 /// Immutable ledger of every credit. Source of truth for a balance statement;
 /// `CreditWallet.balanceCredits` is the materialised total.
 model CreditTransaction {
-  id       String @id @default(uuid()) @db.Uuid
-  walletId String @map("wallet_id") @db.Uuid
+  id                String  @id @default(uuid()) @db.Uuid
+  walletId          String  @map("wallet_id") @db.Uuid
   /// credit | debit | adjustment
-  type          String @default("credit")
-  amountCredits Int    @map("amount_credits")
+  type              String  @default("credit")
+  amountCredits     Int     @map("amount_credits")
   /// Exact amount received, in minor units (kobo). Stored so nothing is ever guessed.
   ///
   /// Null for rows where no money moved: a visibility-fee debit (TDR §25.4) or an onboarding
   /// grant (§25.12) consume or mint credits, not Naira. Zero would read as "received nothing",
   /// which is a different and false claim.
-  amountKobo Int? @map("amount_kobo")
+  amountKobo        Int?    @map("amount_kobo")
   /// Paystack transaction reference. UNIQUE = the exactly-once guarantee.
   providerReference String? @unique @map("provider_reference")
   /// Paystack event id, a second idempotency net.
-  eventId String? @unique @map("event_id")
+  eventId           String? @unique @map("event_id")
   /// Reason string, e.g. "dedicated_account.credit".
-  reason String @default("")
+  reason            String  @default("")
   /// Audit detail: remnant kobo, currency, provider digest.
-  metadata Json @default("{}")
+  metadata          Json    @default("{}")
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -838,21 +843,21 @@ model CreditTransaction {
 /// Mirrors the Evidence Service split — persist the raw fact first, interpret on a sweep — so
 /// a processing bug can be fixed and the backlog replayed without losing a notification.
 model PaymentNotification {
-  id       String @id @default(uuid()) @db.Uuid
-  provider String @default("paystack")
+  id                String  @id @default(uuid()) @db.Uuid
+  provider          String  @default("paystack")
   /// e.g. dedicated_account.credit
-  eventType String @map("event_type")
+  eventType         String  @map("event_type")
   /// Paystack event id. UNIQUE → duplicate deliveries are dropped at the door.
-  eventId String @unique @map("event_id")
+  eventId           String  @unique @map("event_id")
   /// Paystack transaction reference. UNIQUE → second idempotency net.
-  providerReference String @unique @map("provider_reference")
-  accountNumber     String @map("account_number")
-  amountKobo        Int    @map("amount_kobo")
-  currency          String @default("NGN")
+  providerReference String  @unique @map("provider_reference")
+  accountNumber     String  @map("account_number")
+  amountKobo        Int     @map("amount_kobo")
+  currency          String  @default("NGN")
   /// received | processing | credited | failed
-  status    String  @default("received")
-  attempts  Int     @default(0)
-  lastError String? @map("last_error")
+  status            String  @default("received")
+  attempts          Int     @default(0)
+  lastError         String? @map("last_error")
 
   receivedAt  DateTime  @default(now()) @map("received_at")
   processedAt DateTime? @map("processed_at")
@@ -879,7 +884,7 @@ model PaymentNotification {
 model OutboundMessage {
   id String @id @default(uuid()) @db.Uuid
 
-  channel String
+  channel        String
   /// Channel-native address — E.164 for WhatsApp/SMS.
   address        String
   conversationId String @map("conversation_id") @db.Uuid
@@ -923,14 +928,934 @@ model OutboxEvent {
 
   payload Json
 
-  /// Null until successfully relayed to the bus.
+  /// Null until successfully relayed to the in-process bus (legacy subscribers).
   publishedAt DateTime? @map("published_at")
   attempts    Int       @default(0)
   lastError   String?   @map("last_error")
 
+  // Correlated, versioned envelope (Overarching §18.6, §25, §33).
+  eventVersion  String  @default("1.0") @map("event_version")
+  correlationId String? @map("correlation_id")
+  turnId        String? @map("turn_id")
+  runId         String? @map("run_id")
+  aggregateType String? @map("aggregate_type")
+  aggregateId   String? @map("aggregate_id")
+
+  // Durable cross-process consumption (OutboxConsumerWorker). Null until every registered
+  // handler has consumed the event exactly once.
+  consumedAt          DateTime? @map("consumed_at")
+  claimedAt           DateTime? @map("claimed_at")
+  claimedBy           String?   @map("claimed_by")
+  consumptionAttempts Int       @default(0) @map("consumption_attempts")
+
   occurredAt DateTime @default(now()) @map("occurred_at")
 
   @@index([publishedAt, occurredAt])
+  @@index([consumedAt, claimedAt, occurredAt])
+  @@index([correlationId])
   @@index([eventType])
   @@map("outbox_events")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Platform: execution traces and prompt runtime (TDR v1.3 Overarching §7.2, §18.4, §26, §28)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum RunStatus {
+  ACTIVE
+  WAITING_USER
+  COMPLETED
+  PARTIAL
+  FAILED
+}
+
+enum TraceStepStatus {
+  STARTED
+  SUCCESS
+  PARTIAL
+  BLOCKED
+  ERROR
+  SKIPPED
+}
+
+enum PromptExecutionStatus {
+  SUCCESS
+  SCHEMA_FAILURE
+  PROVIDER_FAILURE
+  POLICY_FAILURE
+}
+
+enum EventConsumptionStatus {
+  CONSUMED
+  FAILED
+}
+
+/// One orchestration run per logical turn (`run_id = turn:{turnId}`, MCOS §8). Orchestration
+/// truth for inspection only — business state lives in the domain tables.
+model OrchestrationRun {
+  runId          String    @id @map("run_id")
+  conversationId String    @map("conversation_id")
+  turnId         String    @map("turn_id")
+  correlationId  String    @map("correlation_id")
+  channel        String
+  messageIds     String[]  @map("message_ids")
+  status         RunStatus @default(ACTIVE)
+  startedAt      DateTime  @map("started_at")
+  completedAt    DateTime? @map("completed_at")
+  finalResponse  Json?     @map("final_response")
+  error          Json?
+
+  steps TraceStep[]
+
+  @@index([conversationId, startedAt])
+  @@index([turnId])
+  @@index([correlationId])
+  @@map("orchestration_runs")
+}
+
+/// One component invocation inside a run. `request_id` is the correlation key that every
+/// specialist envelope and prompt execution carries (Overarching §25).
+model TraceStep {
+  id                 String          @id @default(uuid()) @db.Uuid
+  runId              String          @map("run_id")
+  requestId          String          @unique @map("request_id")
+  parentRequestId    String?         @map("parent_request_id")
+  correlationId      String          @map("correlation_id")
+  conversationId     String?         @map("conversation_id")
+  turnId             String?         @map("turn_id")
+  component          String
+  componentVersion   String          @map("component_version")
+  stage              String
+  schemaVersion      String?         @map("schema_version")
+  status             TraceStepStatus @default(STARTED)
+  sequence           Int             @default(0)
+  inputSummary       Json?           @map("input_summary")
+  decision           Json?
+  outputSummary      Json?           @map("output_summary")
+  persistedRecordIds String[]        @default([]) @map("persisted_record_ids")
+  promptExecutionIds String[]        @default([]) @map("prompt_execution_ids")
+  retryCount         Int             @default(0) @map("retry_count")
+  error              Json?
+  startedAt          DateTime        @map("started_at")
+  completedAt        DateTime?       @map("completed_at")
+
+  run OrchestrationRun @relation(fields: [runId], references: [runId], onDelete: Cascade)
+
+  @@index([runId, sequence])
+  @@index([correlationId])
+  @@index([component, startedAt])
+  @@map("trace_steps")
+}
+
+/// Every model invocation, successful or not (Overarching §7.2; Directive §13). Never stores
+/// chain-of-thought: `output` is the validated structured result, `decision_summary` a concise
+/// explanation, `raw_output` only the failed text when validation did not pass.
+model PromptExecution {
+  id               String                @id @db.Uuid
+  requestId        String                @map("request_id")
+  parentRequestId  String?               @map("parent_request_id")
+  correlationId    String                @map("correlation_id")
+  conversationId   String?               @map("conversation_id")
+  turnId           String?               @map("turn_id")
+  runId            String?               @map("run_id")
+  component        String
+  componentVersion String                @map("component_version")
+  promptId         String                @map("prompt_id")
+  promptVersion    String                @map("prompt_version")
+  schemaId         String?               @map("schema_id")
+  schemaVersion    String?               @map("schema_version")
+  modelProvider    String?               @map("model_provider")
+  modelName        String?               @map("model_name")
+  inputHash        String                @map("input_hash")
+  input            Json
+  output           Json?
+  rawOutput        String?               @map("raw_output")
+  status           PromptExecutionStatus
+  validationErrors Json                  @default("[]") @map("validation_errors")
+  repairAttempts   Int                   @default(0) @map("repair_attempts")
+  providerAttempts Int                   @default(0) @map("provider_attempts")
+  failedProviders  String[]              @default([]) @map("failed_providers")
+  latencyMs        Int                   @map("latency_ms")
+  usage            Json?
+  decisionSummary  Json?                 @map("decision_summary")
+  sharedInvocation Boolean               @default(false) @map("shared_invocation")
+  createdAt        DateTime              @map("created_at")
+
+  @@index([runId, createdAt])
+  @@index([conversationId, createdAt])
+  @@index([component, promptId, createdAt])
+  @@index([correlationId])
+  @@map("prompt_executions")
+}
+
+/// Exactly-once consumption ledger for the outbox consumer: one row per (event, consumer).
+model EventConsumption {
+  eventId    String                 @map("event_id") @db.Uuid
+  consumer   String
+  status     EventConsumptionStatus
+  attempts   Int                    @default(1)
+  error      String?
+  consumedAt DateTime?              @map("consumed_at")
+  createdAt  DateTime               @default(now()) @map("created_at")
+
+  @@id([eventId, consumer])
+  @@index([status, createdAt])
+  @@map("event_consumptions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MCOS runtime: logical turns, turn queue, clarification, context snapshots (MCOS v4.4 §5A, §25A, §63)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum LogicalTurnStatus {
+  OPEN
+  SEALED
+  ENQUEUED
+  PROCESSING
+  WAITING_USER
+  COMMITTED
+  FAILED
+  CANCELLED
+}
+
+enum TurnQueueStatus {
+  QUEUED
+  CLAIMED
+  PROCESSING
+  WAITING_USER
+  COMMITTED
+  FAILED
+  CANCELLED
+}
+
+enum PendingClarificationStatus {
+  WAITING_FOR_USER
+  ANSWER_RECEIVED
+  RESOLVED
+  EXPIRED
+  CANCELLED
+  SUPERSEDED
+}
+
+/// One logical conversational turn: the unit LangGraph reasons about (MCOS §5A.3, §5A.7).
+/// Owned by MCOS Turn Assembly. Every transition is a row-locked transaction or a CAS update.
+/// A partial unique index (migration SQL) guarantees at most one OPEN turn per conversation.
+model LogicalTurn {
+  turnId              String            @id @map("turn_id") @db.Uuid
+  conversationId      String            @map("conversation_id") @db.Uuid
+  channel             String
+  status              LogicalTurnStatus @default(OPEN)
+  messageIds          String[]          @map("message_ids")
+  /// Ordered `TurnMessage[]` as accepted, retained so the turn is replayable without joins.
+  messages            Json
+  assembledText       String            @default("") @map("assembled_text")
+  assemblyReason      String?           @map("assembly_reason")
+  boundaryReason      String            @map("boundary_reason")
+  firstMessageAt      DateTime          @map("first_message_at")
+  lastMessageAt       DateTime          @map("last_message_at")
+  quietDeadlineAt     DateTime          @map("quiet_deadline_at")
+  hardDeadlineAt      DateTime          @map("hard_deadline_at")
+  sealedAt            DateTime?         @map("sealed_at")
+  processingStartedAt DateTime?         @map("processing_started_at")
+  committedAt         DateTime?         @map("committed_at")
+  assemblyVersion     Int               @default(1) @map("assembly_version")
+  revision            Int               @default(0)
+  runId               String?           @map("run_id")
+  contextSnapshotId   String?           @map("context_snapshot_id") @db.Uuid
+  correlationId       String            @map("correlation_id")
+  supersedesTurnId    String?           @map("supersedes_turn_id") @db.Uuid
+  correctsTurnId      String?           @map("corrects_turn_id") @db.Uuid
+  /// `ConversationTurnSummary` written at commit; feeds the next turn's context.
+  summary             Json?
+  error               Json?
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  queueEntry TurnQueueEntry?
+
+  @@index([conversationId, status])
+  @@index([status, quietDeadlineAt])
+  @@index([conversationId, firstMessageAt])
+  @@index([correlationId])
+  @@map("logical_turns")
+}
+
+/// Durable, ordered execution queue of sealed turns (MCOS §5A.10–§5A.11).
+model TurnQueueEntry {
+  queueId        String          @id @default(uuid()) @map("queue_id") @db.Uuid
+  conversationId String          @map("conversation_id") @db.Uuid
+  turnId         String          @unique @map("turn_id") @db.Uuid
+  /// Monotonic per conversation; the claim never overtakes a lower sequence.
+  sequence       Int
+  status         TurnQueueStatus @default(QUEUED)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  claimedAt      DateTime?       @map("claimed_at")
+  claimedBy      String?         @map("claimed_by")
+  startedAt      DateTime?       @map("started_at")
+  completedAt    DateTime?       @map("completed_at")
+  attempts       Int             @default(0)
+  lastError      String?         @map("last_error")
+
+  turn LogicalTurn @relation(fields: [turnId], references: [turnId], onDelete: Cascade)
+
+  @@unique([conversationId, sequence])
+  @@index([status, createdAt])
+  @@index([conversationId, status])
+  @@map("turn_queue")
+}
+
+/// Durable pending clarification (MCOS §25A.2). A partial unique index (migration SQL) enforces
+/// at most one WAITING_FOR_USER clarification per conversation. Rows are never deleted.
+model PendingClarification {
+  clarificationId    String                     @id @map("clarification_id") @db.Uuid
+  conversationId     String                     @map("conversation_id") @db.Uuid
+  originatingTurnId  String                     @map("originating_turn_id") @db.Uuid
+  question           String
+  targetActionIds    String[]                   @default([]) @map("target_action_ids")
+  targetIntentIds    String[]                   @default([]) @map("target_intent_ids")
+  blocking           Boolean
+  status             PendingClarificationStatus @default(WAITING_FOR_USER)
+  askedAt            DateTime                   @map("asked_at")
+  answerMessageIds   String[]                   @default([]) @map("answer_message_ids")
+  answerTurnId       String?                    @map("answer_turn_id") @db.Uuid
+  resolvedAt         DateTime?                  @map("resolved_at")
+  expiresAt          DateTime?                  @map("expires_at")
+  attemptCount       Int                        @default(1) @map("attempt_count")
+  expectedResolution String?                    @map("expected_resolution")
+  contextSnapshotId  String?                    @map("context_snapshot_id") @db.Uuid
+  issueKey           String?                    @map("issue_key")
+  version            Int                        @default(1)
+  createdAt          DateTime                   @default(now()) @map("created_at")
+  updatedAt          DateTime                   @updatedAt @map("updated_at")
+
+  @@unique([conversationId, clarificationId])
+  @@index([conversationId, status, askedAt])
+  @@index([originatingTurnId])
+  @@index([conversationId, issueKey, askedAt])
+  @@map("pending_clarifications")
+}
+
+/// Bounded, versioned working-context snapshot per turn (Overarching §18.8).
+model TurnContextSnapshot {
+  id             String   @id @map("snapshot_id") @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  turnId         String   @map("turn_id") @db.Uuid
+  version        Int
+  snapshot       Json
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([conversationId, createdAt])
+  @@index([turnId])
+  @@map("turn_context_snapshots")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IDCE — persisted intent resolutions (IDCE v1.6 §18, §21; Overarching §18.4, §32.1)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum IdceInvocationStatus {
+  SUCCESS
+  TEMPORARY_FAILURE
+  SCHEMA_FAILURE
+  POLICY_FAILURE
+}
+
+/// One IDCE invocation per (conversation, turn, understanding revision). Owned by IDCE. The
+/// `resolution` column is the validated snake_case wire contract (`idce-resolution-1.0`); a later
+/// re-resolution supersedes rather than overwrites (Overarching §18.10).
+model IntentResolution {
+  id                    String               @id @default(uuid()) @db.Uuid
+  requestId             String               @unique @map("request_id")
+  idempotencyKey        String               @unique @map("idempotency_key")
+  conversationId        String               @map("conversation_id") @db.Uuid
+  turnId                String               @map("turn_id") @db.Uuid
+  runId                 String?              @map("run_id")
+  contextSnapshotId     String?              @map("context_snapshot_id")
+  understandingRevision Int                  @default(0) @map("understanding_revision")
+  componentVersion      String               @map("component_version")
+  promptId              String               @map("prompt_id")
+  promptVersion         String               @map("prompt_version")
+  schemaVersion         String               @map("schema_version")
+  policyVersion         String               @map("policy_version")
+  status                IdceInvocationStatus
+  resolutionStatus      String?              @map("resolution_status")
+  resolution            Json?
+  primaryIntentType     String?              @map("primary_intent_type")
+  intentTypes           String[]             @default([]) @map("intent_types")
+  clarificationRequired Boolean              @default(false) @map("clarification_required")
+  promptExecutionId     String?              @map("prompt_execution_id") @db.Uuid
+  modelProvider         String?              @map("model_provider")
+  modelName             String?              @map("model_name")
+  latencyMs             Int                  @map("latency_ms")
+  error                 Json?
+  supersededById        String?              @map("superseded_by_id") @db.Uuid
+  createdAt             DateTime             @default(now()) @map("created_at")
+
+  @@index([conversationId, createdAt])
+  @@index([turnId])
+  @@index([runId])
+  @@map("intent_resolutions")
+}
+
+// ── CSRE v5.4 (Phase 4) ──────────────────────────────────────────────────────────────────────
+
+enum CsreInvocationStatus {
+  SUCCESS
+  TEMPORARY_FAILURE
+  SCHEMA_FAILURE
+  POLICY_FAILURE
+}
+
+/// One CSRE invocation per (conversation, turn, understanding revision): the validated
+/// `csre-resolution-v5` payload with its prompt/schema/policy versions and model lineage
+/// (Overarching §18.4, CSRE §27, §29.3). Append-only; a re-resolution supersedes, never overwrites.
+model SemanticResolution {
+  id                    String               @id @default(uuid()) @db.Uuid
+  requestId             String               @unique @map("request_id")
+  idempotencyKey        String               @unique @map("idempotency_key")
+  conversationId        String               @map("conversation_id") @db.Uuid
+  turnId                String               @map("turn_id") @db.Uuid
+  runId                 String?              @map("run_id")
+  contextSnapshotId     String?              @map("context_snapshot_id")
+  understandingRevision Int                  @default(0) @map("understanding_revision")
+  componentVersion      String               @map("component_version")
+  promptId              String               @map("prompt_id")
+  promptVersion         String               @map("prompt_version")
+  schemaVersion         String               @map("schema_version")
+  policyVersion         String               @map("policy_version")
+  status                CsreInvocationStatus
+  resolutionStatus      String?              @map("resolution_status")
+  resolution            Json?
+  objectCount           Int                  @default(0) @map("object_count")
+  canonicalForms        String[]             @default([]) @map("canonical_forms")
+  entityTypes           String[]             @default([]) @map("entity_types")
+  clarificationRequired Boolean              @default(false) @map("clarification_required")
+  promptExecutionId     String?              @map("prompt_execution_id") @db.Uuid
+  modelProvider         String?              @map("model_provider")
+  modelName             String?              @map("model_name")
+  latencyMs             Int                  @map("latency_ms")
+  error                 Json?
+  supersededById        String?              @map("superseded_by_id") @db.Uuid
+  createdAt             DateTime             @default(now()) @map("created_at")
+  objects               SemanticObject[]
+
+  @@index([conversationId, createdAt])
+  @@index([turnId])
+  @@index([runId])
+  @@map("semantic_resolutions")
+}
+
+/// One row per independently resolved object (CSRE §3.1A, §27.5): the Phrase → EXPRESSES →
+/// MarketConcept observation Enrichment, the GPC Resolver, Evidence and the next turn's context
+/// consume. `object` is the exact wire object; the columns are its indexed projection.
+model SemanticObject {
+  id                   String             @id @default(uuid()) @db.Uuid
+  resolutionId         String             @map("resolution_id") @db.Uuid
+  resolution           SemanticResolution @relation(fields: [resolutionId], references: [id], onDelete: Cascade)
+  requestId            String             @map("request_id")
+  conversationId       String             @map("conversation_id") @db.Uuid
+  turnId               String             @map("turn_id") @db.Uuid
+  objectId             String             @map("object_id")
+  surfaceForm          String             @map("surface_form")
+  canonicalForm        String             @map("canonical_form")
+  entityType           String             @map("entity_type")
+  brand                String?
+  productModel         String?            @map("model")
+  phrase               String
+  concept              String
+  marketConceptId      String?            @map("market_concept_id")
+  conceptStatus        String             @map("concept_status")
+  semanticConfidence   Float              @map("semantic_confidence")
+  commercialRelevance  String             @map("commercial_relevance")
+  commercialOffering   Boolean            @map("commercial_offering")
+  commercialConfidence Float              @map("commercial_confidence")
+  ambiguityPresent     Boolean            @default(false) @map("ambiguity_present")
+  object               Json
+  createdAt            DateTime           @default(now()) @map("created_at")
+
+  @@unique([resolutionId, objectId])
+  @@index([conversationId, createdAt])
+  @@index([turnId])
+  @@index([requestId])
+  @@index([canonicalForm])
+  @@index([marketConceptId])
+  @@map("semantic_objects")
+}
+
+// ── Enrichment v4.4 (Phase 5) ────────────────────────────────────────────────────────────────
+
+enum EnrichmentInvocationStatus {
+  SUCCESS
+  TEMPORARY_FAILURE
+  SCHEMA_FAILURE
+  POLICY_FAILURE
+}
+
+/// One Enrichment invocation per (conversation, turn, CSRE resolution request, downstream
+/// purpose): the validated `enrichment-resolution-v4` payload with its prompt/schema/policy
+/// versions and model lineage (Overarching §11.2, §18.4). Append-only; supersede, never overwrite.
+model EnrichmentResolution {
+  id                        String                     @id @default(uuid()) @db.Uuid
+  requestId                 String                     @unique @map("request_id")
+  idempotencyKey            String                     @unique @map("idempotency_key")
+  conversationId            String                     @map("conversation_id") @db.Uuid
+  turnId                    String                     @map("turn_id") @db.Uuid
+  runId                     String?                    @map("run_id")
+  contextSnapshotId         String?                    @map("context_snapshot_id")
+  sourceResolutionRequestId String                     @map("source_resolution_request_id")
+  componentVersion          String                     @map("component_version")
+  promptId                  String                     @map("prompt_id")
+  promptVersion             String                     @map("prompt_version")
+  schemaVersion             String                     @map("schema_version")
+  policyVersion             String                     @map("policy_version")
+  downstreamPurpose         String                     @map("downstream_purpose")
+  status                    EnrichmentInvocationStatus
+  enrichmentStatus          String?                    @map("enrichment_status")
+  resolution                Json?
+  objectCount               Int                        @default(0) @map("object_count")
+  evidenceRequired          Boolean                    @default(false) @map("evidence_required")
+  promptExecutionId         String?                    @map("prompt_execution_id") @db.Uuid
+  modelProvider             String?                    @map("model_provider")
+  modelName                 String?                    @map("model_name")
+  latencyMs                 Int                        @map("latency_ms")
+  error                     Json?
+  supersededById            String?                    @map("superseded_by_id") @db.Uuid
+  createdAt                 DateTime                   @default(now()) @map("created_at")
+  profiles                  EnrichmentProfile[]
+
+  @@index([conversationId, createdAt])
+  @@index([turnId])
+  @@index([runId])
+  @@index([sourceResolutionRequestId])
+  @@map("enrichment_resolutions")
+}
+
+/// One row per enriched object (Enrichment §11, §16): the profile the GPC Resolver, matching and
+/// the knowledge layer consume, with its three purpose-built embeddings. `profile` is the exact
+/// wire object; the columns are its indexed projection.
+model EnrichmentProfile {
+  id                        String                       @id @default(uuid()) @db.Uuid
+  resolutionId              String                       @map("resolution_id") @db.Uuid
+  resolution                EnrichmentResolution         @relation(fields: [resolutionId], references: [id], onDelete: Cascade)
+  requestId                 String                       @map("request_id")
+  sourceResolutionRequestId String                       @map("source_resolution_request_id")
+  semanticObjectId          String?                      @map("semantic_object_id") @db.Uuid
+  conversationId            String                       @map("conversation_id") @db.Uuid
+  turnId                    String                       @map("turn_id") @db.Uuid
+  objectId                  String                       @map("object_id")
+  canonicalForm             String                       @map("canonical_form")
+  entityType                String                       @map("entity_type")
+  concept                   String
+  marketConceptId           String?                      @map("market_concept_id")
+  conceptStatus             String                       @map("concept_status")
+  definition                String
+  canonicalEmbeddingText    String                       @map("canonical_embedding_text")
+  functionalEmbeddingText   String                       @map("functional_embedding_text")
+  taxonomyEmbeddingText     String                       @map("taxonomy_embedding_text")
+  searchTerms               String[]                     @default([]) @map("search_terms")
+  semanticKeywords          String[]                     @default([]) @map("semantic_keywords")
+  negativeTerms             String[]                     @default([]) @map("negative_terms")
+  evidenceRequired          Boolean                      @default(false) @map("evidence_required")
+  embeddingModel            String?                      @map("embedding_model")
+  canonicalEmbedding        Unsupported("vector(1536)")? @map("canonical_embedding")
+  functionalEmbedding       Unsupported("vector(1536)")? @map("functional_embedding")
+  taxonomyEmbedding         Unsupported("vector(1536)")? @map("taxonomy_embedding")
+  profile                   Json
+  createdAt                 DateTime                     @default(now()) @map("created_at")
+
+  @@unique([resolutionId, objectId])
+  @@index([conversationId, createdAt])
+  @@index([semanticObjectId, createdAt])
+  @@index([sourceResolutionRequestId])
+  @@index([canonicalForm])
+  @@index([marketConceptId])
+  @@map("enrichment_profiles")
+}
+
+// ── GPC Resolver v4.4 (Phase 6) ──────────────────────────────────────────────────────────────
+
+enum GpcInvocationStatus {
+  SUCCESS
+  TEMPORARY_FAILURE
+  SCHEMA_FAILURE
+  POLICY_FAILURE
+}
+
+/// One GPC Resolver invocation per (conversation, turn, CSRE request, Enrichment request): the
+/// validated `gpc-resolver-response-v4` payload with its versions, installed GPC dataset identity
+/// and model lineage (GPC Resolver §62–§63, §93.5). Append-only.
+model GpcResolution {
+  id                  String              @id @default(uuid()) @db.Uuid
+  requestId           String              @unique @map("request_id")
+  idempotencyKey      String              @unique @map("idempotency_key")
+  conversationId      String              @map("conversation_id") @db.Uuid
+  turnId              String              @map("turn_id") @db.Uuid
+  runId               String?             @map("run_id")
+  contextSnapshotId   String?             @map("context_snapshot_id")
+  csreRequestId       String              @map("csre_request_id")
+  enrichmentRequestId String?             @map("enrichment_request_id")
+  componentVersion    String              @map("component_version")
+  promptId            String              @map("prompt_id")
+  promptVersion       String              @map("prompt_version")
+  schemaVersion       String              @map("schema_version")
+  policyVersion       String              @map("policy_version")
+  gpcVersion          String              @map("gpc_version")
+  status              GpcInvocationStatus
+  resolutionStatus    String?             @map("resolution_status")
+  resolution          Json?
+  objectCount         Int                 @default(0) @map("object_count")
+  mappedCount         Int                 @default(0) @map("mapped_count")
+  candidateCount      Int                 @default(0) @map("candidate_count")
+  promptExecutionId   String?             @map("prompt_execution_id") @db.Uuid
+  modelProvider       String?             @map("model_provider")
+  modelName           String?             @map("model_name")
+  latencyMs           Int                 @map("latency_ms")
+  error               Json?
+  createdAt           DateTime            @default(now()) @map("created_at")
+  mappings            GpcMapping[]
+
+  @@index([conversationId, createdAt])
+  @@index([turnId])
+  @@index([runId])
+  @@index([csreRequestId])
+  @@map("gpc_resolutions")
+}
+
+/// One mapping fact per object (GPC Resolver §47, §75.2): MarketConcept → sovereign GPC node with
+/// state, confidence, reason codes, candidate provenance and full lineage back to CSRE/Enrichment.
+model GpcMapping {
+  id                  String        @id @default(uuid()) @db.Uuid
+  resolutionId        String        @map("resolution_id") @db.Uuid
+  resolution          GpcResolution @relation(fields: [resolutionId], references: [id], onDelete: Cascade)
+  requestId           String        @map("request_id")
+  csreRequestId       String        @map("csre_request_id")
+  enrichmentRequestId String?       @map("enrichment_request_id")
+  semanticObjectId    String?       @map("semantic_object_id") @db.Uuid
+  enrichmentProfileId String?       @map("enrichment_profile_id") @db.Uuid
+  conversationId      String        @map("conversation_id") @db.Uuid
+  turnId              String        @map("turn_id") @db.Uuid
+  objectId            String        @map("object_id")
+  concept             String
+  marketConceptId     String?       @map("market_concept_id")
+  entityType          String        @map("entity_type")
+  state               String
+  gpcCode             String?       @map("gpc_code")
+  gpcLevel            String?       @map("gpc_level")
+  gpcTitle            String?       @map("gpc_title")
+  mappingConfidence   Float         @map("mapping_confidence")
+  reasonCodes         String[]      @default([]) @map("reason_codes")
+  gpcVersion          String        @map("gpc_version")
+  resolverVersion     String        @map("resolver_version")
+  candidateCodes      String[]      @default([]) @map("candidate_codes")
+  mapping             Json
+  createdAt           DateTime      @default(now()) @map("created_at")
+
+  @@unique([resolutionId, objectId])
+  @@index([conversationId, createdAt])
+  @@index([semanticObjectId, createdAt])
+  @@index([gpcCode])
+  @@index([marketConceptId])
+  @@index([state])
+  @@map("gpc_mappings")
+}
+
+// ── WRS v4.4 (Phase 7) ───────────────────────────────────────────────────────────────────────
+
+enum WrsInvocationStatus {
+  SUCCESS
+  NO_RELIABLE_EVIDENCE
+  PROVIDER_UNAVAILABLE
+  TEMPORARY_FAILURE
+  SCHEMA_FAILURE
+  POLICY_FAILURE
+}
+
+/// One WRS retrieval operation (WRS §18.3, §20.1): the consumer identity, the queries run, the
+/// validated envelope and the model lineage. `request_id` is the correlation key downstream.
+model WrsRetrieval {
+  id                String              @id @default(uuid()) @db.Uuid
+  requestId         String              @unique @map("request_id")
+  conversationId    String?             @map("conversation_id")
+  turnId            String?             @map("turn_id")
+  runId             String?             @map("run_id")
+  consumerComponent String              @map("consumer_component")
+  consumerVersion   String              @map("consumer_version")
+  consumerPurpose   String              @map("consumer_purpose")
+  question          String
+  /// Validated `wrs-request-v4` wire, so consumers (Evidence) can attribute evidence to candidates.
+  request           Json?
+  provider          String
+  componentVersion  String              @map("component_version")
+  promptId          String              @map("prompt_id")
+  promptVersion     String              @map("prompt_version")
+  schemaVersion     String              @map("schema_version")
+  status            WrsInvocationStatus
+  responseStatus    String?             @map("response_status")
+  response          Json?
+  queries           String[]            @default([])
+  sourceCount       Int                 @default(0) @map("source_count")
+  evidenceCount     Int                 @default(0) @map("evidence_count")
+  promptExecutionId String?             @map("prompt_execution_id") @db.Uuid
+  modelProvider     String?             @map("model_provider")
+  modelName         String?             @map("model_name")
+  latencyMs         Int                 @map("latency_ms")
+  error             Json?
+  createdAt         DateTime            @default(now()) @map("created_at")
+  evidence          WrsEvidence[]
+
+  @@index([conversationId, createdAt])
+  @@index([turnId])
+  @@index([consumerComponent, createdAt])
+  @@map("wrs_retrievals")
+}
+
+/// One immutable evidence record per envelope item (WRS §18.3, §20.4): what the Evidence System
+/// ingests without semantic reconstruction. `evidence_id` is globally unique and never replaced.
+model WrsEvidence {
+  id                  String       @id @default(uuid()) @db.Uuid
+  retrievalId         String       @map("retrieval_id") @db.Uuid
+  retrieval           WrsRetrieval @relation(fields: [retrievalId], references: [id], onDelete: Cascade)
+  requestId           String       @map("request_id")
+  evidenceId          String       @unique @map("evidence_id")
+  consumerComponent   String       @map("consumer_component")
+  claim               String
+  kind                String
+  supports            String[]     @default([])
+  contradicts         String[]     @default([])
+  relationshipTarget  Json?        @map("relationship_target")
+  sourceId            String       @map("source_id")
+  sourceUrl           String?      @map("source_url")
+  sourceTitle         String?      @map("source_title")
+  sourceType          String       @map("source_type")
+  geographicRelevance String       @map("geographic_relevance")
+  temporalRelevance   String       @map("temporal_relevance")
+  quality             String
+  confidence          Float
+  evidence            Json
+  createdAt           DateTime     @default(now()) @map("created_at")
+
+  @@index([requestId])
+  @@index([sourceUrl])
+  @@map("wrs_evidence")
+}
+
+// ── Evidence System v4.4 (Phase 8) ───────────────────────────────────────────────────────────
+
+enum EvidencePolarity {
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+  CONTRADICTORY
+}
+
+enum KnowledgeState {
+  CANDIDATE
+  SUPPORTED
+  ESTABLISHED
+  WEAKENING
+  INACTIVE
+}
+
+enum ObservationStatus {
+  RECORDED
+  INTERPRETED
+  IGNORED
+  FAILED
+}
+
+enum GraphChangeOperation {
+  ADD
+  REINFORCE
+  DECAY
+  DEACTIVATE
+  PRUNE
+  REJECT
+}
+
+enum GraphChangeDecisionStatus {
+  PENDING
+  APPLIED
+  REJECTED
+  FAILED
+}
+
+/// Raw observation (Evidence §2, §13, §50.3): what happened, stored verbatim and never modified.
+model Observation {
+  id              String            @id @default(uuid()) @db.Uuid
+  observationId   String            @unique @map("observation_id")
+  observationType String            @map("observation_type")
+  sourceComponent String            @map("source_component")
+  sourceVersion   String            @map("source_version")
+  sourceEventId   String?           @map("source_event_id")
+  requestId       String?           @map("request_id")
+  conversationId  String?           @map("conversation_id")
+  turnId          String?           @map("turn_id")
+  runId           String?           @map("run_id")
+  workflowId      String?           @map("workflow_id")
+  actionId        String?           @map("action_id")
+  interactionId   String?           @map("interaction_id")
+  actorId         String?           @map("actor_id")
+  actorRole       String?           @map("actor_role")
+  channel         String?
+  country         String?
+  region          String?
+  context         Json              @default("{}")
+  payload         Json
+  rawText         String?           @map("raw_text")
+  observedAt      DateTime          @map("observed_at")
+  ingestedAt      DateTime          @default(now()) @map("ingested_at")
+  status          ObservationStatus @default(RECORDED)
+  evidenceCount   Int               @default(0) @map("evidence_count")
+  error           Json?
+  evidence        Evidence[]
+
+  @@index([runId])
+  @@index([requestId])
+  @@index([conversationId, observedAt])
+  @@index([observationType, observedAt])
+  @@index([actorId, observedAt])
+  @@map("observations")
+}
+
+/// Immutable evidence (Evidence §15, §52.2): one interpretation of one observation about one assertion.
+model Evidence {
+  id              String           @id @default(uuid()) @db.Uuid
+  evidenceId      String           @unique @map("evidence_id")
+  observationId   String           @map("observation_id")
+  observation     Observation      @relation(fields: [observationId], references: [observationId], onDelete: Cascade)
+  assertionId     String           @map("assertion_id")
+  subject         String
+  predicate       String
+  object          String
+  subjectType     String           @map("subject_type")
+  objectType      String           @map("object_type")
+  subjectLabel    String           @map("subject_label")
+  objectLabel     String           @map("object_label")
+  polarity        EvidencePolarity
+  strength        Float
+  kind            String
+  claim           String
+  supports        String[]         @default([])
+  contradicts     String[]         @default([])
+  provenance      Json
+  independenceKey String           @map("independence_key")
+  observedAt      DateTime         @map("observed_at")
+  validFrom       DateTime?        @map("valid_from")
+  validUntil      DateTime?        @map("valid_until")
+  country         String?
+  region          String?
+  sourcePayload   Json             @map("source_payload")
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  @@index([assertionId, observedAt])
+  @@index([observationId])
+  @@index([independenceKey])
+  @@index([subject, predicate])
+  @@index([predicate, object])
+  @@map("evidence")
+}
+
+/// Relationship-first belief state (Evidence §20, §27, §47.10): the current, recomputable belief per assertion.
+model EvidenceAssertion {
+  id                     String         @id @default(uuid()) @db.Uuid
+  assertionId            String         @unique @map("assertion_id")
+  subject                String
+  predicate              String
+  object                 String
+  subjectType            String         @map("subject_type")
+  objectType             String         @map("object_type")
+  subjectLabel           String         @map("subject_label")
+  objectLabel            String         @map("object_label")
+  country                String?
+  region                 String?
+  knowledgeType          String         @map("knowledge_type")
+  prior                  Float?
+  belief                 Float          @default(0)
+  direction              String         @default("STABLE")
+  state                  KnowledgeState @default(CANDIDATE)
+  observationCount       Int            @default(0) @map("observation_count")
+  evidenceCount          Int            @default(0) @map("evidence_count")
+  independentSourceCount Int            @default(0) @map("independent_source_count")
+  positiveCount          Int            @default(0) @map("positive_count")
+  negativeCount          Int            @default(0) @map("negative_count")
+  neutralCount           Int            @default(0) @map("neutral_count")
+  contradictoryCount     Int            @default(0) @map("contradictory_count")
+  requiresMoreEvidence   Boolean        @default(true) @map("requires_more_evidence")
+  firstObservedAt        DateTime?      @map("first_observed_at")
+  lastObservedAt         DateTime?      @map("last_observed_at")
+  lastFusedAt            DateTime?      @map("last_fused_at")
+  policyVersion          String         @map("policy_version")
+  fusion                 Json?
+  decisionCount          Int            @default(0) @map("decision_count")
+  createdAt              DateTime       @default(now()) @map("created_at")
+  updatedAt              DateTime       @updatedAt @map("updated_at")
+
+  @@index([subject])
+  @@index([object])
+  @@index([predicate, belief])
+  @@index([knowledgeType, state])
+  @@map("evidence_assertions")
+}
+
+/// Score journey (Evidence §44): every belief change with its reason and evidence.
+model BeliefHistory {
+  id            String   @id @default(uuid()) @db.Uuid
+  assertionId   String   @map("assertion_id")
+  score         Float
+  previousScore Float?   @map("previous_score")
+  reason        String
+  evidenceIds   String[] @default([]) @map("evidence_ids")
+  policyVersion String   @map("policy_version")
+  recordedAt    DateTime @default(now()) @map("recorded_at")
+
+  @@index([assertionId, recordedAt])
+  @@map("belief_history")
+}
+
+/// Durable market knowledge (Evidence §17, §36, §54.2) with evidence lineage; never self-proving.
+model Knowledge {
+  id              String         @id @default(uuid()) @db.Uuid
+  knowledgeId     String         @unique @map("knowledge_id")
+  assertionId     String         @map("assertion_id")
+  type            String
+  claim           Json
+  scope           Json           @default("{}")
+  confidence      Float
+  state           KnowledgeState @default(CANDIDATE)
+  supportedBy     String[]       @default([]) @map("supported_by")
+  contradictedBy  String[]       @default([]) @map("contradicted_by")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  lastValidatedAt DateTime?      @map("last_validated_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@index([type, state])
+  @@index([assertionId])
+  @@map("knowledge")
+}
+
+/// GraphChangeDecision (Evidence §53.2; MKG §12): Evidence's hand-off to MKG, never a direct graph write.
+model GraphChangeDecision {
+  id                String                    @id @default(uuid()) @db.Uuid
+  decisionId        String                    @unique @map("decision_id")
+  assertionId       String                    @map("assertion_id")
+  operation         GraphChangeOperation
+  relevanceDecision String                    @map("relevance_decision")
+  subjectId         String                    @map("subject_id")
+  predicate         String
+  objectId          String                    @map("object_id")
+  beliefScore       Float                     @map("belief_score")
+  reasonCodes       String[]                  @default([]) @map("reason_codes")
+  evidenceIds       String[]                  @default([]) @map("evidence_ids")
+  policyVersion     String                    @map("policy_version")
+  correlationId     String                    @map("correlation_id")
+  runId             String?                   @map("run_id")
+  status            GraphChangeDecisionStatus @default(PENDING)
+  failure           String?
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  appliedAt         DateTime?                 @map("applied_at")
+
+  @@index([status, createdAt])
+  @@index([assertionId, createdAt])
+  @@index([runId])
+  @@map("graph_change_decisions")
 }

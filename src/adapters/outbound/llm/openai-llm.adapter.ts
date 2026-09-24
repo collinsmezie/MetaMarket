@@ -7,6 +7,7 @@ import type {
   StructuredRequest,
 } from '../../../domain/ports/outbound/llm-provider.port';
 import { LlmProviderError } from '../../../domain/ports/outbound/llm-provider.port';
+import { decodeStrictOutput, toStrictOutputSchema } from '../../../platform/contracts/strict-output-schema';
 
 /**
  * True for OpenAI reasoning models (the o-series and GPT-5 family).
@@ -52,12 +53,13 @@ export class OpenAiLlmAdapter implements LlmProviderPort {
     // chat-model parameters to one produces a 400 on every single call — which the fallback
     // chain silently absorbs, so the deployment looks healthy while the primary provider is
     // completely unusable and every request is paying a fallback's latency.
-    const reasoning = isReasoningModel(this.model);
+    const model = request.model ?? this.model;
+    const reasoning = isReasoningModel(model);
 
     try {
       const completion = await this.client.chat.completions.create(
         {
-          model: this.model,
+          model,
           ...(reasoning ? {} : { temperature: request.temperature ?? 0 }),
           ...(request.maxOutputTokens === undefined
             ? {}
@@ -73,7 +75,9 @@ export class OpenAiLlmAdapter implements LlmProviderPort {
             json_schema: {
               name: request.schemaName,
               strict: true,
-              schema: request.schema as Record<string, unknown>,
+              // Strict mode accepts only a subset of JSON Schema; the full TDR schema (with its
+              // conditionals and value constraints) is enforced by the caller afterwards.
+              schema: toStrictOutputSchema(request.schema),
             },
           },
         },
@@ -104,7 +108,9 @@ export class OpenAiLlmAdapter implements LlmProviderPort {
       }
 
       return {
-        text,
+        // Free-form maps travel as entry lists under strict mode; fold them back so callers see
+        // the wire contract, not the model-facing projection.
+        text: decodeOutputText(text, request.schema),
         model: completion.model,
         usage:
           completion.usage === undefined
@@ -149,5 +155,14 @@ export class OpenAiLlmAdapter implements LlmProviderPort {
   /** Exposed for health reporting; the model is a deployment fact worth surfacing. */
   describe(): { provider: string; model: string; configured: boolean } {
     return { provider: this.name, model: this.model, configured: this.isConfigured() };
+  }
+}
+
+/** Parses, decodes the strict-schema projection and re-serialises; unparsable text passes through for the caller's own error path. */
+function decodeOutputText(text: string, schema: Readonly<Record<string, unknown>>): string {
+  try {
+    return JSON.stringify(decodeStrictOutput(schema, JSON.parse(text)));
+  } catch {
+    return text;
   }
 }

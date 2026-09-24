@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/wrs-response-v4.json",
+  "title": "WRS Response v4",
+  "description": "Stable WRS evidence envelope (WRS TDR v4.4 §4, §18.2, §19–§20) with the finding/contradiction/source item shapes made explicit. Every payload valid here is valid against §18.2 verbatim.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "request_id", "consumer", "task_type", "status", "evidence", "findings", "contradictions", "sources", "confidence", "payload"],
+  "properties": {
+    "schema_version": { "const": "4.0" },
+    "request_id": { "type": "string", "minLength": 1 },
+    "consumer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component", "version", "purpose"],
+      "properties": {
+        "component": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "purpose": { "type": "string", "minLength": 1 }
+      }
+    },
+    "task_type": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["SUCCESS", "PARTIAL", "NO_RELIABLE_EVIDENCE", "ERROR"] },
+    "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "contradictions": { "type": "array", "items": { "$ref": "#/$defs/contradiction" } },
+    "sources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["overall", "evidence_quality", "evidence_consistency"],
+      "properties": {
+        "overall": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidence_quality": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidence_consistency": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "payload": { "type": "object" }
+  },
+  "$defs": {
+    "relationshipTarget": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["subject_id", "predicate", "object_id", "object_type"],
+          "properties": {
+            "subject_id": { "type": ["string", "null"] },
+            "predicate": { "type": ["string", "null"] },
+            "object_id": { "type": ["string", "null"] },
+            "object_type": { "type": ["string", "null"] }
+          }
+        },
+        { "type": "null" }
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "claim", "supports", "contradicts", "relationship_target", "quote", "source_id", "source_url", "source_title", "source_type", "geographic_relevance", "temporal_relevance", "quality", "confidence", "kind"],
+      "properties": {
+        "evidence_id": { "type": "string", "minLength": 1 },
+        "claim": { "type": "string", "minLength": 1 },
+        "supports": { "type": "array", "items": { "type": "string" } },
+        "contradicts": { "type": "array", "items": { "type": "string" } },
+        "relationship_target": { "$ref": "#/$defs/relationshipTarget" },
+        "quote": { "type": ["string", "null"] },
+        "source_id": { "type": "string", "minLength": 1 },
+        "source_url": { "type": ["string", "null"] },
+        "source_title": { "type": ["string", "null"] },
+        "source_type": { "enum": ["manufacturer", "retailer", "government", "standards", "publication", "marketplace", "forum", "other"] },
+        "geographic_relevance": { "enum": ["HIGH", "MEDIUM", "LOW", "UNKNOWN"] },
+        "temporal_relevance": { "enum": ["CURRENT", "HISTORICAL", "UNKNOWN"] },
+        "quality": { "enum": ["HIGH", "MEDIUM", "LOW"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "kind": { "enum": ["OBSERVED", "CROSS_SOURCE", "INFERENCE"] }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finding", "kind", "evidence_ids", "supports", "contradicts"],
+      "properties": {
+        "finding": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["OBSERVED", "CROSS_SOURCE", "INFERENCE", "UNRESOLVED"] },
+        "evidence_ids": { "type": "array", "items": { "type": "string" } },
+        "supports": { "type": "array", "items": { "type": "string" } },
+        "contradicts": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "contradiction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim_a", "claim_b", "evidence_ids", "likely_reason", "effect_on_confidence"],
+      "properties": {
+        "claim_a": { "type": "string", "minLength": 1 },
+        "claim_b": { "type": "string", "minLength": 1 },
+        "evidence_ids": { "type": "array", "items": { "type": "string" } },
+        "likely_reason": { "enum": ["GEOGRAPHIC", "TEMPORAL", "VARIANT", "SEMANTIC_AMBIGUITY", "UNKNOWN"] },
+        "effect_on_confidence": { "type": "string" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "url", "title", "source_type", "quality", "relevance"],
+      "properties": {
+        "source_id": { "type": "string", "minLength": 1 },
+        "url": { "type": ["string", "null"] },
+        "title": { "type": ["string", "null"] },
+        "source_type": { "enum": ["manufacturer", "retailer", "government", "standards", "publication", "marketplace", "forum", "other"] },
+        "quality": { "enum": ["HIGH", "MEDIUM", "LOW"] },
+        "relevance": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}

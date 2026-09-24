@@ -1,0 +1,492 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/csre-resolution-v5.json",
+  "title": "CSRE Resolution v5",
+  "description": "Canonical CSRE output (CSRE TDR v5.4 §27.2), with the item shapes §11, §14A, §15 and §28.1 describe made explicit. Every payload valid here is valid against the §27.2 text verbatim.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "resolution_status",
+    "original_message",
+    "objects",
+    "context",
+    "clarification",
+    "evidence"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "5.0"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "resolution_status": {
+      "enum": [
+        "RESOLVED",
+        "AMBIGUOUS",
+        "UNRESOLVED",
+        "COMPOSITE",
+        "NON_REFERENTIAL"
+      ]
+    },
+    "original_message": {
+      "type": "string"
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/object"
+      }
+    },
+    "context": {
+      "$ref": "#/$defs/context"
+    },
+    "clarification": {
+      "$ref": "#/$defs/clarification"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidenceRef"
+      }
+    }
+  },
+  "$defs": {
+    "semanticOrigin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phrase",
+        "concept",
+        "market_concept_id",
+        "concept_status",
+        "relationship",
+        "origin",
+        "request_id",
+        "semantic_confidence"
+      ],
+      "properties": {
+        "phrase": {
+          "type": "string",
+          "minLength": 1
+        },
+        "concept": {
+          "type": "string",
+          "minLength": 1
+        },
+        "market_concept_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "concept_status": {
+          "enum": [
+            "KNOWN",
+            "PROPOSED"
+          ]
+        },
+        "relationship": {
+          "const": "EXPRESSES"
+        },
+        "origin": {
+          "const": "CSRE"
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "semantic_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "commercialInterpretation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relevance",
+        "commercial_offering",
+        "reason",
+        "confidence"
+      ],
+      "properties": {
+        "relevance": {
+          "enum": [
+            "DIRECT_PRODUCT",
+            "DIRECT_SERVICE",
+            "COMMERCIAL_CATEGORY",
+            "COMMERCIAL_MATERIAL",
+            "COMMERCIAL_RESOURCE",
+            "COMMERCIAL_CAPABILITY",
+            "COMMERCIAL_ENTITY",
+            "NON_COMMERCIAL",
+            "UNKNOWN"
+          ]
+        },
+        "commercial_offering": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "meaning",
+        "entity_type",
+        "definition",
+        "plausibility"
+      ],
+      "properties": {
+        "meaning": {
+          "type": "string",
+          "minLength": 1
+        },
+        "entity_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "definition": {
+          "type": "string"
+        },
+        "plausibility": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "objects",
+        "context"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "context": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "object_id",
+        "semantic_origin",
+        "surface_form",
+        "canonical_form",
+        "entity_type",
+        "definition",
+        "brand",
+        "model",
+        "attributes",
+        "aliases",
+        "commercial_interpretation",
+        "confidence",
+        "ambiguity",
+        "functional_context",
+        "relationships"
+      ],
+      "properties": {
+        "object_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "semantic_origin": {
+          "$ref": "#/$defs/semanticOrigin"
+        },
+        "surface_form": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canonical_form": {
+          "type": "string",
+          "minLength": 1
+        },
+        "entity_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "definition": {
+          "type": "string"
+        },
+        "brand": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "attributes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "null"
+            ]
+          }
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "commercial_interpretation": {
+          "$ref": "#/$defs/commercialInterpretation"
+        },
+        "confidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "semantic_resolution",
+            "commercial_relevance"
+          ],
+          "properties": {
+            "semantic_resolution": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "commercial_relevance": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "ambiguity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "present",
+            "remaining_candidates"
+          ],
+          "properties": {
+            "present": {
+              "type": "boolean"
+            },
+            "remaining_candidates": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/candidate"
+              }
+            }
+          }
+        },
+        "functional_context": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "relationships": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/relationship"
+          }
+        }
+      }
+    },
+    "venue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expression",
+        "canonical_venue",
+        "venue_type"
+      ],
+      "properties": {
+        "expression": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canonical_venue": {
+          "type": "string",
+          "minLength": 1
+        },
+        "venue_type": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "regionalContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "country",
+        "region",
+        "regional_terms",
+        "regional_interpretation_used"
+      ],
+      "properties": {
+        "country": {
+          "type": "string"
+        },
+        "region": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "regional_terms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "regional_interpretation_used": {
+          "type": "boolean"
+        }
+      }
+    },
+    "locationContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expression",
+        "normalized",
+        "confidence"
+      ],
+      "properties": {
+        "expression": {
+          "type": "string"
+        },
+        "normalized": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "venues",
+        "regional_context",
+        "functional_context",
+        "location_context",
+        "qualifiers"
+      ],
+      "properties": {
+        "venues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/venue"
+          }
+        },
+        "regional_context": {
+          "$ref": "#/$defs/regionalContext"
+        },
+        "functional_context": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "location_context": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/locationContext"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "qualifiers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "clarification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "question"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "question": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id",
+        "source",
+        "claim"
+      ],
+      "properties": {
+        "evidence_id": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "claim": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/evidence-request-v4.json",
+  "title": "Evidence Request v4",
+  "description": "Evidence System request envelope (Evidence TDR v4.4 §30, §50.1). Requests may target a relationship, not only a node. Optional fields beyond §50.1 (semantic_target, relationship_target) are §30's addressable-assertion inputs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "request_id", "consumer", "task", "objects", "context", "candidate_interpretations", "required_evidence"],
+  "properties": {
+    "schema_version": { "const": "4.0" },
+    "request_id": { "type": "string", "minLength": 1 },
+    "consumer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component", "version"],
+      "properties": {
+        "component": { "enum": ["CSRE", "ENRICHMENT", "WRS", "GPC_RESOLVER", "MATCHING_FANOUT", "CAPABILITY_PROJECTION", "MKG", "OTHER"] },
+        "version": { "type": "string" }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "question"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "question": { "type": "string" }
+      }
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "surface_form"],
+        "properties": {
+          "id": { "type": "string" },
+          "surface_form": { "type": "string" },
+          "market_concept_id": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "semantic_target": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["phrase", "concept"],
+          "properties": {
+            "phrase": { "type": "string" },
+            "concept": { "type": ["string", "null"] },
+            "relationship": { "type": "string" },
+            "origin": { "type": "string" }
+          }
+        },
+        { "type": "null" }
+      ]
+    },
+    "relationship_target": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["subject_id", "predicate", "object_id"],
+          "properties": {
+            "subject_id": { "type": ["string", "null"] },
+            "predicate": { "type": ["string", "null"] },
+            "object_id": { "type": ["string", "null"] }
+          }
+        },
+        { "type": "null" }
+      ]
+    },
+    "context": { "type": "object" },
+    "candidate_interpretations": { "type": "array", "items": { "type": "string" } },
+    "required_evidence": { "type": "array", "items": { "type": "string" } }
+  }
+}

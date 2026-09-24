@@ -1,8 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Interval } from '@nestjs/schedule';
 import type { Prisma } from '@prisma/client';
 import type { DomainEvent } from '../../../domain/ports/outbound/event-publisher.port';
+import {
+  DISTRIBUTED_LOCK,
+  type DistributedLockPort,
+} from '../../../domain/ports/outbound/distributed-lock.port';
+import { LeaderLock } from '../../../platform/scheduling/leader-lock';
 import { PrismaService } from '../persistence/prisma.service';
 
 /** How often unpublished events are swept. */
@@ -30,11 +35,15 @@ export class OutboxRelay {
   private readonly logger = new Logger(OutboxRelay.name);
   /** Prevents overlapping sweeps when a batch outlives the interval. */
   private running = false;
+  private readonly leader: LeaderLock;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly emitter: EventEmitter2,
-  ) {}
+    @Inject(DISTRIBUTED_LOCK) locks: DistributedLockPort,
+  ) {
+    this.leader = new LeaderLock(locks);
+  }
 
   @Interval(RELAY_INTERVAL_MS)
   async relayPending(): Promise<void> {
@@ -42,13 +51,17 @@ export class OutboxRelay {
     this.running = true;
 
     try {
-      const pending = await this.prisma.outboxEvent.findMany({
-        where: { publishedAt: null, attempts: { lt: MAX_ATTEMPTS } },
-        orderBy: { occurredAt: 'asc' },
-        take: BATCH_SIZE,
-      });
+      // One replica sweeps per tick (Directive §27): without the leader lock every replica
+      // re-dispatched the same rows to its own in-process subscribers.
+      await this.leader.runExclusively('outbox-relay', RELAY_INTERVAL_MS * 2, async () => {
+        const pending = await this.prisma.outboxEvent.findMany({
+          where: { publishedAt: null, attempts: { lt: MAX_ATTEMPTS } },
+          orderBy: { occurredAt: 'asc' },
+          take: BATCH_SIZE,
+        });
 
-      for (const row of pending) await this.relayOne(row);
+        for (const row of pending) await this.relayOne(row);
+      });
     } catch (error) {
       this.logger.error(`Outbox sweep failed: ${error instanceof Error ? error.message : String(error)}`);
     } finally {

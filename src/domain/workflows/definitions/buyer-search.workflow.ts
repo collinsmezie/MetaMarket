@@ -300,8 +300,10 @@ const resolveDemand = {
       };
     }
 
-    const extractedProduct =
-      trigger.semanticRequest?.products[0]?.normalized ?? trigger.semanticRequest?.products[0]?.raw ?? null;
+    // A service request ("a plumber") names the service; never fall through to "your item"
+    // when the resolver told us exactly what was asked for.
+    const requested = trigger.semanticRequest?.products[0] ?? trigger.semanticRequest?.services[0] ?? null;
+    const extractedProduct = requested?.normalized ?? requested?.raw ?? null;
 
     if (result.outcome === 'no_capability') {
       const resolvedName = extractedProduct ?? 'your item';

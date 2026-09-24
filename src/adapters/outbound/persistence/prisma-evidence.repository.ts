@@ -42,8 +42,10 @@ export class PrismaEvidenceRepository implements EvidenceRepositoryPort {
           producer: event.producer,
           vendorId: event.vendorId ?? null,
           customerId: event.customerId ?? null,
-          requestId: event.requestId ?? null,
-          conversationId: event.conversationId ?? null,
+          // Legacy capture table types these as UUIDs; platform request ids (`req_…`, `…:wrs:n`) are
+          // opaque strings, so only UUID-shaped values are stored here (Phase 8 replaces this table).
+          requestId: uuidOrNull(event.requestId),
+          conversationId: uuidOrNull(event.conversationId),
           product: subject.product,
           capability: subject.capability,
           metadata: (event.payload ?? {}) as Prisma.InputJsonValue,
@@ -308,4 +310,10 @@ export class PrismaEvidenceRepository implements EvidenceRepositoryPort {
       lastObservedAt: row.lastObservedAt,
     };
   }
+}
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function uuidOrNull(value: string | undefined | null): string | null {
+  return typeof value === 'string' && UUID_PATTERN.test(value) ? value : null;
 }

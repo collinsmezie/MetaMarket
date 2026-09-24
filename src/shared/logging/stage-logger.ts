@@ -3,6 +3,7 @@ import type { Logger } from 'pino';
 import pino from 'pino';
 import { AppConfigService } from '../../config/app-config.service';
 import type { StageLog, StageLoggerPort } from '../../domain/ports/outbound/stage-logger.port';
+import { RequestContextStore } from '../../platform/correlation/request-context';
 
 /**
  * Implements the mandated stage log format (Execution.md §3):
@@ -36,6 +37,14 @@ const REDACTED_KEYS = new Set([
 ]);
 
 const REDACTION_PLACEHOLDER = '[redacted]';
+
+interface CorrelationIds {
+  readonly correlationId?: string;
+  readonly requestId?: string;
+  readonly conversationId?: string;
+  readonly turnId?: string;
+  readonly runId?: string;
+}
 
 /** Beyond this, logged payloads are truncated rather than flooding the terminal. */
 const MAX_RENDERED_LENGTH = 2_000;
@@ -127,10 +136,10 @@ export class StageLogger implements StageLoggerPort {
   }
 
   stage(log: StageLog): void {
-    const correlationId = log.correlationId ?? this.correlationId;
+    const ids = this.correlation(log.correlationId);
 
     if (this.pretty) {
-      this.logger.info(this.renderBlock(log, correlationId));
+      this.logger.info(this.renderBlock(log, ids));
       return;
     }
 
@@ -140,18 +149,18 @@ export class StageLogger implements StageLoggerPort {
       action: log.action,
       input: sanitizeForLog(log.input),
       output: sanitizeForLog(log.output),
-      correlationId,
+      ...ids,
       durationMs: log.durationMs,
     });
   }
 
   stageFailed(log: Omit<StageLog, 'output'> & { error: unknown }): void {
-    const correlationId = log.correlationId ?? this.correlationId;
+    const ids = this.correlation(log.correlationId);
     const error = log.error;
     const rendered = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
 
     if (this.pretty) {
-      const header = this.header(log.component, log.stage, correlationId, log.durationMs);
+      const header = this.header(log.component, log.stage, ids, log.durationMs);
       this.logger.error(
         [header, `Input  : ${render(log.input)}`, `Action : ${log.action}`, `FAILED : ${rendered}`].join(
           '\n',
@@ -167,21 +176,40 @@ export class StageLogger implements StageLoggerPort {
       input: sanitizeForLog(log.input),
       // Named `error`, never `output`: a failure must not be readable as a result.
       error: sanitizeForLog(error),
-      correlationId,
+      ...ids,
       durationMs: log.durationMs,
     });
   }
 
-  private header(component: string, stage: string, correlationId?: string, durationMs?: number): string {
+  /**
+   * Correlation identifiers for this log line (Overarching §25–§26). An explicit id on the
+   * log wins, then a correlated clone's id, then the ambient request context — so every stage
+   * executed inside a turn is stamped with the turn's ids without the caller threading them.
+   */
+  private correlation(explicit?: string): CorrelationIds {
+    const context = RequestContextStore.current();
+    return {
+      correlationId: explicit ?? this.correlationId ?? context?.correlationId,
+      requestId: context?.requestId,
+      conversationId: context?.conversationId ?? undefined,
+      turnId: context?.turnId ?? undefined,
+      runId: context?.runId ?? undefined,
+    };
+  }
+
+  private header(component: string, stage: string, ids: CorrelationIds, durationMs?: number): string {
     const parts = [`[${new Date().toISOString()}]`, `[${component}]`, `[${stage}]`];
-    if (correlationId !== undefined) parts.push(`(${correlationId})`);
+    const tags = [ids.runId ?? ids.conversationId, ids.correlationId].filter(
+      (value): value is string => value !== undefined,
+    );
+    if (tags.length > 0) parts.push(`(${tags.join(' ')})`);
     if (durationMs !== undefined) parts.push(`${durationMs}ms (${(durationMs / 1000).toFixed(2)}s)`);
     return parts.join(' ');
   }
 
-  private renderBlock(log: StageLog, correlationId?: string): string {
+  private renderBlock(log: StageLog, ids: CorrelationIds): string {
     return [
-      this.header(log.component, log.stage, correlationId, log.durationMs),
+      this.header(log.component, log.stage, ids, log.durationMs),
       `Input  : ${render(log.input)}`,
       `Action : ${log.action}`,
       `Output : ${render(log.output)}`,

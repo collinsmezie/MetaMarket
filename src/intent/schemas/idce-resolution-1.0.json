@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/idce-resolution-1.0.json",
+  "title": "IDCE Resolution",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["resolution_status", "intents", "relations", "clarification", "unresolved", "context_used", "model_metadata"],
+  "properties": {
+    "resolution_status": { "enum": ["RESOLVED", "PARTIAL", "AMBIGUOUS", "CONFLICTING", "INCOMPLETE", "UNSUPPORTED"] },
+    "intents": { "type": "array", "items": { "$ref": "#/$defs/intent" } },
+    "relations": { "type": "array", "items": { "$ref": "#/$defs/relation" } },
+    "clarification": { "anyOf": [{ "$ref": "#/$defs/clarification" }, { "type": "null" }] },
+    "unresolved": { "type": "array", "items": { "$ref": "#/$defs/unresolvedIssue" } },
+    "context_used": { "$ref": "#/$defs/contextUsed" },
+    "model_metadata": { "$ref": "#/$defs/modelMetadata" }
+  },
+  "$defs": {
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent_id", "type", "role", "status", "confidence", "explicitness", "priority", "scope", "evidence", "dependencies", "related_intents", "constraints", "source_spans", "routing_hints"],
+      "properties": {
+        "intent_id": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "minLength": 1 },
+        "role": { "enum": ["PRIMARY", "SECONDARY", "SUPPORTING", "DEPENDENT"] },
+        "status": { "enum": ["RESOLVED", "AMBIGUOUS", "INCOMPLETE", "CONFLICTING", "UNSUPPORTED"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "explicitness": { "enum": ["EXPLICIT", "IMPLICIT", "CONTEXTUAL"] },
+        "priority": { "type": "number", "minimum": 0, "maximum": 1 },
+        "scope": { "$ref": "#/$defs/scope" },
+        "evidence": { "$ref": "#/$defs/evidence" },
+        "dependencies": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "related_intents": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "constraints": { "type": "array", "items": { "$ref": "#/$defs/constraint" } },
+        "source_spans": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "routing_hints": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "object_ids", "workflow_ids", "conversation_scope"],
+      "properties": {
+        "type": { "enum": ["OBJECT", "OBJECT_SET", "CONVERSATION", "ACCOUNT", "VENDOR", "LOCATION", "VENUE", "WORKFLOW", "TRANSACTION", "MESSAGE", "SYSTEM"] },
+        "object_ids": { "type": "array", "items": { "type": "string" } },
+        "workflow_ids": { "type": "array", "items": { "type": "string" } },
+        "conversation_scope": { "type": "boolean" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["explicit", "implicit", "context_used", "signals"],
+      "properties": {
+        "explicit": { "type": "boolean" },
+        "implicit": { "type": "boolean" },
+        "context_used": { "type": "boolean" },
+        "signals": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "constraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "value", "polarity", "source_span"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "value": {},
+        "polarity": { "enum": ["POSITIVE", "NEGATIVE"] },
+        "source_span": { "type": "string", "minLength": 1 }
+      }
+    },
+    "relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "type", "to"],
+      "properties": {
+        "from": { "type": "string", "minLength": 1 },
+        "to": { "type": "string", "minLength": 1 },
+        "type": { "enum": ["DEPENDS_ON", "REQUIRES", "PRECEDES", "SUPPORTS", "REFINES", "CONTRADICTS", "ALTERNATIVE_TO", "CORRECTS", "CANCELS", "SUPERSEDES"] }
+      }
+    },
+    "clarification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "reason", "target_intent_ids", "question", "blocking", "expected_resolution"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "reason": { "enum": ["INTENT_SCOPE_AMBIGUITY", "MISSING_REQUIRED_INFORMATION", "CONFLICTING_OBJECTIVE", "UNRESOLVED_REFERENCE", "UNRESOLVED_CONTEXT", "OTHER"] },
+        "target_intent_ids": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "question": { "type": ["string", "null"] },
+        "blocking": { "type": "boolean" },
+        "expected_resolution": { "type": ["string", "null"] }
+      }
+    },
+    "unresolvedIssue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issue_id", "type", "status", "description", "related_intent_ids", "source_spans"],
+      "properties": {
+        "issue_id": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["AMBIGUOUS", "INCOMPLETE", "CONFLICTING", "UNRESOLVED"] },
+        "description": { "type": "string", "minLength": 1 },
+        "related_intent_ids": { "type": "array", "items": { "type": "string" } },
+        "source_spans": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "contextUsed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["conversation_history", "active_workflows", "semantic_objects", "location", "venue"],
+      "properties": {
+        "conversation_history": { "type": "boolean" },
+        "active_workflows": { "type": "boolean" },
+        "semantic_objects": { "type": "boolean" },
+        "location": { "type": "boolean" },
+        "venue": { "type": "boolean" }
+      }
+    },
+    "modelMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prompt_version", "schema_version"],
+      "properties": {
+        "prompt_version": { "type": "string", "minLength": 1 },
+        "schema_version": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "clarification": {
+            "type": "object",
+            "properties": { "required": { "const": true } },
+            "required": ["required"]
+          }
+        },
+        "required": ["clarification"]
+      },
+      "then": {
+        "properties": {
+          "clarification": {
+            "type": "object",
+            "properties": {
+              "question": { "type": "string", "minLength": 1 },
+              "target_intent_ids": { "type": "array", "minItems": 1 }
+            },
+            "required": ["question", "target_intent_ids"]
+          }
+        }
+      }
+    }
+  ]
+}

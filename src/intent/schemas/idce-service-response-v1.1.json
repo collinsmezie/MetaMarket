@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/idce-service-response-v1.1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "component",
+    "component_version",
+    "conversation_id",
+    "turn_id",
+    "run_id",
+    "status",
+    "resolution",
+    "error"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.1" },
+    "request_id": { "type": "string", "minLength": 1 },
+    "component": { "const": "IDCE" },
+    "component_version": { "type": "string", "pattern": "^1\\.[0-9]+$" },
+    "conversation_id": { "type": "string", "minLength": 1 },
+    "turn_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["SUCCESS", "PARTIAL", "ERROR"] },
+    "resolution": {
+      "anyOf": [{ "$ref": "https://metamarket.local/schemas/idce-resolution-1.0.json" }, { "type": "null" }]
+    },
+    "error": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "message", "retryable"],
+          "properties": {
+            "code": { "type": "string", "minLength": 1 },
+            "message": { "type": "string", "minLength": 1 },
+            "retryable": { "type": "boolean" }
+          }
+        },
+        { "type": "null" }
+      ]
+    }
+  }
+}

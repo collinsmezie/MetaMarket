@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/gpc-candidate-v4.json",
+  "title": "GPC Candidate v4",
+  "description": "A retrieved sovereign taxonomy node with provenance (GPC Resolver TDR v4.4 §46, §93A.2, §76.3).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["gpc_code", "level", "title", "definition", "segment", "family", "class", "brick", "retrieval_sources", "retrieval_score"],
+  "properties": {
+    "gpc_code": { "type": "string", "minLength": 1 },
+    "level": { "enum": ["SEGMENT", "FAMILY", "CLASS", "BRICK"] },
+    "title": { "type": "string", "minLength": 1 },
+    "definition": { "type": ["string", "null"] },
+    "segment": { "$ref": "#/$defs/lineage" },
+    "family": { "$ref": "#/$defs/lineage" },
+    "class": { "$ref": "#/$defs/lineage" },
+    "brick": { "$ref": "#/$defs/lineage" },
+    "retrieval_sources": { "type": "array", "items": { "enum": ["VECTOR", "LEXICAL", "ALIAS", "KNOWLEDGE", "EXACT"] } },
+    "retrieval_score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "gpc_version": { "type": "string" },
+    "for_object_id": { "type": "string" }
+  },
+  "$defs": {
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": { "type": "string" },
+        "title": { "type": "string" }
+      }
+    }
+  }
+}

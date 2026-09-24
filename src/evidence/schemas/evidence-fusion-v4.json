@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/evidence-fusion-v4.json",
+  "title": "Evidence Fusion v4",
+  "description": "Evidence TDR v4.4 §51.2 verbatim. Produced by the deterministic fusion policy and validated before any belief mutation (§50.8).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "relationship_id", "current_score", "direction", "evidence_summary", "supporting_evidence_ids", "contradictory_evidence_ids", "requires_more_evidence"],
+  "properties": {
+    "schema_version": { "const": "4.0" },
+    "relationship_id": { "type": "string" },
+    "current_score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "direction": { "enum": ["INCREASING", "DECREASING", "STABLE", "UNCERTAIN"] },
+    "evidence_summary": { "type": "string" },
+    "supporting_evidence_ids": { "type": "array", "items": { "type": "string" } },
+    "contradictory_evidence_ids": { "type": "array", "items": { "type": "string" } },
+    "requires_more_evidence": { "type": "boolean" }
+  }
+}

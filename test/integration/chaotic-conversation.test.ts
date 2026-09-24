@@ -2,16 +2,15 @@ import { CHAOS_TRANSCRIPT } from '../harness/chaos-transcript';
 import { ChaosHarness, formatScorecard, type Scorecard } from '../harness/conversation-harness';
 
 /**
- * Chaos replay: the transcript from Conversation-Core-Comparison TDR §3, driven through the
- * real pipeline on both channels with a scripted-correct LLM.
+ * Chaos replay (MCOS TDR v4.4 §52): the canonical transcript driven through the real pipeline —
+ * turn assembly, the LangGraph orchestrator, the workflow engine — on both channels with a
+ * scripted-correct LLM.
  *
  * This is a *measurement*, not a acceptance suite — the scorecard it prints is what the two
  * branches are compared on (TDR §7). Deliberately few assertions: they pin the two facts that
  * must not drift silently, and the printed scorecard carries everything else.
  *
- * The gaps recorded below are the baseline this branch starts from. When segmentation and the
- * PlatformInfo workflow land, these expectations invert — which is the point of writing them
- * down as code rather than prose.
+ * Every expectation here is a Definition-of-Done item for the orchestrator (MCOS §60).
  */
 
 describe('Chaotic conversation replay', () => {
@@ -77,13 +76,15 @@ describe('Chaotic conversation replay', () => {
       expect(multiIntent.objectivesServed).toEqual(['VendorOnboarding', 'BuyerSearch']);
       expect(multiIntent.replyMissing).toEqual([]);
 
-      // The mechanism, not just the outcome: the message is split, and each part gets its own
-      // continuity read. Asserting this stops a future change from producing the right answer
-      // by luck — say, by classifying the whole turn as a search.
-      expect(multiIntent.llmOperations).toContain('utterance_segmentation');
-      expect(
-        multiIntent.llmOperations.filter((operation) => operation === 'continuity_analysis'),
-      ).toHaveLength(2);
+      // The mechanism, not just the outcome (MCOS §13, §65.3): one IDCE call and one CSRE call
+      // per logical turn — understanding is joined, never re-run per fragment — and no legacy
+      // segmentation. Asserting this stops a future change from producing the right answer by
+      // luck, say by classifying the whole turn as a search.
+      const specialist = (prefix: string) =>
+        multiIntent.llmOperations.filter((operation) => operation.startsWith(prefix));
+      expect(specialist('idce.master.discover@')).toHaveLength(1);
+      expect(specialist('csre.runtime.resolve@')).toHaveLength(1);
+      expect(multiIntent.llmOperations).not.toContain('utterance_segmentation');
     }
   });
 

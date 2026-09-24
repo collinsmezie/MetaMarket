@@ -7,6 +7,7 @@ import type {
   StructuredRequest,
 } from '../../../domain/ports/outbound/llm-provider.port';
 import { LlmProviderError } from '../../../domain/ports/outbound/llm-provider.port';
+import { decodeStrictOutput, toStrictOutputSchema } from '../../../platform/contracts/strict-output-schema';
 
 /**
  * Second fallback provider (Execution.md §2.4).
@@ -61,7 +62,7 @@ export class AnthropicLlmAdapter implements LlmProviderPort {
             {
               name: request.schemaName,
               description: `Return the structured result for the "${request.operation}" operation.`,
-              input_schema: request.schema as Anthropic.Tool['input_schema'],
+              input_schema: toStrictOutputSchema(request.schema) as Anthropic.Tool['input_schema'],
             },
           ],
           // Forcing the tool call is what makes the schema binding mandatory.
@@ -93,7 +94,7 @@ export class AnthropicLlmAdapter implements LlmProviderPort {
       return {
         // The tool input is already a parsed object; re-serialising keeps the port's
         // contract (raw JSON text) identical across providers.
-        text: JSON.stringify(toolUse.input),
+        text: JSON.stringify(decodeStrictOutput(request.schema, toolUse.input)),
         model: response.model,
         usage: {
           inputTokens: response.usage.input_tokens,

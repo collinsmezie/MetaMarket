@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mcos-p2-continuity-1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["turn_relationships", "primary_relationship", "confidence", "reason"],
+  "properties": {
+    "turn_relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["relationship", "intent_ids", "workflow_ids"],
+        "properties": {
+          "relationship": {
+            "enum": ["CONTINUATION", "RESUME", "NEW_WORKFLOW", "DIGRESSION", "WORKFLOW_SWITCH", "MULTI_WORKFLOW", "CORRECTION", "CANCELLATION", "NO_WORKFLOW_CONTEXT"]
+          },
+          "intent_ids": { "type": "array", "items": { "type": "string" } },
+          "workflow_ids": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "primary_relationship": {
+      "enum": ["CONTINUATION", "RESUME", "NEW_WORKFLOW", "DIGRESSION", "WORKFLOW_SWITCH", "MULTI_WORKFLOW", "CORRECTION", "CANCELLATION", "NO_WORKFLOW_CONTEXT"]
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "reason": { "type": "string", "minLength": 1 }
+  }
+}

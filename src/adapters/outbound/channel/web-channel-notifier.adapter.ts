@@ -7,9 +7,12 @@ import type {
   DeliveryTarget,
   TypingTarget,
 } from '../../../domain/ports/outbound/channel-notifier.port';
+import {
+  CHANNEL_STREAM_BUS,
+  type ChannelStreamBusPort,
+} from '../../../domain/ports/outbound/channel-stream-bus.port';
 import { STAGE_LOGGER, type StageLoggerPort } from '../../../domain/ports/outbound/stage-logger.port';
 import { CLOCK, type ClockPort } from '../../../domain/ports/outbound/system.port';
-import { WebStreamHub } from './web-stream.hub';
 
 const COMPONENT = 'MCOS';
 const STAGE = 'WebChannelNotifier';
@@ -30,7 +33,7 @@ export class WebChannelNotifier implements ChannelNotifierPort {
   readonly channel: Channel = 'web';
 
   constructor(
-    private readonly hub: WebStreamHub,
+    @Inject(CHANNEL_STREAM_BUS) private readonly hub: ChannelStreamBusPort,
     @Inject(STAGE_LOGGER) private readonly logger: StageLoggerPort,
     @Inject(CLOCK) private readonly clock: ClockPort,
   ) {}

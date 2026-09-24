@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mcos-p6-naturalized-response-1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["message", "actions"],
+  "properties": {
+    "message": { "type": "string", "minLength": 1 },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "title", "payload"],
+        "properties": {
+          "type": { "type": "string" },
+          "title": { "type": "string" },
+          "payload": { "type": "string" },
+          "description": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

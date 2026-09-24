@@ -28,6 +28,12 @@ export interface HandleIncomingMessageResult {
    * will be delivered when the media job completes.
    */
   readonly deferred: boolean;
+  /**
+   * The logical turn the message was assembled into (MCOS v4.4 §5A). Null when deduplicated or
+   * deferred for media. The turn executes asynchronously from the queue; the reply is delivered
+   * through the channel, never returned here.
+   */
+  readonly turnId: string | null;
 }
 
 export interface HandleIncomingMessagePort {

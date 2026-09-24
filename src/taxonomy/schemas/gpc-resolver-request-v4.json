@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/gpc-resolver-request-v4.json",
+  "title": "GPC Resolver Request v4",
+  "description": "Canonical GPC Resolver request (GPC Resolver TDR v4.4 §93A.1, §95.1). resolver_version is validated against the deployed component version by the runtime; gpc_candidates is an optional override/hint (§76.2).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "request_id", "resolver_version", "objects", "message_context", "enrichment", "market_knowledge", "evidence", "gpc_candidates", "resolution_policy"],
+  "properties": {
+    "schema_version": { "const": "4.0" },
+    "request_id": { "type": "string", "minLength": 1 },
+    "resolver_version": { "type": "string", "minLength": 1 },
+    "conversation_id": { "type": "string" },
+    "turn_id": { "type": "string" },
+    "context_snapshot_id": { "type": "string" },
+    "objects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["object_id", "semantic_origin", "source_trace", "canonical_form", "entity_type"],
+        "properties": {
+          "object_id": { "type": "string", "minLength": 1 },
+          "semantic_origin": {
+            "type": "object",
+            "required": ["phrase", "concept", "market_concept_id", "concept_status", "relationship", "origin", "request_id", "semantic_confidence"],
+            "properties": {
+              "relationship": { "const": "EXPRESSES" },
+              "origin": { "const": "CSRE" },
+              "request_id": { "type": "string", "minLength": 1 }
+            }
+          },
+          "source_trace": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["csre_request_id", "enrichment_request_id", "wrs_evidence_ids", "evidence_system_ids"],
+            "properties": {
+              "csre_request_id": { "type": "string", "minLength": 1 },
+              "enrichment_request_id": { "type": ["string", "null"] },
+              "wrs_evidence_ids": { "type": "array", "items": { "type": "string" } },
+              "evidence_system_ids": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "canonical_form": { "type": "string", "minLength": 1 },
+          "entity_type": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "message_context": { "type": "object" },
+    "enrichment": { "type": "object" },
+    "market_knowledge": { "type": "array", "items": { "type": "object" } },
+    "evidence": { "type": "array", "items": { "type": "object" } },
+    "gpc_candidates": { "type": "array", "items": { "type": "object" } },
+    "resolution_policy": { "type": "object" }
+  }
+}

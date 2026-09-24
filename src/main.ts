@@ -6,6 +6,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import * as express from 'express';
 import { AppModule } from './app.module';
 import { AppConfigService } from './config/app-config.service';
+import { correlationMiddleware } from './platform/correlation/correlation.middleware';
 
 // Enforce IPv4 resolution across Nest and native fetch to prevent IPv6 timeout hangs
 setDefaultResultOrder('ipv4first');
@@ -29,6 +30,10 @@ async function bootstrap(): Promise<void> {
 
   const config = app.get(AppConfigService);
   const logger = new Logger('Bootstrap');
+
+  // First middleware: every request runs inside a correlation context (Overarching §25) so the
+  // body parser, guards, controllers and everything they trigger are stamped with the same ids.
+  app.use(correlationMiddleware);
 
   app.use(
     express.json({
@@ -77,6 +82,11 @@ async function bootstrap(): Promise<void> {
       : 'Web CORS disabled (set WEB_CLIENT_ORIGINS to enable browser access)',
   );
   logger.log(`Health: GET /health`);
+  logger.log(
+    config.platform.devTraceApiEnabled
+      ? 'Dev trace API: GET /dev/registry, GET /dev/runs/:runId, POST /dev/live-tests/runs'
+      : 'Dev trace API disabled',
+  );
 }
 
 void bootstrap();

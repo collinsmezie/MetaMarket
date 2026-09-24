@@ -17,6 +17,8 @@ const FRAMEWORK_AND_DRIVER_PACKAGES = [
   'pino',
   'nestjs-pino',
   'axios',
+  '@langchain/*',
+  'neo4j-driver',
 ];
 
 module.exports = {
@@ -43,7 +45,7 @@ module.exports = {
   overrides: [
     {
       // The hexagon centre: pure business logic only.
-      files: ['src/domain/**/*.ts'],
+      files: ['src/domain/**/*.ts', 'src/*/domain/**/*.ts', 'src/*/*/domain/**/*.ts'],
       rules: {
         'no-restricted-imports': [
           'error',
@@ -55,7 +57,7 @@ module.exports = {
                   'ADR-001: the domain core must not depend on frameworks, DB drivers or provider SDKs. Depend on a port in src/domain/ports/outbound instead.',
               },
               {
-                group: ['**/adapters/**', '**/application/**', '**/config/**'],
+                group: ['**/adapters/**', '**/application/**', '**/config/**', '**/platform/**'],
                 message:
                   'ADR-001: the domain core must not import adapters, application wiring or config. Dependencies point inward only.',
               },
@@ -76,6 +78,37 @@ module.exports = {
                 group: ['**/domain/workflows/**', '**/adapters/outbound/llm/**'],
                 message:
                   'Execution.md §2.1: channel adapters must not execute workflows or call AI directly. Invoke an inbound port.',
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      // Channel adapters (web, WhatsApp, payment webhooks) connect to the system through ports
+      // only: map the payload, call an inbound port, nothing else. Health is a diagnostics
+      // endpoint and is deliberately excluded.
+      files: [
+        'src/adapters/inbound/web/**/*.ts',
+        'src/adapters/inbound/whatsapp/**/*.ts',
+        'src/adapters/inbound/paystack/**/*.ts',
+      ],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            patterns: [
+              {
+                group: [
+                  '**/domain/workflows/**',
+                  '**/adapters/outbound/**',
+                  '**/application/**',
+                  '**/platform/**',
+                  '**/conversation/**',
+                  '**/orchestration/**',
+                ],
+                message:
+                  'ADR-001 / MCOS §24: a channel adapter depends on ports (src/domain/ports) and config only — never on application services, outbound adapters or the runtime.',
               },
             ],
           },

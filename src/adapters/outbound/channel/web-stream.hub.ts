@@ -1,7 +1,8 @@
 import { Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 import { Observable, Subject } from 'rxjs';
-import type { Response } from '../../../domain/models/response';
+import type { ConversationStreamEvent } from '../../../domain/ports/inbound/conversation-stream.port';
+import type { ChannelStreamBusPort } from '../../../domain/ports/outbound/channel-stream-bus.port';
 import { RedisService } from '../persistence/redis.service';
 
 /**
@@ -21,20 +22,8 @@ import { RedisService } from '../persistence/redis.service';
  * the user's laptop was asleep.
  */
 
-export type WebStreamEvent =
-  | {
-      readonly kind: 'message';
-      readonly conversationId: string;
-      /** The canonical response. Rendering stays the client's concern (MCOS §13). */
-      readonly response: Response;
-      readonly workflowId?: string;
-      readonly at: string;
-    }
-  | {
-      readonly kind: 'typing';
-      readonly conversationId: string;
-      readonly at: string;
-    };
+/** The bus event, as defined by the domain port; kept under its historical name for callers. */
+export type WebStreamEvent = ConversationStreamEvent;
 
 /** Redis channel namespace. Pattern-subscribed once rather than per conversation. */
 const KEY_PREFIX = 'mcos:web:';
@@ -53,7 +42,7 @@ const PRESENCE_TTL_MS = 45_000;
 const PRESENCE_REFRESH_MS = 15_000;
 
 @Injectable()
-export class WebStreamHub implements OnModuleDestroy {
+export class WebStreamHub implements ChannelStreamBusPort, OnModuleDestroy {
   private readonly logger = new Logger(WebStreamHub.name);
   /**
    * A connection in subscriber mode cannot run ordinary commands, so this must be a
@@ -137,6 +126,12 @@ export class WebStreamHub implements OnModuleDestroy {
     }
 
     return live;
+  }
+
+  /** `ChannelStreamBusPort.subscribe`: attaches a listener on this replica; returns the teardown. */
+  subscribe(conversationId: string, listener: (event: ConversationStreamEvent) => void): () => void {
+    const subscription = this.stream(conversationId).subscribe(listener);
+    return () => subscription.unsubscribe();
   }
 
   /** The event stream for one conversation, scoped to the lifetime of the subscription. */

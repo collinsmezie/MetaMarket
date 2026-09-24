@@ -5,6 +5,16 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "tsConfigPath": "tsconfig.build.json",
-    "plugins": []
+    "plugins": [],
+    "assets": [
+      {
+        "include": "**/prompts/**/*.md",
+        "watchAssets": true
+      },
+      {
+        "include": "**/schemas/**/*.json",
+        "watchAssets": true
+      }
+    ]
   }
 }

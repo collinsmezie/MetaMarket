@@ -11,16 +11,19 @@ import {
   Sse,
   type MessageEvent,
 } from '@nestjs/common';
-import { map, merge, type Observable, interval } from 'rxjs';
-import { WebStreamHub, type WebStreamEvent } from '../../../adapters/outbound/channel/web-stream.hub';
-import { ConversationContextManager } from '../../../application/conversation/conversation-context.manager';
+import { interval, map, merge, Observable } from 'rxjs';
+import { resolveWebIdentity } from '../../../domain/models/user-identity';
+import {
+  CONVERSATION_STREAM,
+  type ConversationStreamEvent,
+  type ConversationStreamPort,
+} from '../../../domain/ports/inbound/conversation-stream.port';
 import {
   HANDLE_INCOMING_MESSAGE,
   type HandleIncomingMessagePort,
 } from '../../../domain/ports/inbound/handle-incoming-message.port';
 import { STAGE_LOGGER, type StageLoggerPort } from '../../../domain/ports/outbound/stage-logger.port';
 import { CLOCK, type ClockPort } from '../../../domain/ports/outbound/system.port';
-import { resolveWebIdentity } from '../../../domain/models/user-identity';
 import { mapWebMessage, type WebMessageBody } from './web-payload.mapper';
 
 const COMPONENT = 'MCOS';
@@ -30,8 +33,8 @@ const STAGE = 'WebChannelAdapter';
  * Interval for SSE keep-alive frames.
  *
  * Reverse proxies and load balancers close idle event streams, typically at 30–60s. A turn can
- * legitimately take longer than that (the heartbeat watchdog in `TurnProcessor` fires at 25s),
- * so the stream must prove it is alive more often than the proxy's patience.
+ * legitimately take longer than that (the orchestrator heartbeat fires at 25s), so the stream
+ * must prove it is alive more often than the proxy's patience.
  */
 const KEEPALIVE_MS = 15_000;
 
@@ -43,23 +46,22 @@ interface WebStreamQuery {
 /**
  * Web client endpoints (ADR-001 inbound adapter).
  *
- * The symmetry with `WhatsAppWebhookController` is deliberate: map the payload, call the
- * inbound port, do nothing else. No business logic, no AI, no knowledge of workflows.
+ * The symmetry with `WhatsAppWebhookController` is deliberate and now complete: map the
+ * payload, call an inbound port, do nothing else. The adapter depends on exactly two ports —
+ * `HandleIncomingMessagePort` for what the user said and `ConversationStreamPort` for what the
+ * platform says back — and never on application services or outbound adapters.
  *
  * Processing is not awaited into the HTTP response. A turn that runs a matching fan-out can
  * exceed any sensible request timeout, and the reply's route to the user is the event stream
- * either way — the same route WhatsApp uses, one notifier along. Answering 202 and pushing the
- * result keeps one delivery path for both channels rather than a fast path for whichever
- * channel happens to be synchronous.
+ * either way — the same durable delivery path WhatsApp uses, one notifier along.
  */
 @Controller('channels/web')
 export class WebChannelController {
   constructor(
     @Inject(HANDLE_INCOMING_MESSAGE) private readonly handler: HandleIncomingMessagePort,
+    @Inject(CONVERSATION_STREAM) private readonly conversations: ConversationStreamPort,
     @Inject(STAGE_LOGGER) private readonly logger: StageLoggerPort,
     @Inject(CLOCK) private readonly clock: ClockPort,
-    private readonly context: ConversationContextManager,
-    private readonly hub: WebStreamHub,
   ) {}
 
   /**
@@ -70,11 +72,14 @@ export class WebChannelController {
    */
   @Sse('stream')
   async stream(@Query() query: WebStreamQuery): Promise<Observable<MessageEvent>> {
-    const conversationId = await this.resolveConversation(query);
+    const conversationId = await this.conversations.resolveConversation({
+      userId: this.identify(query),
+      channel: 'web',
+    });
 
-    const events = this.hub
-      .stream(conversationId)
-      .pipe(map((event: WebStreamEvent): MessageEvent => ({ type: event.kind, data: event })));
+    const events = new Observable<ConversationStreamEvent>((subscriber) =>
+      this.conversations.subscribe(conversationId, (event) => subscriber.next(event)),
+    ).pipe(map((event): MessageEvent => ({ type: event.kind, data: event })));
 
     // Comment-only frames would be cheaper, but Nest's SSE contract is typed around events, so
     // an explicit ping the client ignores is the honest way to express it.
@@ -96,15 +101,16 @@ export class WebChannelController {
     conversationId: string;
     history: readonly { role: string; content: string; at: string }[];
   }> {
-    const userId = this.identify(query);
-    const { conversation } = await this.context.load({ userId, channel: 'web' });
-
+    const { conversationId, history } = await this.conversations.history({
+      userId: this.identify(query),
+      channel: 'web',
+    });
     return {
-      conversationId: conversation.id,
-      history: conversation.history.map((entry) => ({
+      conversationId,
+      history: history.map((entry) => ({
         role: entry.role,
         content: entry.content,
-        at: entry.timestamp.toISOString(),
+        at: entry.at.toISOString(),
       })),
     };
   }
@@ -119,7 +125,7 @@ export class WebChannelController {
       throw new BadRequestException(mapped.reason);
     }
 
-    const conversationId = await this.context.resolveConversationId({
+    const conversationId = await this.conversations.resolveConversation({
       userId: mapped.message.userId,
       channel: 'web',
     });
@@ -147,16 +153,12 @@ export class WebChannelController {
     return resolveWebIdentity({ phone: query.phone, sessionId });
   }
 
-  private async resolveConversation(query: WebStreamQuery): Promise<string> {
-    return this.context.resolveConversationId({ userId: this.identify(query), channel: 'web' });
-  }
-
   /**
    * Runs the turn detached from the HTTP response.
    *
    * Every failure is caught: an unhandled rejection here would take the process down rather
-   * than fail one message. The user still learns something went wrong, because `TurnProcessor`
-   * delivers its own error envelope over the same stream.
+   * than fail one message. The user still learns something went wrong, because the
+   * orchestrator delivers its own error envelope over the same stream.
    */
   private async process(message: Parameters<HandleIncomingMessagePort['handle']>[0]): Promise<void> {
     try {

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/evidence-observation-v4.json",
+  "title": "Evidence Observation v4",
+  "description": "Raw observation submitted to the Evidence System (Evidence TDR v4.4 §2, §13, §32A, §42, §50.3, §52.6). One observation is one thing that happened; it is stored immutably and interpreted into evidence. Platform events (CSRE, GPC, WRS, Enrichment) are normalised into this shape by the ingestion handler; vendor/buyer interactions submit it directly.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "observation_id", "observation_type", "source", "observed_at", "context", "payload"],
+  "properties": {
+    "schema_version": { "const": "4.0" },
+    "observation_id": { "type": "string", "minLength": 1 },
+    "observation_type": {
+      "enum": [
+        "CSRE_SEMANTIC_RESOLUTION",
+        "GPC_MAPPING",
+        "WRS_EXTERNAL_EVIDENCE",
+        "ENRICHMENT_INSIGHT",
+        "BUYER_REQUEST",
+        "BUYER_CLARIFICATION",
+        "BUYER_CONFIRMATION",
+        "VENDOR_STATEMENT",
+        "VENDOR_INVENTORY_UPDATE",
+        "VENDOR_RESPONSE",
+        "VENDOR_CLARIFICATION",
+        "VENDOR_CONFIRMATION",
+        "VENDOR_REJECTION",
+        "FULFILLMENT_COMPLETED",
+        "OTHER"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component", "version"],
+      "properties": {
+        "component": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "event_id": { "type": ["string", "null"] },
+        "request_id": { "type": ["string", "null"] }
+      }
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "role"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "role": { "enum": ["BUYER", "VENDOR", "SYSTEM", "UNKNOWN"] }
+      }
+    },
+    "channel": { "type": ["string", "null"] },
+    "interaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "conversation_id": { "type": ["string", "null"] },
+        "turn_id": { "type": ["string", "null"] },
+        "run_id": { "type": ["string", "null"] },
+        "workflow_id": { "type": ["string", "null"] },
+        "action_id": { "type": ["string", "null"] },
+        "interaction_id": { "type": ["string", "null"] }
+      }
+    },
+    "observed_at": { "type": "string", "minLength": 1 },
+    "context": {
+      "type": "object",
+      "properties": {
+        "country": { "type": ["string", "null"] },
+        "region": { "type": ["string", "null"] },
+        "language": { "type": ["string", "null"] }
+      }
+    },
+    "payload": { "type": "object" },
+    "raw_text": { "type": ["string", "null"] }
+  }
+}

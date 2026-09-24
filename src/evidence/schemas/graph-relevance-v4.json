@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/graph-relevance-v4.json",
+  "title": "Graph Relevance Decision v4",
+  "description": "Evidence TDR v4.4 §51.3 verbatim. Produced by the deterministic graph-relevance policy and validated before a GraphChangeDecision is emitted (§50.8, §53.2).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "relationship_id", "decision", "belief_score", "justification", "evidence_ids"],
+  "properties": {
+    "schema_version": { "const": "4.0" },
+    "relationship_id": { "type": "string" },
+    "decision": { "enum": ["EXPAND", "REINFORCE", "MAINTAIN", "DECAY", "PRUNE", "NO_CHANGE", "INVESTIGATE"] },
+    "belief_score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "justification": { "type": "string" },
+    "evidence_ids": { "type": "array", "items": { "type": "string" } }
+  }
+}

@@ -43,6 +43,7 @@ import {
   MediaDownloaderRegistry,
   MEDIA_DOWNLOADER_REGISTRY,
 } from '../application/media/media-downloader.registry';
+import { CHANNEL_STREAM_BUS } from '../domain/ports/outbound/channel-stream-bus.port';
 import {
   CHANNEL_NOTIFIER_REGISTRY,
   RAW_CHANNEL_NOTIFIER_REGISTRY,
@@ -83,6 +84,8 @@ import {
   type IdGeneratorPort,
   SystemClock,
 } from '../domain/ports/outbound/system.port';
+import { PrismaTraceRecorder } from '../platform/observability/prisma-trace-recorder';
+import { TRACE_RECORDER } from '../platform/observability/trace.port';
 import { StageLogger } from '../shared/logging/stage-logger';
 import { AppConfigService } from './app-config.service';
 
@@ -124,6 +127,9 @@ import { AppConfigService } from './app-config.service';
     { provide: STAGE_LOGGER, useClass: StageLogger },
     { provide: CLOCK, useClass: SystemClock },
     { provide: ID_GENERATOR, useClass: UuidIdGenerator },
+    // Execution traces (Overarching §26/§28). Bound here, not in PlatformModule, because the
+    // LLM funnel below depends on it and PlatformModule depends on the LLM funnel.
+    { provide: TRACE_RECORDER, useClass: PrismaTraceRecorder },
 
     { provide: CONVERSATION_REPOSITORY, useClass: PrismaConversationRepository },
     { provide: MESSAGE_REPOSITORY, useClass: PrismaMessageRepository },
@@ -161,6 +167,7 @@ import { AppConfigService } from './app-config.service';
     WhatsAppNotifier,
     TwilioSmsNotifier,
     WebStreamHub,
+    { provide: CHANNEL_STREAM_BUS, useExisting: WebStreamHub },
     WebChannelNotifier,
     PrismaOutboundMessageRepository,
     { provide: OUTBOUND_MESSAGE_REPOSITORY, useExisting: PrismaOutboundMessageRepository },
@@ -215,6 +222,7 @@ import { AppConfigService } from './app-config.service';
     STAGE_LOGGER,
     CLOCK,
     ID_GENERATOR,
+    TRACE_RECORDER,
     CONVERSATION_REPOSITORY,
     MESSAGE_REPOSITORY,
     WORKFLOW_REPOSITORY,
@@ -236,9 +244,9 @@ import { AppConfigService } from './app-config.service';
     MEDIA_BATCH_TRACKER,
     MEDIA_DOWNLOADER_REGISTRY,
     CHANNEL_NOTIFIER_REGISTRY,
-    // Exported for the web inbound adapter, which subscribes the browser to the same bus the
-    // notifier publishes on.
-    WebStreamHub,
+    // The reply bus behind pull channels; `ConversationStreamService` subscribes browsers to the
+    // same bus the web notifier publishes on. Adapters see only the port.
+    CHANNEL_STREAM_BUS,
     // Exported so ingestion can read back the options the last reply offered, which is what
     // lets a bare "2" be resolved to the option it names.
     OUTBOUND_MESSAGE_REPOSITORY,

@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/enrichment-resolution-v4.json",
+  "title": "GPC-Oriented Semantic Enrichment v4",
+  "description": "Canonical Enrichment output (Enrichment TDR v4.4 §26.2) with the per-object layers of §16 made explicit. Every payload valid here is valid against the §26.2 text verbatim.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "request_id", "enrichment_status", "source_resolution", "objects", "relationships", "message_context"],
+  "properties": {
+    "schema_version": { "const": "4.0" },
+    "request_id": { "type": "string", "minLength": 1 },
+    "enrichment_status": { "enum": ["ENRICHED", "PARTIAL", "EVIDENCE_REQUIRED", "BLOCKED"] },
+    "source_resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolver_version", "resolution_request_id"],
+      "properties": {
+        "resolver_version": { "type": "string" },
+        "resolution_request_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "objects": { "type": "array", "items": { "$ref": "#/$defs/object" } },
+    "relationships": { "type": "array", "items": { "$ref": "#/$defs/relationship" } },
+    "message_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["functional_context", "shared_constraints"],
+      "properties": {
+        "functional_context": { "type": "array", "items": { "type": "string" } },
+        "shared_constraints": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  "$defs": {
+    "semanticOrigin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phrase", "concept", "market_concept_id", "concept_status", "relationship", "origin", "request_id", "semantic_confidence"],
+      "properties": {
+        "phrase": { "type": "string" },
+        "concept": { "type": "string" },
+        "market_concept_id": { "type": ["string", "null"] },
+        "concept_status": { "enum": ["KNOWN", "PROPOSED"] },
+        "relationship": { "const": "EXPRESSES" },
+        "origin": { "const": "CSRE" },
+        "request_id": { "type": "string" },
+        "semantic_confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "objects", "context"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "objects": { "type": "array", "items": { "type": "string" } },
+        "context": { "type": ["string", "null"] }
+      }
+    },
+    "stringList": { "type": "array", "items": { "type": "string" } },
+    "object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "object_id",
+        "semantic_origin",
+        "canonical_form",
+        "entity_type",
+        "definition",
+        "brand",
+        "model",
+        "variant",
+        "attributes",
+        "functional_profile",
+        "use_cases",
+        "commercial_terminology",
+        "taxonomy_semantics",
+        "distinguishing_features",
+        "confusable_concepts",
+        "embedding_representations",
+        "evidence",
+        "confidence",
+        "evidence_required",
+        "evidence_request",
+        "resolution_concern"
+      ],
+      "properties": {
+        "object_id": { "type": "string", "minLength": 1 },
+        "semantic_origin": { "$ref": "#/$defs/semanticOrigin" },
+        "canonical_form": { "type": "string", "minLength": 1 },
+        "entity_type": { "type": "string", "minLength": 1 },
+        "definition": { "type": "string" },
+        "brand": { "type": ["string", "null"] },
+        "model": { "type": ["string", "null"] },
+        "variant": { "type": ["string", "null"] },
+        "attributes": { "type": "object", "additionalProperties": { "type": ["string", "number", "boolean", "null"] } },
+        "functional_profile": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["primary_function", "secondary_functions", "mechanism"],
+          "properties": {
+            "primary_function": { "type": ["string", "null"] },
+            "secondary_functions": { "$ref": "#/$defs/stringList" },
+            "mechanism": { "type": ["string", "null"] }
+          }
+        },
+        "use_cases": { "$ref": "#/$defs/stringList" },
+        "commercial_terminology": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["synonyms", "aliases", "informal_terms", "regional_terms", "industry_terms"],
+          "properties": {
+            "synonyms": { "$ref": "#/$defs/stringList" },
+            "aliases": { "$ref": "#/$defs/stringList" },
+            "informal_terms": { "$ref": "#/$defs/stringList" },
+            "regional_terms": { "$ref": "#/$defs/stringList" },
+            "industry_terms": { "$ref": "#/$defs/stringList" }
+          }
+        },
+        "taxonomy_semantics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["domain_hints", "category_hints", "subcategory_hints", "object_family", "taxonomy_vocabulary"],
+          "properties": {
+            "domain_hints": { "$ref": "#/$defs/stringList" },
+            "category_hints": { "$ref": "#/$defs/stringList" },
+            "subcategory_hints": { "$ref": "#/$defs/stringList" },
+            "object_family": { "$ref": "#/$defs/stringList" },
+            "taxonomy_vocabulary": { "$ref": "#/$defs/stringList" }
+          }
+        },
+        "distinguishing_features": { "$ref": "#/$defs/stringList" },
+        "confusable_concepts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["concept", "distinguishing_signal"],
+            "properties": {
+              "concept": { "type": "string", "minLength": 1 },
+              "distinguishing_signal": { "type": "string" }
+            }
+          }
+        },
+        "embedding_representations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["canonical_embedding_text", "functional_embedding_text", "taxonomy_embedding_text", "search_terms", "semantic_keywords", "negative_terms"],
+          "properties": {
+            "canonical_embedding_text": { "type": "string", "minLength": 1 },
+            "functional_embedding_text": { "type": "string" },
+            "taxonomy_embedding_text": { "type": "string" },
+            "search_terms": { "$ref": "#/$defs/stringList" },
+            "semantic_keywords": { "$ref": "#/$defs/stringList" },
+            "negative_terms": { "$ref": "#/$defs/stringList" }
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["evidence_id", "derived_fields"],
+            "properties": {
+              "evidence_id": { "type": "string", "minLength": 1 },
+              "derived_fields": { "$ref": "#/$defs/stringList" }
+            }
+          }
+        },
+        "confidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enrichment", "functional_profile", "taxonomy_semantics"],
+          "properties": {
+            "enrichment": { "type": "number", "minimum": 0, "maximum": 1 },
+            "functional_profile": { "type": "number", "minimum": 0, "maximum": 1 },
+            "taxonomy_semantics": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "evidence_required": { "type": "boolean" },
+        "evidence_request": {
+          "anyOf": [
+            { "$ref": "#/$defs/evidenceRequest" },
+            { "type": "null" }
+          ]
+        },
+        "resolution_concern": { "type": ["string", "null"] }
+      }
+    },
+    "evidenceRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["question", "reason", "candidates", "geographic_context", "preferred_source_types", "requested_fields"],
+      "properties": {
+        "question": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string" },
+        "candidates": { "$ref": "#/$defs/stringList" },
+        "geographic_context": { "type": ["string", "null"] },
+        "preferred_source_types": { "$ref": "#/$defs/stringList" },
+        "requested_fields": { "$ref": "#/$defs/stringList" }
+      }
+    }
+  }
+}

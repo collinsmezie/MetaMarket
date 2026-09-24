@@ -48,6 +48,20 @@ export const envSchema = z
 
     OPENAI_API_KEY: z.string().optional(),
     OPENAI_MODEL: z.string().default('gpt-4o-2024-11-20'),
+    // Model pinned for the v1.3 specialists (IDCE, CSRE, Enrichment, GPC, MCOS prompts). Chat
+    // model at temperature 0: reasoning models reject temperature and were measured to break
+    // determinism. Independent of OPENAI_MODEL so the legacy path can differ during migration.
+    /** P5/P6 response naturalisation for multi-result turns (MCOS §34A.10); single results compose deterministically. */
+    ORCHESTRATOR_NATURALIZE_RESPONSES: booleanFromString(true),
+    LLM_SPECIALIST_MODEL: z.string().default('gpt-4o-2024-11-20'),
+    /** WRS search provider (final decision lock Q5): Tavily is the initial adapter; `none` disables retrieval honestly. */
+    WRS_SEARCH_PROVIDER: z.enum(['tavily', 'none']).default('tavily'),
+    TAVILY_API_KEY: z.string().optional(),
+    /** Overridable for contract tests against a local stand-in; production uses Tavily's endpoint. */
+    TAVILY_API_URL: z.string().url().default('https://api.tavily.com/search'),
+    WRS_MAX_QUERIES: z.coerce.number().int().min(1).max(8).default(4),
+    WRS_MAX_RESULTS_PER_QUERY: z.coerce.number().int().min(1).max(10).default(6),
+    WRS_TIMEOUT_MS: z.coerce.number().int().min(1000).default(15000),
     OPENAI_EMBEDDING_MODEL: z.string().default('text-embedding-3-small'),
     EMBEDDING_DIMENSION: intFromString(1536, 1),
 
@@ -100,6 +114,30 @@ export const envSchema = z
     MAX_SUSPENDED_WORKFLOWS: intFromString(10, 1),
 
     GS1_GPC_FILE: z.string().default('data/gs1_gpc.json'),
+
+    // ── Platform (TDR v1.3 Phase 1) ─────────────────────────────────────────────────────
+    // The dev trace / live-test API (Overarching §28). Defaults on outside production; the
+    // production refine below forbids it there regardless of the value.
+    DEV_TRACE_API_ENABLED: booleanFromString(true),
+    // Escape hatch for tests that drive the outbox consumer manually.
+    OUTBOX_CONSUMER_DISABLED: booleanFromString(false),
+
+    // ── MCOS Turn Assembly (MCOS v4.4 §5A.3.2) — configuration, never prompt logic ─────────────
+    // Short inter-message accumulation window, per channel. Web users type one thought per
+    // message and expect a fast reply; WhatsApp users routinely split one request across bursts.
+    TURN_QUIET_WINDOW_MS_WHATSAPP: intFromString(2_500, 0),
+    TURN_QUIET_WINDOW_MS_WEB: intFromString(1_200, 0),
+    TURN_QUIET_WINDOW_MS_DEFAULT: intFromString(2_000, 0),
+    // Hard upper bounds for one logical turn.
+    TURN_MAX_ASSEMBLY_MS: intFromString(15_000, 1_000),
+    TURN_MAX_MESSAGE_COUNT: intFromString(8, 1),
+    // Queue worker: claim lease before a crashed replica's claim is recovered, and poll interval.
+    TURN_CLAIM_TTL_MS: intFromString(300_000, 10_000),
+    TURN_QUEUE_POLL_MS: intFromString(1_000, 100),
+    TURN_MAX_EXECUTION_ATTEMPTS: intFromString(3, 1),
+    // P1 bounded model-assisted boundary classifier (MCOS §34A.2). Deterministic signals decide
+    // by default; the classifier is a fallback for inconclusive cases only.
+    TURN_ASSEMBLY_MODEL_CLASSIFIER_ENABLED: booleanFromString(false),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'production') return;
@@ -129,6 +167,15 @@ export const envSchema = z
         path: ['PAYSTACK_SECRET_KEY'],
         message:
           'PAYSTACK_SECRET_KEY is required in production (credits funding and webhook signature verification).',
+      });
+    }
+
+    if (env.DEV_TRACE_API_ENABLED) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['DEV_TRACE_API_ENABLED'],
+        message:
+          'DEV_TRACE_API_ENABLED must be false in production: the /dev inspection API is unauthenticated.',
       });
     }
 

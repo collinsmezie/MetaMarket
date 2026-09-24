@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Prisma } from '@prisma/client';
 import type { DomainEvent, EventPublisherPort } from '../../../domain/ports/outbound/event-publisher.port';
+import { RequestContextStore } from '../../../platform/correlation/request-context';
+import { isCorrelatedEvent } from '../../../platform/events/domain-event';
 import { PrismaService } from '../persistence/prisma.service';
 
 /**
@@ -29,19 +31,32 @@ export class OutboxEventPublisher implements EventPublisherPort {
   async publishAll(events: readonly DomainEvent[]): Promise<void> {
     if (events.length === 0) return;
 
+    // Correlation is stamped from the ambient request context when the producer did not
+    // supply it, so no event can leave the process untraceable (Overarching §25, §33).
+    const context = RequestContextStore.current();
+
     await this.prisma.outboxEvent.createMany({
-      data: events.map((event) => ({
-        eventId: event.eventId,
-        eventType: event.eventType,
-        producer: event.producer,
-        conversationId: event.conversationId ?? null,
-        workflowId: event.workflowId ?? null,
-        vendorId: event.vendorId ?? null,
-        customerId: event.customerId ?? null,
-        requestId: event.requestId ?? null,
-        payload: event.payload as Prisma.InputJsonValue,
-        occurredAt: event.timestamp,
-      })),
+      data: events.map((event) => {
+        const correlated = isCorrelatedEvent(event) ? event : null;
+        return {
+          eventId: event.eventId,
+          eventType: event.eventType,
+          eventVersion: correlated?.eventVersion ?? '1.0',
+          producer: event.producer,
+          conversationId: event.conversationId ?? context?.conversationId ?? null,
+          workflowId: event.workflowId ?? null,
+          vendorId: event.vendorId ?? null,
+          customerId: event.customerId ?? null,
+          requestId: event.requestId ?? null,
+          correlationId: correlated?.correlationId ?? context?.correlationId ?? null,
+          turnId: correlated?.turnId ?? context?.turnId ?? null,
+          runId: correlated?.runId ?? context?.runId ?? null,
+          aggregateType: correlated?.aggregate?.type ?? null,
+          aggregateId: correlated?.aggregate?.id ?? null,
+          payload: event.payload as Prisma.InputJsonValue,
+          occurredAt: event.timestamp,
+        };
+      }),
       // A retried turn can re-emit an event that is already recorded; that is not an error.
       skipDuplicates: true,
     });

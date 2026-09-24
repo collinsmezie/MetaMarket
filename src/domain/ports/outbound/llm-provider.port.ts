@@ -32,6 +32,22 @@ export interface StructuredRequest {
   /** 0 for deterministic extraction; higher only where variety genuinely helps. */
   readonly temperature?: number;
   readonly maxOutputTokens?: number;
+  /** Model override for the answering provider; adapters fall back to their configured default. */
+  readonly model?: string;
+  /**
+   * Provenance for the persisted execution record (Overarching §7.2). Calls made through the
+   * Prompt Runtime set `recordedByCaller` so the invocation is persisted once, with its prompt
+   * and schema versions; direct legacy calls are persisted by the provider service as
+   * `legacy:<operation>` until they are migrated onto versioned prompts.
+   */
+  readonly trace?: {
+    readonly component: string;
+    readonly promptId: string;
+    readonly promptVersion: string;
+    readonly schemaId?: string;
+    readonly schemaVersion?: string;
+    readonly recordedByCaller?: boolean;
+  };
 }
 
 export interface StructuredResult<T> {

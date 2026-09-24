@@ -2,7 +2,8 @@ import { FrozenClock, RecordingStageLogger } from '@test/fakes';
 import type { Response } from '../../../domain/models/response';
 import type { DeliveryTarget } from '../../../domain/ports/outbound/channel-notifier.port';
 import { WebChannelNotifier } from './web-channel-notifier.adapter';
-import type { WebStreamEvent, WebStreamHub } from './web-stream.hub';
+import type { ChannelStreamBusPort } from '../../../domain/ports/outbound/channel-stream-bus.port';
+import type { WebStreamEvent } from './web-stream.hub';
 
 const TARGET: DeliveryTarget = {
   channel: 'web',
@@ -28,7 +29,7 @@ class FakeHub {
 function build(receivers: number | Error) {
   const hub = new FakeHub(receivers);
   const logger = new RecordingStageLogger();
-  const notifier = new WebChannelNotifier(hub as unknown as WebStreamHub, logger, new FrozenClock());
+  const notifier = new WebChannelNotifier(hub as unknown as ChannelStreamBusPort, logger, new FrozenClock());
 
   return { hub, logger, notifier };
 }

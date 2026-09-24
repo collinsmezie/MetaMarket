@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mcos-p1-turn-assembly-1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decision", "confidence", "reason", "relationship"],
+  "properties": {
+    "decision": { "enum": ["SAME_TURN", "NEW_TURN"] },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "reason": { "type": "string", "minLength": 1 },
+    "relationship": {
+      "enum": ["CONTINUATION", "CORRECTION", "CANCELLATION", "TOPIC_SWITCH", "NONE"]
+    }
+  }
+}

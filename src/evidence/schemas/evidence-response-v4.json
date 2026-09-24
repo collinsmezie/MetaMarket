@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metamarket.local/schemas/evidence-response-v4.json",
+  "title": "Evidence Response v4",
+  "description": "Evidence System response envelope (Evidence TDR v4.4 §31, §50.2, §52.7). Every payload valid here is valid against §50.2; item shapes for knowledge, insights, contradictions, provenance and relationship targets are made explicit.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "request_id", "status", "evidence", "knowledge", "insights", "contradictions", "provenance", "relationship_targets", "quality"],
+  "properties": {
+    "schema_version": { "const": "4.0" },
+    "request_id": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["SUCCESS", "PARTIAL", "NO_RELIABLE_EVIDENCE", "ERROR"] },
+    "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidenceRecord" } },
+    "knowledge": { "type": "array", "items": { "$ref": "#/$defs/knowledge" } },
+    "insights": { "type": "array", "items": { "$ref": "#/$defs/insight" } },
+    "contradictions": { "type": "array", "items": { "$ref": "#/$defs/contradiction" } },
+    "provenance": { "type": "array", "items": { "type": "object" } },
+    "relationship_targets": { "type": "array", "items": { "$ref": "#/$defs/relationshipTarget" } },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_count", "independent_source_count", "knowledge_count", "contradiction_count"],
+      "properties": {
+        "evidence_count": { "type": "integer", "minimum": 0 },
+        "independent_source_count": { "type": "integer", "minimum": 0 },
+        "knowledge_count": { "type": "integer", "minimum": 0 },
+        "contradiction_count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "$defs": {
+    "evidenceRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "claim", "supports", "contradicts", "relationship_target", "provenance", "confidence", "observation_id", "assertion", "polarity", "strength", "independence_key", "observed_at"],
+      "properties": {
+        "evidence_id": { "type": "string", "minLength": 1 },
+        "claim": { "type": "string", "minLength": 1 },
+        "supports": { "type": "array", "items": { "type": "string" } },
+        "contradicts": { "type": "array", "items": { "type": "string" } },
+        "relationship_target": { "type": ["object", "null"] },
+        "provenance": { "type": "object" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "observation_id": { "type": "string", "minLength": 1 },
+        "assertion": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["subject", "predicate", "object"],
+          "properties": {
+            "subject": { "type": "string" },
+            "predicate": { "type": "string" },
+            "object": { "type": "string" }
+          }
+        },
+        "polarity": { "enum": ["POSITIVE", "NEGATIVE", "NEUTRAL", "CONTRADICTORY"] },
+        "strength": { "type": "number", "minimum": 0, "maximum": 1 },
+        "independence_key": { "type": "string" },
+        "observed_at": { "type": "string" }
+      }
+    },
+    "knowledge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["knowledge_id", "type", "claim", "scope", "confidence", "state", "supported_by", "contradicted_by", "last_validated_at"],
+      "properties": {
+        "knowledge_id": { "type": "string" },
+        "type": { "type": "string" },
+        "claim": { "type": "object" },
+        "scope": { "type": "object" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "state": { "enum": ["CANDIDATE", "SUPPORTED", "ESTABLISHED", "WEAKENING", "INACTIVE"] },
+        "supported_by": { "type": "array", "items": { "type": "string" } },
+        "contradicted_by": { "type": "array", "items": { "type": "string" } },
+        "last_validated_at": { "type": ["string", "null"] }
+      }
+    },
+    "insight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assertion_id", "subject", "predicate", "object", "belief", "direction", "state", "evidence_count", "independent_source_count", "requires_more_evidence"],
+      "properties": {
+        "assertion_id": { "type": "string" },
+        "subject": { "type": "string" },
+        "predicate": { "type": "string" },
+        "object": { "type": "string" },
+        "subject_label": { "type": ["string", "null"] },
+        "object_label": { "type": ["string", "null"] },
+        "belief": { "type": "number", "minimum": 0, "maximum": 1 },
+        "direction": { "enum": ["INCREASING", "DECREASING", "STABLE", "UNCERTAIN"] },
+        "state": { "enum": ["CANDIDATE", "SUPPORTED", "ESTABLISHED", "WEAKENING", "INACTIVE"] },
+        "evidence_count": { "type": "integer", "minimum": 0 },
+        "independent_source_count": { "type": "integer", "minimum": 0 },
+        "requires_more_evidence": { "type": "boolean" }
+      }
+    },
+    "contradiction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assertion_id", "supporting_evidence_ids", "contradictory_evidence_ids", "current_belief"],
+      "properties": {
+        "assertion_id": { "type": "string" },
+        "supporting_evidence_ids": { "type": "array", "items": { "type": "string" } },
+        "contradictory_evidence_ids": { "type": "array", "items": { "type": "string" } },
+        "current_belief": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "relationshipTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assertion_id", "subject_id", "predicate", "object_id"],
+      "properties": {
+        "assertion_id": { "type": "string" },
+        "subject_id": { "type": "string" },
+        "predicate": { "type": "string" },
+        "object_id": { "type": "string" }
+      }
+    }
+  }
+}

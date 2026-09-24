@@ -1,12 +1,13 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
+import { ConversationRuntimeModule } from '../conversation/conversation-runtime.module';
 import { WalletModule } from './wallet.module';
 import { HealthController } from '../adapters/inbound/health/health.controller';
 import { WebChannelController } from '../adapters/inbound/web/web-channel.controller';
+import { ConversationStreamService } from '../application/conversation/conversation-stream.service';
+import { CONVERSATION_STREAM } from '../domain/ports/inbound/conversation-stream.port';
 import { WhatsAppWebhookController } from '../adapters/inbound/whatsapp/whatsapp-webhook.controller';
 import { MediaProcessingProcessor } from '../adapters/outbound/queue/media-processing.processor';
 import { ConversationContextManager } from '../application/conversation/conversation-context.manager';
-import { LangGraphConversationCore } from '../application/langgraph/langgraph-conversation-core';
-import { TurnCheckpointer } from '../application/langgraph/turn-checkpointer.provider';
 import { MediaProcessingService } from '../application/media/media-processing.service';
 import { TaxonomySeeder } from '../application/taxonomy/taxonomy-seeder.service';
 import { BusinessUnderstandingService } from '../application/capability/business-understanding.service';
@@ -23,24 +24,14 @@ import { RequestDistributionService } from '../application/fulfilment/request-di
 import { VendorFanoutNotifier } from '../application/fulfilment/vendor-fanout-notifier.service';
 import { VendorResponseHandler } from '../application/fulfilment/vendor-response-handler.service';
 import { MessageIngestionService } from '../application/pipeline/message-ingestion.service';
-import { TurnProcessor } from '../application/pipeline/turn-processor.service';
 import { WORKFLOW_SERVICES } from '../application/pipeline/workflow-services';
 import { ConversationDelivery } from '../application/response/conversation-delivery.service';
-import { ResponseComposer } from '../application/response/response-composer.service';
-import { SuggestedActionsService } from '../application/response/suggested-actions.service';
-import { ConversationContinuityAnalyzer } from '../application/understanding/continuity-analyzer.service';
-import { UtteranceSegmentationService } from '../application/understanding/segmentation.service';
-import { IntentResolutionService } from '../application/understanding/intent-resolution.service';
-import { SemanticResolutionService } from '../application/understanding/semantic-resolution.service';
 import { WorkflowExpirySweeper } from '../application/workflow/workflow-expiry.sweeper';
 import { HANDLE_INCOMING_MESSAGE } from '../domain/ports/inbound/handle-incoming-message.port';
-import { CONVERSATION_CORE } from '../domain/ports/inbound/conversation-core.port';
-import { SEGMENT_EXECUTOR } from '../domain/ports/inbound/segment-executor.port';
 import {
   EMBEDDING_PROVIDER,
   type EmbeddingProviderPort,
 } from '../domain/ports/outbound/embedding-provider.port';
-import { LLM_PROVIDER_SERVICE, type LlmService } from '../domain/ports/outbound/llm-provider.port';
 import { STAGE_LOGGER, type StageLoggerPort } from '../domain/ports/outbound/stage-logger.port';
 import {
   CLOCK,
@@ -65,13 +56,14 @@ import { WorkflowDefinitionRegistry } from '../domain/workflows/workflow-registr
 import { AppConfigService } from './app-config.service';
 
 /**
- * The Conversation OS itself: understanding stages, workflow lifecycle, and the pipeline.
+ * The Conversation OS itself: ingestion, business services, workflow lifecycle, delivery.
+ * Understanding and orchestration live in the IDCE, CSRE and LangGraph orchestrator modules.
  *
  * Domain classes are plain constructors with no Nest decorators (ADR-001 keeps the core
  * framework-free), so they are assembled here with explicit factories.
  */
 @Module({
-  imports: [WalletModule],
+  imports: [WalletModule, forwardRef(() => ConversationRuntimeModule)],
   controllers: [WhatsAppWebhookController, WebChannelController, HealthController],
   providers: [
     ConversationContextManager,
@@ -81,6 +73,8 @@ import { AppConfigService } from './app-config.service';
     CapabilityResolver,
     CapabilityDiscoveryService,
     CapabilityPromotionSubscriber,
+    ConversationStreamService,
+    { provide: CONVERSATION_STREAM, useExisting: ConversationStreamService },
     OnboardingExtractionService,
     VendorOnboardingService,
     EvidenceProcessor,
@@ -90,15 +84,7 @@ import { AppConfigService } from './app-config.service';
     RequestDistributionService,
     VendorFanoutNotifier,
     VendorResponseHandler,
-    ResponseComposer,
-    SuggestedActionsService,
     ConversationDelivery,
-    ConversationContinuityAnalyzer,
-    UtteranceSegmentationService,
-    SemanticResolutionService,
-    TurnProcessor,
-    TurnCheckpointer,
-    LangGraphConversationCore,
     MessageIngestionService,
     MediaProcessingProcessor,
     WorkflowExpirySweeper,
@@ -118,20 +104,6 @@ import { AppConfigService } from './app-config.service';
         registry.register(platformInfoWorkflow);
         registry.register(triageWorkflow);
         return registry;
-      },
-    },
-
-    {
-      // The prompt lists exactly the intents this deployment can route, so the model is
-      // never asked to produce a label nothing can handle.
-      provide: IntentResolutionService,
-      inject: [LLM_PROVIDER_SERVICE, STAGE_LOGGER, WorkflowDefinitionRegistry],
-      useFactory: (llm: LlmService, logger: StageLoggerPort, definitions: WorkflowDefinitionRegistry) => {
-        const intents = [
-          ...new Set(definitions.all().flatMap((definition) => definition.startingIntents)),
-        ].filter((intent) => intent !== 'unknown');
-
-        return new IntentResolutionService(llm, logger, intents);
       },
     },
 
@@ -205,16 +177,20 @@ import { AppConfigService } from './app-config.service';
       }),
     },
 
-    // The conversation core under test on this branch: the LangGraph supervisor graph. On
-    // mcos-native this same binding points at TurnProcessor, and that one line is the whole
-    // difference between the two branches at the seam (Conversation-Core-Comparison TDR §6).
-    { provide: CONVERSATION_CORE, useExisting: LangGraphConversationCore },
-
-    // The per-segment pipeline, shared by both cores. Only the driver differs between them.
-    { provide: SEGMENT_EXECUTOR, useExisting: TurnProcessor },
-
     { provide: HANDLE_INCOMING_MESSAGE, useExisting: MessageIngestionService },
   ],
-  exports: [MessageIngestionService, HANDLE_INCOMING_MESSAGE, EvidenceQueryService],
+  exports: [
+    MessageIngestionService,
+    HANDLE_INCOMING_MESSAGE,
+    EvidenceQueryService,
+    ConversationContextManager,
+    // Consumed by the LangGraph orchestrator's workflow-execution, fast-path and delivery seams.
+    WorkflowDefinitionRegistry,
+    WorkflowEngine,
+    ConversationPolicyEngine,
+    WORKFLOW_SERVICES,
+    ConversationDelivery,
+    VendorResponseHandler,
+  ],
 })
 export class ConversationModule {}

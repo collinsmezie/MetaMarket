@@ -22,7 +22,7 @@ const STAGE = 'DurableDelivery';
  * composed reply existed only in memory, so an unreachable Graph API — or a deploy landing
  * mid-turn — meant the user got silence and there was nothing left to retry.
  *
- * A decorator rather than a change to each caller: `TurnProcessor`, `WalletNotifier` and
+ * A decorator rather than a change to each caller: the conversation orchestrator, `WalletNotifier` and
  * `VendorFanoutNotifier` all send through the registry, and durability is not a concern any of
  * them should have to remember to opt into.
  */

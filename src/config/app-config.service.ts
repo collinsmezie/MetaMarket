@@ -178,6 +178,55 @@ export class AppConfigService {
     };
   }
 
+  /** Web Retrieval System provider policy (final decision lock Q5). */
+  get wrs() {
+    const key = this.get('TAVILY_API_KEY');
+    return {
+      provider: this.get('WRS_SEARCH_PROVIDER'),
+      tavilyApiKey: key === undefined || key.trim().length === 0 ? null : key,
+      tavilyApiUrl: this.get('TAVILY_API_URL'),
+      maxQueries: this.get('WRS_MAX_QUERIES'),
+      maxResultsPerQuery: this.get('WRS_MAX_RESULTS_PER_QUERY'),
+      timeoutMs: this.get('WRS_TIMEOUT_MS'),
+    };
+  }
+
+  /** LangGraph conversation orchestrator policy (MCOS v4.4 §34A.10). */
+  get orchestrator() {
+    return { naturalizeResponses: this.get('ORCHESTRATOR_NATURALIZE_RESPONSES') };
+  }
+
+  /** Model pinned for the TDR v1.3 specialists' structured prompts. */
+  get specialistModel(): string {
+    return this.get('LLM_SPECIALIST_MODEL');
+  }
+
+  /** MCOS logical-turn assembly limits (MCOS v4.4 §5A.3.2), exposed for telemetry as well. */
+  get turnAssembly() {
+    const whatsapp = this.get('TURN_QUIET_WINDOW_MS_WHATSAPP');
+    const web = this.get('TURN_QUIET_WINDOW_MS_WEB');
+    const fallback = this.get('TURN_QUIET_WINDOW_MS_DEFAULT');
+    return {
+      quietWindowMsFor: (channel: string): number =>
+        channel === 'whatsapp' ? whatsapp : channel === 'web' ? web : fallback,
+      quietWindows: { whatsapp, web, default: fallback },
+      maxAssemblyMs: this.get('TURN_MAX_ASSEMBLY_MS'),
+      maxMessageCount: this.get('TURN_MAX_MESSAGE_COUNT'),
+      claimTtlMs: this.get('TURN_CLAIM_TTL_MS'),
+      queuePollMs: this.get('TURN_QUEUE_POLL_MS'),
+      maxExecutionAttempts: this.get('TURN_MAX_EXECUTION_ATTEMPTS'),
+      classifierEnabled: this.get('TURN_ASSEMBLY_MODEL_CLASSIFIER_ENABLED'),
+    };
+  }
+
+  /** Cross-cutting platform switches (trace API, outbox consumer). */
+  get platform() {
+    return {
+      devTraceApiEnabled: this.get('DEV_TRACE_API_ENABLED') && !this.isProduction,
+      outboxConsumerDisabled: this.get('OUTBOX_CONSUMER_DISABLED'),
+    };
+  }
+
   get taxonomy() {
     return {
       gs1GpcFile: this.get('GS1_GPC_FILE'),
