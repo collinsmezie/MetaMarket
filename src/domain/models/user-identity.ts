@@ -15,6 +15,11 @@
  */
 export function normalizePhoneNumber(raw: string): string {
   const digits = raw.replace(/[^\d]/g, '');
+  // Nigerian local formats: "0809 000 0002" (11 digits, leading trunk 0) and "809 000 0002"
+  // (10 digits) are the same subscriber as +2348090000002. Anything already carrying a country
+  // code is kept as written.
+  if (digits.length === 11 && digits.startsWith('0')) return `+234${digits.slice(1)}`;
+  if (digits.length === 10 && /^[789]/.test(digits)) return `+234${digits}`;
   return `+${digits}`;
 }
 

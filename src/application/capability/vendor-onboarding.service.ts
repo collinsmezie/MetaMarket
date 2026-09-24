@@ -96,6 +96,8 @@ export class VendorOnboardingService {
     city: string;
     state: string;
     summary: string;
+    /** What the vendor actually said about what they sell — the raw observation for Evidence (§54.4). */
+    statements?: readonly string[];
   }): Promise<Vendor> {
     const now = this.clock.now();
 
@@ -127,6 +129,8 @@ export class VendorOnboardingService {
         businessName: params.businessName,
         city: params.city,
         state: params.state,
+        contactPhone: params.contactPhone,
+        statements: params.statements ?? [],
         capabilityCount,
         // The Evidence Service consumes this in Phase 3 as the vendor's first evidence.
         topCapabilities: (profile?.dna.beliefs ?? []).slice(0, 10).map((belief) => ({

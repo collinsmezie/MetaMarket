@@ -1,0 +1,1436 @@
+[
+  {
+    "id": "v01",
+    "sector": "Building materials & cement",
+    "style": "ITEMS",
+    "channel": "web",
+    "businessName": "Okonkwo Cement Depot",
+    "statement": "I sell Dangote cement, BUA cement, sharp sand and 12mm iron rods in Aba",
+    "gpcExpected": {
+      "title": "Cement/Concrete/Mortar",
+      "level": "CLASS"
+    },
+    "ingest": null,
+    "vendor": {
+      "id": "7242c13b-b2ce-49af-9157-aba0b3f22ec8",
+      "status": "onboarding",
+      "businessName": "",
+      "contactPhone": null,
+      "city": null,
+      "state": null,
+      "onboardedAt": null,
+      "conversationId": "b36d8db9-8e7d-4684-a775-6b974ea937bb"
+    },
+    "turns": [
+      {
+        "status": "PROCESSING",
+        "channel": "web"
+      }
+    ],
+    "wallet": null,
+    "csre": [
+      {
+        "surface": "Dangote cement",
+        "canonical": "cement",
+        "entityType": "PRODUCT",
+        "concept": "cement",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "BUA cement",
+        "canonical": "cement",
+        "entityType": "PRODUCT",
+        "concept": "cement",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "sharp sand",
+        "canonical": "sharp sand",
+        "entityType": "MATERIAL",
+        "concept": "sharp sand",
+        "status": "PROPOSED",
+        "confidence": 0.9,
+        "relevance": "COMMERCIAL_MATERIAL"
+      },
+      {
+        "surface": "12mm iron rods",
+        "canonical": "iron rods",
+        "entityType": "MATERIAL",
+        "concept": "iron rods",
+        "status": "PROPOSED",
+        "confidence": 0.9,
+        "relevance": "COMMERCIAL_MATERIAL"
+      }
+    ],
+    "gpc": [],
+    "capabilities": [],
+    "evidence": {
+      "observations": [
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "ENRICHMENT_INSIGHT",
+          "status": "INTERPRETED",
+          "evidence": 14
+        }
+      ],
+      "vendorAssertions": [],
+      "phraseAssertions": [
+        {
+          "subject": "sharp sand",
+          "predicate": "mkg:EXPRESSES",
+          "object": "sharp sand",
+          "belief": 0.21,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "12mm iron rods",
+          "predicate": "mkg:EXPRESSES",
+          "object": "iron rods",
+          "belief": 0.21,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Dangote cement",
+          "predicate": "mkg:EXPRESSES",
+          "object": "cement",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "BUA cement",
+          "predicate": "mkg:EXPRESSES",
+          "object": "cement",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "cement",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Portland cement",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "cement",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Hydraulic cement",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "cement",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Dangote Portland cement",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "cement",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Dangote cement",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "cement",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "BUA Portland cement",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "cement",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "BUA cement",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "sharp sand",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Angular sand",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "sharp sand",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Construction sand",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "iron rods",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Rebar",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "iron rods",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Steel rods",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "iron rods",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "12mm rebar",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "iron rods",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "12mm iron rods",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        }
+      ],
+      "decisions": []
+    }
+  },
+  {
+    "id": "v02",
+    "sector": "Electrical materials",
+    "style": "MIXED",
+    "channel": "web",
+    "businessName": "Musa Electricals Alaba",
+    "statement": "We deal in electrical materials: wall sockets, switches, 2.5mm cables, circuit breakers and energy bulbs",
+    "gpcExpected": {
+      "title": "Electrical Cables",
+      "level": "CLASS",
+      "code": "78040300"
+    },
+    "ingest": {
+      "id": "v02",
+      "channel": "web",
+      "businessName": "Musa Electricals Alaba",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We deal in electrical materials: wall sockets, switches, 2.5mm cables, circuit breakers and energy bulbs",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 65
+        },
+        {
+          "turn": 2,
+          "sent": "Ojo, Lagos State",
+          "reply": "What's your business name?",
+          "seconds": 40
+        },
+        {
+          "turn": 3,
+          "sent": "Musa Electricals Alaba",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 52
+        },
+        {
+          "turn": 4,
+          "sent": "08090000002",
+          "reply": "All set, Musa Electricals Alaba.\n\nYou're listed in Ojo, Lagos State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000002.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 34
+        }
+      ],
+      "conversationId": "5b04e0c7-015f-46ec-af46-e59b8c31b0a6",
+      "completed": true,
+      "error": null
+    },
+    "vendor": {
+      "id": "a75bfde1-899b-46a8-8705-f07430d1decc",
+      "status": "active",
+      "businessName": "Musa Electricals Alaba",
+      "contactPhone": "+08090000002",
+      "city": "Ojo",
+      "state": "Lagos State",
+      "onboardedAt": "2026-09-24T17:25:14.783Z",
+      "conversationId": "5b04e0c7-015f-46ec-af46-e59b8c31b0a6"
+    },
+    "turns": [
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      },
+      {
+        "status": "COMMITTED",
+        "channel": "web"
+      }
+    ],
+    "wallet": {
+      "balance": 2000,
+      "grants": 1,
+      "grantAmount": 2000
+    },
+    "csre": [
+      {
+        "surface": "wall sockets",
+        "canonical": "wall socket",
+        "entityType": "PRODUCT",
+        "concept": "wall socket",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "switches",
+        "canonical": "switch",
+        "entityType": "PRODUCT",
+        "concept": "switch",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "2.5mm cables",
+        "canonical": "2.5mm cable",
+        "entityType": "PRODUCT",
+        "concept": "2.5mm cable",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "circuit breakers",
+        "canonical": "circuit breaker",
+        "entityType": "PRODUCT",
+        "concept": "circuit breaker",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "energy bulbs",
+        "canonical": "energy bulb",
+        "entityType": "PRODUCT",
+        "concept": "energy bulb",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "Musa Electricals",
+        "canonical": "Musa Electricals",
+        "entityType": "ORGANIZATION",
+        "concept": "Musa Electricals",
+        "status": "PROPOSED",
+        "confidence": 0.9,
+        "relevance": "COMMERCIAL_ENTITY"
+      },
+      {
+        "surface": "Alaba",
+        "canonical": "Alaba International Market",
+        "entityType": "PLACE",
+        "concept": "Alaba International Market",
+        "status": "PROPOSED",
+        "confidence": 0.85,
+        "relevance": "COMMERCIAL_ENTITY"
+      }
+    ],
+    "gpc": [
+      {
+        "concept": "Musa Electricals",
+        "state": "NOT_APPLICABLE",
+        "code": null,
+        "level": null,
+        "title": null,
+        "confidence": 0
+      },
+      {
+        "concept": "Alaba International Market",
+        "state": "NOT_APPLICABLE",
+        "code": null,
+        "level": null,
+        "title": null,
+        "confidence": 0
+      }
+    ],
+    "capabilities": [
+      {
+        "name": "Switches",
+        "domain": "product",
+        "confidence": 0.8659249987364613,
+        "inferred": false,
+        "evidence": 1
+      },
+      {
+        "name": "Circuit Breakers",
+        "domain": "product",
+        "confidence": 0.8659249987364613,
+        "inferred": false,
+        "evidence": 1
+      },
+      {
+        "name": "Electrical Distribution",
+        "domain": "product",
+        "confidence": 0.7242014604881614,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Electrical Connection/Distribution",
+        "domain": "product",
+        "confidence": 0.5720937982841189,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Sockets/Receptacles/Outlets",
+        "domain": "product",
+        "confidence": 0.5610437021826734,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Electrical Wires",
+        "domain": "product",
+        "confidence": 0.5610437021826734,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Light Bulbs/Tubes/Light-Emitting Diodes",
+        "domain": "product",
+        "confidence": 0.5610437021826734,
+        "inferred": true,
+        "evidence": 1
+      },
+      {
+        "name": "Electrical Supplies",
+        "domain": "product",
+        "confidence": 0.4462457824652092,
+        "inferred": true,
+        "evidence": 1
+      }
+    ],
+    "evidence": {
+      "observations": [
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "ENRICHMENT_INSIGHT",
+          "status": "INTERPRETED",
+          "evidence": 20
+        },
+        {
+          "type": "WRS_EXTERNAL_EVIDENCE",
+          "status": "INTERPRETED",
+          "evidence": 2
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "ENRICHMENT_INSIGHT",
+          "status": "INTERPRETED",
+          "evidence": 5
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "IGNORED",
+          "evidence": 0
+        },
+        {
+          "type": "GPC_MAPPING",
+          "status": "IGNORED",
+          "evidence": 0
+        },
+        {
+          "type": "VENDOR_STATEMENT",
+          "status": "INTERPRETED",
+          "evidence": 6
+        }
+      ],
+      "vendorAssertions": [
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "switches",
+          "belief": 0.476,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "2.5mm cables",
+          "belief": 0.476,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "electrical materials",
+          "belief": 0.476,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "wall sockets",
+          "belief": 0.476,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "circuit breakers",
+          "belief": 0.476,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        },
+        {
+          "predicate": "mkg:SUPPLIES",
+          "object": "energy bulbs",
+          "belief": 0.476,
+          "state": "CANDIDATE",
+          "sources": 1,
+          "counts": [
+            1,
+            0
+          ]
+        }
+      ],
+      "phraseAssertions": [
+        {
+          "subject": "wall sockets",
+          "predicate": "mkg:EXPRESSES",
+          "object": "wall socket",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "switches",
+          "predicate": "mkg:EXPRESSES",
+          "object": "switch",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "2.5mm cables",
+          "predicate": "mkg:EXPRESSES",
+          "object": "2.5mm cable",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "circuit breakers",
+          "predicate": "mkg:EXPRESSES",
+          "object": "circuit breaker",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "energy bulbs",
+          "predicate": "mkg:EXPRESSES",
+          "object": "energy bulb",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "wall socket",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "electrical outlet",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "wall socket",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "power socket",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "wall socket",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "plug point",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "wall socket",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "wall socket (Nigeria)",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "switch",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "electrical switch",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Musa Electricals Alaba",
+          "predicate": "mkg:EXPRESSES",
+          "object": "A location or venue associated with electrical materials",
+          "belief": 0.326,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Musa Electricals",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Electricals business",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "switch",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "circuit switch",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "switch",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "toggle",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "switch",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "switch (Nigeria)",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "2.5mm cable",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "2.5mm² cable",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "2.5mm cable",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "electrical wire",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "2.5mm cable",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "wiring cable",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "2.5mm cable",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "2.5mm cable (Nigeria)",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "circuit breaker",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "breaker",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "circuit breaker",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "trip switch",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "circuit breaker",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "electrical circuit breaker",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "energy bulb",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "eco bulb",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "energy bulb",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "energy bulb (Nigeria)",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "circuit breaker",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "circuit breaker (Nigeria)",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "energy bulb",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "energy-saving bulb",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "energy bulb",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "efficient light bulb",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Musa Electricals Alaba",
+          "predicate": "mkg:EXPRESSES",
+          "object": "A business entity named Musa Electricals",
+          "belief": 0.326,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Alaba",
+          "predicate": "mkg:EXPRESSES",
+          "object": "Alaba International Market",
+          "belief": 0.199,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Musa Electricals",
+          "predicate": "mkg:EXPRESSES",
+          "object": "Musa Electricals",
+          "belief": 0.21,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Musa Electricals",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Electrical materials supplier",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Alaba International Market",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Alaba Market",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Alaba International Market",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Electrical materials hub",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "Alaba International Market",
+          "predicate": "mkg:HAS_ALIAS",
+          "object": "Alaba",
+          "belief": 0.045,
+          "state": "CANDIDATE"
+        }
+      ],
+      "decisions": [
+        {
+          "operation": "ADD",
+          "predicate": "mkg:EXPRESSES",
+          "object": "concept:proposed:a business entity named musa electricals",
+          "belief": 0.326,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:EXPRESSES",
+          "object": "concept:proposed:a location or venue associated with electrical materials",
+          "belief": 0.326,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:electrical materials",
+          "belief": 0.476,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:wall sockets",
+          "belief": 0.476,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:switches",
+          "belief": 0.476,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:2.5mm cables",
+          "belief": 0.476,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:circuit breakers",
+          "belief": 0.476,
+          "status": "PENDING"
+        },
+        {
+          "operation": "ADD",
+          "predicate": "mkg:SUPPLIES",
+          "object": "concept:proposed:energy bulbs",
+          "belief": 0.476,
+          "status": "PENDING"
+        }
+      ]
+    }
+  },
+  {
+    "id": "v03",
+    "sector": "Plumbing materials",
+    "style": "HYBRID",
+    "channel": "web",
+    "businessName": "Chidi Plumbing Works",
+    "statement": "I sell PVC pipes, taps, water closets and fittings, and I also do plumbing installation and repairs",
+    "gpcExpected": {
+      "title": "Plumbing/Heating/Ventilation/Air Conditioning",
+      "level": "FAMILY",
+      "code": "79010000"
+    },
+    "ingest": null,
+    "vendor": {
+      "id": "e641c87e-690a-416a-b23f-696a4675923a",
+      "status": "onboarding",
+      "businessName": "",
+      "contactPhone": null,
+      "city": null,
+      "state": null,
+      "onboardedAt": null,
+      "conversationId": "2cc0b3fd-e0f1-4a70-ac7c-2d3ddbba8a4c"
+    },
+    "turns": [
+      {
+        "status": "PROCESSING",
+        "channel": "web"
+      }
+    ],
+    "wallet": null,
+    "csre": [
+      {
+        "surface": "PVC pipes",
+        "canonical": "PVC pipes",
+        "entityType": "PRODUCT",
+        "concept": "PVC pipes",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "taps",
+        "canonical": "taps",
+        "entityType": "PRODUCT",
+        "concept": "taps",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "water closets",
+        "canonical": "water closets",
+        "entityType": "PRODUCT",
+        "concept": "water closets",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_PRODUCT"
+      },
+      {
+        "surface": "fittings",
+        "canonical": "plumbing fittings",
+        "entityType": "PRODUCT_CATEGORY",
+        "concept": "fittings",
+        "status": "PROPOSED",
+        "confidence": 0.9,
+        "relevance": "COMMERCIAL_CATEGORY"
+      },
+      {
+        "surface": "plumbing installation and repairs",
+        "canonical": "plumbing installation and repairs",
+        "entityType": "SERVICE",
+        "concept": "plumbing installation and repairs",
+        "status": "PROPOSED",
+        "confidence": 0.95,
+        "relevance": "DIRECT_SERVICE"
+      }
+    ],
+    "gpc": [],
+    "capabilities": [],
+    "evidence": {
+      "observations": [
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        },
+        {
+          "type": "CSRE_SEMANTIC_RESOLUTION",
+          "status": "INTERPRETED",
+          "evidence": 1
+        }
+      ],
+      "vendorAssertions": [],
+      "phraseAssertions": [
+        {
+          "subject": "taps",
+          "predicate": "mkg:EXPRESSES",
+          "object": "taps",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "PVC pipes",
+          "predicate": "mkg:EXPRESSES",
+          "object": "PVC pipes",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "water closets",
+          "predicate": "mkg:EXPRESSES",
+          "object": "water closets",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "plumbing installation and repairs",
+          "predicate": "mkg:EXPRESSES",
+          "object": "plumbing installation and repairs",
+          "belief": 0.222,
+          "state": "CANDIDATE"
+        },
+        {
+          "subject": "fittings",
+          "predicate": "mkg:EXPRESSES",
+          "object": "fittings",
+          "belief": 0.21,
+          "state": "CANDIDATE"
+        }
+      ],
+      "decisions": []
+    }
+  },
+  {
+    "id": "v04",
+    "sector": "Paints & coatings",
+    "style": "CATEGORY",
+    "channel": "web",
+    "businessName": "Rainbow Paints Ilorin",
+    "statement": "We are a paint and coatings shop",
+    "gpcExpected": {
+      "title": "Paints/Varnishes",
+      "level": "CLASS"
+    },
+    "ingest": null,
+    "vendor": {
+      "id": "a1336d08-8e4b-4c22-b096-7d234e8a0c1f",
+      "status": "onboarding",
+      "businessName": "",
+      "contactPhone": null,
+      "city": null,
+      "state": null,
+      "onboardedAt": null,
+      "conversationId": "3287500d-f67f-4f8c-a58e-2424f0410f77"
+    },
+    "turns": [
+      {
+        "status": "PROCESSING",
+        "channel": "web"
+      }
+    ],
+    "wallet": null,
+    "csre": [],
+    "gpc": [],
+    "capabilities": [],
+    "evidence": {
+      "observations": [],
+      "vendorAssertions": [],
+      "phraseAssertions": [],
+      "decisions": []
+    }
+  },
+  {
+    "id": "v05",
+    "sector": "Roofing",
+    "style": "HYBRID",
+    "channel": "web",
+    "businessName": "Gbenga Roofing",
+    "statement": "Aluminium roofing sheets, stone-coated roofing tiles and long span, plus roof installation and leak repairs",
+    "gpcExpected": {
+      "title": "Roofing Tiles/Slates/Shingles/Shakes",
+      "level": "BRICK",
+      "code": "10002683"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v06",
+    "sector": "Generators & power",
+    "style": "HYBRID",
+    "channel": "whatsapp",
+    "businessName": "PowerHouse Generators",
+    "statement": "I sell Elepaq and Sumec Firman generators and I repair generators of all sizes",
+    "gpcExpected": {
+      "title": "Generators",
+      "level": "BRICK",
+      "code": "10005211"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v07",
+    "sector": "Solar & inverters",
+    "style": "ITEMS",
+    "channel": "web",
+    "businessName": "SunLite Solar Kano",
+    "statement": "I sell 550W mono solar panels, 5kVA inverters and 200Ah tubular batteries",
+    "gpcExpected": {
+      "title": "Solar Panels",
+      "level": "BRICK",
+      "code": "10008389"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v08",
+    "sector": "Mobile phones & accessories",
+    "style": "VENUE",
+    "channel": "web",
+    "businessName": "Computer Village Phones",
+    "statement": "I have a shop in Computer Village Ikeja where I sell phones, chargers and earpieces",
+    "gpcExpected": {
+      "title": "Mobile Phones",
+      "level": "BRICK",
+      "code": "10008506"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v09",
+    "sector": "Computers & laptops",
+    "style": "HYBRID",
+    "channel": "web",
+    "businessName": "ByteWorks Abuja",
+    "statement": "We sell UK-used laptops and desktops and we fix laptops, replace screens and install software",
+    "gpcExpected": {
+      "title": "Computers/Laptops",
+      "level": "CLASS"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v10",
+    "sector": "Home appliances",
+    "style": "MIXED",
+    "channel": "web",
+    "businessName": "Coolzone Appliances",
+    "statement": "Home appliances dealer: fridges, deep freezers, air conditioners, washing machines and standing fans",
+    "gpcExpected": {
+      "title": "Refrigerator/Freezers",
+      "level": "BRICK",
+      "code": "10003695"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v11",
+    "sector": "Auto spare parts",
+    "style": "VENUE",
+    "channel": "whatsapp",
+    "businessName": "Ladipo Auto Parts",
+    "statement": "I sell at Ladipo market — tyres, brake pads, shock absorbers and Toyota spare parts",
+    "gpcExpected": {
+      "title": "Tyres",
+      "level": "BRICK",
+      "code": "10002924"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v12",
+    "sector": "Auto repair services",
+    "style": "SERVICE",
+    "channel": "web",
+    "businessName": "Baba Tunde Mechanic Workshop",
+    "statement": "I am a mechanic. I do engine repairs, servicing, brake work and AC repair for cars",
+    "gpcExpected": {
+      "title": "Automotive services",
+      "level": "SERVICE (not in GPC)"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v13",
+    "sector": "Fashion & clothing",
+    "style": "CATEGORY",
+    "channel": "web",
+    "businessName": "Amaka's Boutique",
+    "statement": "We run a ladies' boutique for clothing and fashion accessories",
+    "gpcExpected": {
+      "title": "Clothing",
+      "level": "FAMILY"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v14",
+    "sector": "Footwear",
+    "style": "ITEMS",
+    "channel": "web",
+    "businessName": "Aba Made Shoes",
+    "statement": "I make and sell leather sandals, men's loafers and school shoes",
+    "gpcExpected": {
+      "title": "Footwear",
+      "level": "CLASS"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v15",
+    "sector": "Textiles & fabrics",
+    "style": "VENUE",
+    "channel": "web",
+    "businessName": "Balogun Fabrics",
+    "statement": "My shop is in Balogun market, I sell ankara, lace, aso-oke and senator materials",
+    "gpcExpected": {
+      "title": "Fabrics/Textiles",
+      "level": "CLASS"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v16",
+    "sector": "Tailoring",
+    "style": "SERVICE",
+    "channel": "web",
+    "businessName": "Stitches by Halima",
+    "statement": "I am a tailor and fashion designer. I sew native wears, kaftans and wedding outfits",
+    "gpcExpected": {
+      "title": "Tailoring services",
+      "level": "SERVICE (not in GPC)"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v17",
+    "sector": "Beauty & cosmetics",
+    "style": "MIXED",
+    "channel": "web",
+    "businessName": "Glow Beauty Store",
+    "statement": "Cosmetics and skincare: body lotions, perfumes, human hair wigs and makeup kits",
+    "gpcExpected": {
+      "title": "Cosmetics/Fragrances",
+      "level": "FAMILY"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v18",
+    "sector": "Hair & barbing services",
+    "style": "SERVICE",
+    "channel": "web",
+    "businessName": "Kings Cut Barbershop",
+    "statement": "We are a barbing salon offering haircuts, beard grooming and hair dye",
+    "gpcExpected": {
+      "title": "Personal care services",
+      "level": "SERVICE (not in GPC)"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v19",
+    "sector": "Pharmacy & medical supplies",
+    "style": "MIXED",
+    "channel": "whatsapp",
+    "businessName": "Onitsha Central Pharmacy",
+    "statement": "Pharmacy and medical supplies — drugs, blood pressure monitors, glucose strips, surgical gloves and face masks",
+    "gpcExpected": {
+      "title": "Pharmaceutical Drugs",
+      "level": "FAMILY"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v20",
+    "sector": "Foodstuff & grains",
+    "style": "VENUE",
+    "channel": "web",
+    "businessName": "Mile 12 Foodstuff",
+    "statement": "I sell foodstuff in Mile 12 market: bags of rice, beans, garri, palm oil and yam",
+    "gpcExpected": {
+      "title": "Grains/Rice",
+      "level": "CLASS"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v21",
+    "sector": "Provisions & FMCG",
+    "style": "CATEGORY",
+    "channel": "web",
+    "businessName": "Mama Nkechi Provisions",
+    "statement": "I run a provisions store",
+    "gpcExpected": {
+      "title": "Food/Beverage/Tobacco",
+      "level": "SEGMENT"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v22",
+    "sector": "Frozen foods & poultry",
+    "style": "ITEMS",
+    "channel": "web",
+    "businessName": "Iceberg Frozen Foods",
+    "statement": "I sell frozen chicken, turkey wings, titus fish and croaker",
+    "gpcExpected": {
+      "title": "Poultry - Unprepared/Unprocessed",
+      "level": "BRICK"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v23",
+    "sector": "Bottled & sachet water",
+    "style": "HYBRID",
+    "channel": "web",
+    "businessName": "Aqua Fresh Table Water",
+    "statement": "We produce and supply sachet water and bottled water, and we deliver to shops and events",
+    "gpcExpected": {
+      "title": "Packaged Water",
+      "level": "BRICK",
+      "code": "10000232"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v24",
+    "sector": "Agro inputs & fertiliser",
+    "style": "MIXED",
+    "channel": "web",
+    "businessName": "Green Harvest Agro",
+    "statement": "Agro inputs dealer: NPK fertiliser, urea, herbicides, knapsack sprayers and hybrid maize seed",
+    "gpcExpected": {
+      "title": "Plant/Soil Fertilizer/Food",
+      "level": "BRICK",
+      "code": "10003234"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v25",
+    "sector": "Furniture",
+    "style": "HYBRID",
+    "channel": "whatsapp",
+    "businessName": "Oga Carpenter Furniture",
+    "statement": "I make sofas, beds, wardrobes and dining sets, and I also do furniture repairs and upholstery",
+    "gpcExpected": {
+      "title": "Household/Office Sofas",
+      "level": "BRICK",
+      "code": "10002195"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v26",
+    "sector": "Books & stationery",
+    "style": "CATEGORY",
+    "channel": "web",
+    "businessName": "Scholars Bookshop",
+    "statement": "We are a bookshop and stationery store",
+    "gpcExpected": {
+      "title": "Stationery/Office Machinery",
+      "level": "SEGMENT"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v27",
+    "sector": "Baby products",
+    "style": "ITEMS",
+    "channel": "web",
+    "businessName": "Little Ones Baby Store",
+    "statement": "I sell Pampers diapers, baby wipes, feeding bottles and baby formula",
+    "gpcExpected": {
+      "title": "Baby Diapers (Disposable)",
+      "level": "BRICK",
+      "code": "10000494"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v28",
+    "sector": "Cleaning & household chemicals",
+    "style": "MIXED",
+    "channel": "web",
+    "businessName": "Sparkle Cleaning Supplies",
+    "statement": "Cleaning supplies: detergents, bleach, iron sponge, mops and toilet paper in bulk",
+    "gpcExpected": {
+      "title": "Laundry Detergents",
+      "level": "BRICK",
+      "code": "10000424"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v29",
+    "sector": "Event rentals & catering services",
+    "style": "SERVICE",
+    "channel": "web",
+    "businessName": "Royal Events Rentals",
+    "statement": "We rent canopies, chairs and tables for events and we also provide catering and decoration services",
+    "gpcExpected": {
+      "title": "Event services",
+      "level": "SERVICE (not in GPC)"
+    },
+    "ingest": null,
+    "vendor": null
+  },
+  {
+    "id": "v30",
+    "sector": "Industrial safety & PPE",
+    "style": "ITEMS",
+    "channel": "whatsapp",
+    "businessName": "SafeGuard PPE Warri",
+    "statement": "I supply safety gloves, safety boots, helmets, reflective jackets and goggles to oil companies",
+    "gpcExpected": {
+      "title": "Gloves",
+      "level": "BRICK",
+      "code": "10005894"
+    },
+    "ingest": null,
+    "vendor": null
+  }
+]

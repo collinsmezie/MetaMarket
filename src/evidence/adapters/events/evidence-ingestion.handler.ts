@@ -14,6 +14,7 @@ import { EVIDENCE_COMPONENT, type ObservationInput, type ObservationType } from 
 import { EVIDENCE_INTAKE, type EvidenceIntakePort } from '../../ports/evidence-intake.port';
 
 type Wire = Record<string, unknown>;
+const SELLER_ONBOARDED = 'seller.onboarded';
 
 /**
  * Durable, exactly-once ingestion of platform facts into the Evidence System (Evidence TDR §42,
@@ -29,6 +30,9 @@ export class EvidenceIngestionHandler implements EventHandler {
     PlatformEvents.GPCMapped,
     PlatformEvents.EvidenceRetrieved,
     PlatformEvents.EnrichmentCompleted,
+    // Legacy vendor onboarding (until Capability Projection, Phase 10): the vendor's own words
+    // about what they sell are a first-class market-language observation (§54.4).
+    SELLER_ONBOARDED,
   ] as const;
 
   constructor(
@@ -137,6 +141,33 @@ export class EvidenceIngestionHandler implements EventHandler {
               profile: profile.profile,
             })),
           },
+        };
+      }
+      case SELLER_ONBOARDED: {
+        const statements = Array.isArray(payload.statements)
+          ? (payload.statements as unknown[]).map(String).filter((t) => t.trim().length > 0)
+          : [];
+        const vendorId = event.vendorId ?? null;
+        if (vendorId === null || statements.length === 0) return null;
+        return {
+          ...base,
+          observationType: 'VENDOR_STATEMENT',
+          source: {
+            component: 'VENDOR_ONBOARDING',
+            version: 'legacy',
+            eventId: event.eventId,
+            requestId: null,
+          },
+          actor: { id: vendorId, role: 'VENDOR' },
+          channel: null,
+          context: { country: 'NG', region: str(payload.state) },
+          payload: {
+            actor_label: str(payload.businessName) ?? vendorId,
+            city: payload.city ?? null,
+            state: payload.state ?? null,
+            cde_capabilities: payload.topCapabilities ?? [],
+          },
+          rawText: statements.join('\n'),
         };
       }
       default:

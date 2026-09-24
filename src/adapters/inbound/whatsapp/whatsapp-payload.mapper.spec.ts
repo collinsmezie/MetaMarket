@@ -252,5 +252,9 @@ describe('normalizePhoneNumber', () => {
     expect(normalizePhoneNumber('2348012345678')).toBe('+2348012345678');
     expect(normalizePhoneNumber('+234 801 234 5678')).toBe('+2348012345678');
     expect(normalizePhoneNumber('+234-801-234-5678')).toBe('+2348012345678');
+    // Nigerian local formats are the same subscriber.
+    expect(normalizePhoneNumber('08012345678')).toBe('+2348012345678');
+    expect(normalizePhoneNumber('0801 234 5678')).toBe('+2348012345678');
+    expect(normalizePhoneNumber('8012345678')).toBe('+2348012345678');
   });
 });

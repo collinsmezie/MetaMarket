@@ -99,14 +99,15 @@ export class OnboardingExtractionService {
         ...(data.state.trim().length > 0 &&
         !data.stateInferredFromCity &&
         data.stateConfidence >= FIELD_ACCEPT_THRESHOLD
-          ? { state: data.state.trim() }
+          ? { state: stateName(data.state) }
           : {}),
       };
 
       const extraction: ExtractionResult = {
         fields,
         stateInferredFromCity: data.stateInferredFromCity,
-        inferredState: data.stateInferredFromCity && data.state.trim().length > 0 ? data.state.trim() : null,
+        inferredState:
+          data.stateInferredFromCity && data.state.trim().length > 0 ? stateName(data.state) : null,
         stateConfidence: data.stateConfidence,
         confirmation:
           data.isConfirmation && data.confirmationValue !== 'none' ? data.confirmationValue : null,
@@ -214,3 +215,8 @@ Rules:
 - Confidence must be honest. When unsure, return a low confidence and let the platform ask.
 - Never invent a value to fill a field. An empty string is the correct answer when the vendor
   did not say it.`;
+
+/** "Lagos State" and "Lagos" are the same state; the workflow appends the word itself. */
+function stateName(raw: string): string {
+  return raw.trim().replace(/\s+state$/i, '');
+}

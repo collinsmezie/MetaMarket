@@ -114,6 +114,7 @@ export interface OnboardingServices extends WorkflowServices {
       city: string;
       state: string;
       summary: string;
+      statements?: readonly string[];
     }): Promise<void>;
   };
 }
@@ -482,6 +483,13 @@ const createProfile = {
       city: data.fields.city,
       state: data.fields.state,
       summary,
+      statements: [
+        ...new Set(
+          [data.fields.capabilityStatement, ...data.statements].filter(
+            (statement): statement is string => typeof statement === 'string' && statement.trim().length > 0,
+          ),
+        ),
+      ],
     });
 
     return {

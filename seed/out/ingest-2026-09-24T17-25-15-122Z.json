@@ -1,0 +1,40 @@
+{
+  "base": "http://localhost:4000",
+  "startedAt": "2026-09-24T17:25:15.124Z",
+  "results": [
+    {
+      "id": "v02",
+      "channel": "web",
+      "businessName": "Musa Electricals Alaba",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "We deal in electrical materials: wall sockets, switches, 2.5mm cables, circuit breakers and energy bulbs",
+          "reply": "Which city and state is your business located in?",
+          "seconds": 65
+        },
+        {
+          "turn": 2,
+          "sent": "Ojo, Lagos State",
+          "reply": "What's your business name?",
+          "seconds": 40
+        },
+        {
+          "turn": 3,
+          "sent": "Musa Electricals Alaba",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 52
+        },
+        {
+          "turn": 4,
+          "sent": "08090000002",
+          "reply": "All set, Musa Electricals Alaba.\n\nYou're listed in Ojo, Lagos State State. Buyers looking for what you sell can now find you, and I'll send their requests to +08090000002.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 34
+        }
+      ],
+      "conversationId": "5b04e0c7-015f-46ec-af46-e59b8c31b0a6",
+      "completed": true,
+      "error": null
+    }
+  ]
+}
