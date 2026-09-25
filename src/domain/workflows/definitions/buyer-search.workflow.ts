@@ -45,7 +45,13 @@ interface RankedVendorView {
 
 export interface BuyerSearchServices extends WorkflowServices {
   readonly matching: {
-    match(params: { query: string; history?: readonly string[]; customerCity?: string | null }): Promise<
+    match(params: {
+      query: string;
+      history?: readonly string[];
+      customerCity?: string | null;
+      conceptLabel?: string | null;
+      gpcCode?: string | null;
+    }): Promise<
       | {
           outcome: 'ranked';
           resolved: {
@@ -271,10 +277,16 @@ const resolveDemand = {
 
     const customerCity = trigger.conversation.memory.facts['location.city']?.value;
 
+    const requestedProduct = trigger.semanticRequest?.products?.[0];
+    const conceptLabel = requestedProduct?.normalized || null;
+    const gpcCode = trigger.semanticRequest?.category?.gpc || null;
+
     const result = await services.matching.match({
       query,
       history: trigger.recentHistory.slice(-4).map((entry) => `${entry.role}: ${entry.content}`),
       customerCity: typeof customerCity === 'string' ? customerCity : null,
+      conceptLabel,
+      gpcCode,
     });
 
     if (result.outcome === 'clarification_needed') {

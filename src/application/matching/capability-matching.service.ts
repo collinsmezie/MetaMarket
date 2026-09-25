@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import type { CapabilityRef } from '../../domain/models/capability';
 import type {
   DemandObject,
@@ -26,6 +26,7 @@ import {
 import { CapabilityResolver } from '../capability/capability-resolver.service';
 import { EvidenceQueryService } from '../evidence/evidence-query.service';
 import { DemandUnderstandingService } from './demand-understanding.service';
+import { MatchingService } from '../../matching/application/matching.service';
 
 const COMPONENT = 'CME';
 
@@ -49,6 +50,9 @@ export interface MatchRequest {
   /** Customer location, for proximity scoring. */
   readonly customerCity?: string | null;
   readonly limit?: number;
+  /** Pre-resolved semantic concept from upstream CSRE (Overarching §15.2, §30.5). */
+  readonly conceptLabel?: string | null;
+  readonly gpcCode?: string | null;
 }
 
 export type MatchResult =
@@ -85,10 +89,92 @@ export class CapabilityMatchingService {
     private readonly understanding: DemandUnderstandingService,
     private readonly resolver: CapabilityResolver,
     private readonly evidence: EvidenceQueryService,
+    @Optional() private readonly newMatching?: MatchingService,
   ) {}
 
   async match(request: MatchRequest): Promise<MatchResult> {
     const startedAt = Date.now();
+
+    // ── Phase 11 / v1.3 Matching & Fanout Seam ──────────────────────────────────────
+    if (this.newMatching) {
+      try {
+        const mkgResult = await this.newMatching.match({
+          query: request.query,
+          history: request.history,
+          customerCity: request.customerCity,
+          conceptLabel: request.conceptLabel,
+          gpcCode: request.gpcCode,
+        });
+
+        if (mkgResult.outcome === 'ranked' && mkgResult.vendors && mkgResult.vendors.length > 0) {
+          const vendors: RankedVendor[] = mkgResult.vendors.map((v) => ({
+            vendorId: v.vendorId,
+            businessName: v.businessName,
+            phone: v.phone ?? undefined,
+            city: v.city ?? null,
+            state: v.state ?? null,
+            score: v.score,
+            rating: v.rating ?? undefined,
+            description: v.description ?? undefined,
+            components: {
+              capabilityMatch: Math.min(1.0, v.score / 4),
+              expansionMatch: 0.8,
+              evidenceScore: 0.9,
+              evidenceConfidence: 0.9,
+              proximity: 0.8,
+              availability: 1.0,
+            },
+            reasons: v.reasons ? [...v.reasons] : [],
+          }));
+
+          const resolvedDemand: ResolvedDemand = {
+            demand: {
+              rawQuery: request.query,
+              mode: 'item',
+              products: (mkgResult.resolved?.demand.products ? [...mkgResult.resolved.demand.products] : [request.conceptLabel || request.query]),
+              services: [],
+              businessTypes: [],
+              quantities: [],
+              modifiers: [],
+              constraints: [],
+              brands: [],
+              location: request.customerCity || '',
+              ambiguityType: 'none',
+              ambiguityScore: 0,
+              ambiguityOptions: [],
+            },
+            expansion: {
+              missions: [],
+              capabilities: [],
+              inventoryAffinities: [],
+              inferredProducts: [],
+            },
+            primaryCapabilities: (mkgResult.resolved?.primaryCapabilities ? mkgResult.resolved.primaryCapabilities.map((c) => ({
+              domain: 'product' as const,
+              id: c.id,
+              name: c.name,
+            })) : [
+              { domain: 'product' as const, id: request.gpcCode || 'mkg_capability', name: request.conceptLabel || request.query },
+            ]),
+            expandedCapabilities: [],
+          };
+
+          return {
+            outcome: 'ranked',
+            resolved: resolvedDemand,
+            vendors,
+          };
+        }
+      } catch (err) {
+        this.logger.stageFailed({
+          component: COMPONENT,
+          stage: 'MkgMatchingDelegation',
+          input: { query: request.query },
+          action: 'Error delegating to Phase 11 MatchingService; falling back to legacy pipeline',
+          error: err as Error,
+        });
+      }
+    }
 
     // ── Stage 1: Demand Understanding ────────────────────────────────────────────────
     const demand = await this.understanding.understand({

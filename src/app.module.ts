@@ -5,6 +5,7 @@ import { InfrastructureModule } from './config/infrastructure.module';
 import { EnrichmentModule } from './enrichment/enrichment.module';
 import { EvidenceModule } from './evidence/evidence.module';
 import { IntentModule } from './intent/intent.module';
+import { MkgModule } from './mkg/mkg.module';
 import { OrchestrationModule } from './orchestration/orchestration.module';
 import { DevModule } from './platform/live-test/dev.module';
 import { PlatformModule } from './platform/platform.module';
@@ -29,6 +30,7 @@ const devApiEnabled = process.env.NODE_ENV !== 'production' && process.env.DEV_T
     IntentModule,
     RetrievalModule,
     SemanticsModule,
+    MkgModule,
     EnrichmentModule,
     GpcResolverModule,
     EvidenceModule,

@@ -1679,6 +1679,18 @@ enum GraphChangeDecisionStatus {
   FAILED
 }
 
+/// Lifecycle states of MKG commercial relationships (MKG TDR §11, §33.5).
+enum MkgLifecycleState {
+  CANDIDATE
+  ACTIVE
+  REINFORCED
+  WEAKENING
+  INACTIVE
+  PRUNED
+  REJECTED
+}
+
+
 /// Raw observation (Evidence §2, §13, §50.3): what happened, stored verbatim and never modified.
 model Observation {
   id              String            @id @default(uuid()) @db.Uuid
@@ -1859,3 +1871,77 @@ model GraphChangeDecision {
   @@index([runId])
   @@map("graph_change_decisions")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Market Knowledge Graph (MKG) v1.1 Standalone Models (Phase 9 & 10)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Nodes in the Market Knowledge Graph (MKG TDR §7).
+/// Represents MarketConcepts, Phrases, Actors (Vendors/Buyers), GPC Backbone Links, and Contexts.
+model MkgNode {
+  /// Deterministic URI/ID, e.g. "concept:vacuum_flask", "actor:vendor_uuid", "phrase:hot_flask", "gpc:class:10001096".
+  id          String   @id
+  /// Node type: CONCEPT | PHRASE | GPC_CLASS | GPC_BRICK | ACTOR | CONTEXT | ASSERTION
+  nodeType    String   @map("node_type")
+  /// Display or preferred label (SKOS prefLabel)
+  label       String
+  /// Alternative surface labels, aliases, or colloquialisms (SKOS altLabel)
+  aliases     String[] @default([])
+  description String?
+  /// Additional metadata (specificityLevel, schemeId, externalURIs, etc.)
+  properties  Json     @default("{}")
+  /// Node operational status: ACTIVE | INACTIVE | DEPRECATED
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  outgoingEdges MkgEdge[] @relation("MkgEdgeSubject")
+  incomingEdges MkgEdge[] @relation("MkgEdgeObject")
+
+  @@index([nodeType, status])
+  @@index([label])
+  @@map("mkg_nodes")
+}
+
+/// Commercial relationships in the Market Knowledge Graph (MKG TDR §8, §9, §11, §25).
+/// Stored as native RDF triples with belief, prior, evidence lineage, and lifecycle tracking.
+model MkgEdge {
+  id             String            @id @default(uuid()) @db.Uuid
+  subjectId      String            @map("subject_id")
+  /// Predicate URI/string: mkg:EXPRESSES, mkg:MAPPED_TO_GPC, mkg:SUPPLIES, mkg:ACCESSORY_OF, mkg:SUBSTITUTE_FOR, etc.
+  predicate      String
+  objectId       String            @map("object_id")
+  /// Current belief score [0.0 - 1.0] determined by Evidence System
+  beliefScore    Float             @default(1.0) @map("belief_score")
+  /// Graph prior score for candidate traversal weighting
+  priorScore     Float             @default(1.0) @map("prior_score")
+  /// Commercial lifecycle state (MKG §11)
+  lifecycleState MkgLifecycleState @default(ACTIVE) @map("lifecycle_state")
+  /// Supporting Evidence IDs from the Evidence System (§15)
+  evidenceIds    String[]          @default([]) @map("evidence_ids")
+  /// ID of the GraphChangeDecision that last modified this relationship
+  decisionId     String?           @map("decision_id")
+  /// Policy version that authorized the relationship state
+  policyVersion  String            @default("1.0") @map("policy_version")
+  /// Regional or marketplace locality (e.g. "NG", "Lagos", "Computer Village")
+  locality       String?
+  /// Additional relationship metadata (inverses, temporal tags, confidence intervals)
+  properties     Json              @default("{}")
+  /// Deterministic idempotency hash: hash(decisionId + operation + subject + predicate + object)
+  idempotencyKey String?           @unique @map("idempotency_key")
+  validFrom      DateTime?         @map("valid_from")
+  validUntil     DateTime?         @map("valid_until")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  subject MkgNode @relation("MkgEdgeSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+  object  MkgNode @relation("MkgEdgeObject", fields: [objectId], references: [id], onDelete: Cascade)
+
+  @@unique([subjectId, predicate, objectId], name: "mkg_edge_unique_triple")
+  @@index([subjectId, predicate, beliefScore])
+  @@index([objectId, predicate, beliefScore])
+  @@index([predicate, lifecycleState])
+  @@index([decisionId])
+  @@map("mkg_edges")
+}
+

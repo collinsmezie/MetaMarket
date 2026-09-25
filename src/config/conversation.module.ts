@@ -1,6 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { ConversationRuntimeModule } from '../conversation/conversation-runtime.module';
 import { WalletModule } from './wallet.module';
+import { MatchingModule } from '../matching/matching.module';
 import { HealthController } from '../adapters/inbound/health/health.controller';
 import { WebChannelController } from '../adapters/inbound/web/web-channel.controller';
 import { ConversationStreamService } from '../application/conversation/conversation-stream.service';
@@ -63,7 +64,7 @@ import { AppConfigService } from './app-config.service';
  * framework-free), so they are assembled here with explicit factories.
  */
 @Module({
-  imports: [WalletModule, forwardRef(() => ConversationRuntimeModule)],
+  imports: [WalletModule, forwardRef(() => ConversationRuntimeModule), MatchingModule],
   controllers: [WhatsAppWebhookController, WebChannelController, HealthController],
   providers: [
     ConversationContextManager,
