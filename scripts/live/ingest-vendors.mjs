@@ -31,6 +31,8 @@ const json = async (res) => {
   }
 };
 
+const RUN_ID = Date.now();
+
 /** Chooses the answer to the workflow's latest question (Information Before Questions applies: any turn may carry more). */
 function answerFor(reply, vendor, sentSoFar) {
   const q = reply.toLowerCase();
@@ -39,8 +41,8 @@ function answerFor(reply, vendor, sentSoFar) {
   if (/right\?|is that correct\?|correct\?|confirm|shall i|ready to list|should i proceed/i.test(q)) return 'Yes';
   if (/business name|name of your/i.test(q)) return vendor.followups.businessName;
   if (/whatsapp number|phone number|which number|contact number/i.test(q)) return vendor.followups.phone;
-  if (/we found a match|match for|found a seller|checking across our seller network|supplier is ready|connecting you with/i.test(q)) return `I am a seller listing my products. ${vendor.statement}`;
-  if (/what would you like to do|what you want to do|inquire about their availability|find these products|looking to buy, or say|looking to buy|buy something|sell something|want to buy|want to sell|buy or sell/i.test(q)) return `I want to sell ${vendor.statement}`;
+  if (/we found a match|match for|found a seller|checking across our seller network|supplier is ready|connecting you with/i.test(q)) return `I want to sell ${vendor.statement}`;
+  if (/what would you like to do|what you want to do|clarify what you want to do|inquire about their availability|find these products|looking to buy, or say|looking to buy|buy something|sell something|want to buy|want to sell|buy or sell/i.test(q)) return `I want to sell ${vendor.statement}`;
   if (/what do you sell|what would you like to add|what service|what products|anything else|other products|any other/i.test(q)) return sentSoFar.includes(vendor.statement) ? `${vendor.statement}. That is all.` : vendor.statement;
   return null;
 }
@@ -67,7 +69,7 @@ async function sendWeb(vendor, text, index) {
   const res = await fetch(`${BASE}/channels/web/messages`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId: `seed-${vendor.id}`, phone: vendor.phone, text, clientMessageId: `seed-${vendor.id}-${index}` }),
+    body: JSON.stringify({ sessionId: `seed-${vendor.id}`, phone: vendor.phone, text, clientMessageId: `seed-${vendor.id}-${RUN_ID}-${index}` }),
   });
   if (res.status !== 202) throw new Error(`web message rejected: ${res.status} ${await res.text()}`);
   return json(res);
@@ -87,7 +89,7 @@ async function sendWhatsApp(vendor, text, index) {
               messaging_product: 'whatsapp',
               metadata: { display_phone_number: '15550000000', phone_number_id: 'seed' },
               contacts: [{ profile: { name: vendor.businessName }, wa_id: wa }],
-              messages: [{ from: wa, id: `wamid.seed.${vendor.id}.${index}.${Date.now()}`, timestamp: String(Math.floor(Date.now() / 1000)), type: 'text', text: { body: text } }],
+              messages: [{ from: wa, id: `wamid.seed.${vendor.id}.${RUN_ID}.${index}`, timestamp: String(Math.floor(Date.now() / 1000)), type: 'text', text: { body: text } }],
             },
           },
         ],
@@ -115,14 +117,23 @@ async function onboard(vendor) {
   const sent = [];
   try {
     const existingHistory = (await historyFor(vendor)).history ?? [];
-    const lastReply = existingHistory.filter((e) => e.role === 'assistant').slice(-1)[0]?.content;
+    const assistantHistory = existingHistory.filter((e) => e.role === 'assistant' && !/still working on your request/i.test(e.content));
+    const lastReply = assistantHistory.slice(-1)[0]?.content;
     if (lastReply && /all set|you're listed in|grant received|current balance:\s*\d+/i.test(lastReply)) {
       log.completed = true;
       console.log(`✓ ${vendor.id} ${vendor.businessName} [${vendor.channel}] already completed`);
       return log;
     }
-    let text = vendor.statement;
-    let seen = existingHistory.filter((e) => e.role === 'assistant').length;
+    let seen = assistantHistory.length;
+    let text;
+    if (lastReply) {
+      text = answerFor(lastReply, vendor, sent);
+    }
+    if (!text) {
+      text = vendor.statement.toLowerCase().startsWith('i sell') || vendor.statement.toLowerCase().startsWith('i want to sell')
+        ? vendor.statement
+        : `I want to sell ${vendor.statement}`;
+    }
     for (let turn = 1; turn <= 8 && text !== null; turn += 1) {
       const startedAt = Date.now();
       await send(vendor, text, turn);

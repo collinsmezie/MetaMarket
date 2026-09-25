@@ -24,6 +24,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "prisma db seed",
+    "db:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
     "seed:taxonomy": "nest build && node dist/cli/seed-taxonomy.js",
     "webhook:test": "node dist/cli/send-test-webhook.js",
@@ -87,5 +89,9 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }
+

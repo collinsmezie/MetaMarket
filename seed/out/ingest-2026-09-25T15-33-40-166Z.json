@@ -1,0 +1,28 @@
+{
+  "base": "http://localhost:4000",
+  "startedAt": "2026-09-25T15:33:40.167Z",
+  "results": [
+    {
+      "id": "v05",
+      "channel": "web",
+      "businessName": "Gbenga Roofing",
+      "turns": [
+        {
+          "turn": 1,
+          "sent": "Gbenga Roofing",
+          "reply": "Lastly, which WhatsApp number should I send buyer requests to?",
+          "seconds": 8
+        },
+        {
+          "turn": 2,
+          "sent": "08090000005",
+          "reply": "All set, Gbenga Roofing.\n\nYou're listed in Abeokuta, Ogun State. Buyers looking for what you sell can now find you, and I'll send their requests to +2348090000005.\n\nI'll check in from time to time to learn more about your business and help customers find you — no forms, just a quick question here and there.",
+          "seconds": 10
+        }
+      ],
+      "conversationId": "c2d14ed0-ebd1-422d-b938-116daf1e0976",
+      "completed": true,
+      "error": null
+    }
+  ]
+}

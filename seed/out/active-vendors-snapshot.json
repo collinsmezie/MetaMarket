@@ -1,0 +1,2147 @@
+[
+  {
+    "phone": "+2348090000001",
+    "businessName": "Okonkwo Cement Depot",
+    "city": "Aba",
+    "state": "Abia",
+    "declaredProducts": [
+      "Dangote cement",
+      "BUA cement",
+      "sharp sand",
+      "12mm iron rods"
+    ],
+    "declaredServices": [],
+    "summary": "building materials shop Sells: Dangote cement, BUA cement, sharp sand. Brands: Dangote, BUA.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10002526",
+        "name": "Cement",
+        "confidence": 0.9059705649068156,
+        "logOdds": 2.265398943908548,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "83010600",
+        "name": "Asphalt/Concrete/Masonry",
+        "confidence": 0.8551277983908581,
+        "logOdds": 1.775398943994708,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83010000",
+        "name": "Building Products",
+        "confidence": 0.7105175437093864,
+        "logOdds": 0.8978989441490046,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10003897",
+        "name": "Sand (DIY)",
+        "confidence": 0.6983386115967992,
+        "logOdds": 0.8393989441592915,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10002525",
+        "name": "Brick/Block",
+        "confidence": 0.6983386115967992,
+        "logOdds": 0.8393989441592915,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10003182",
+        "name": "Nails/Pins (Fixings/Fasteners)",
+        "confidence": 0.6983386115967992,
+        "logOdds": 0.8393989441592915,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10008281",
+        "name": "Metal Components (Dimension/Structural)",
+        "confidence": 0.6983386115967992,
+        "logOdds": 0.8393989441592915,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10002686",
+        "name": "Roofing Panels/Slabs",
+        "confidence": 0.6983386115967992,
+        "logOdds": 0.8393989441592915,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83000000",
+        "name": "Building Products",
+        "confidence": 0.5596579406330583,
+        "logOdds": 0.2397739442647266,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83011900",
+        "name": "Fixings/Fasteners Hardware",
+        "confidence": 0.5488187119813761,
+        "logOdds": 0.1958989442724415,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83010700",
+        "name": "Structural Components/Assemblies",
+        "confidence": 0.5488187119813761,
+        "logOdds": 0.1958989442724415,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83011700",
+        "name": "Roofing",
+        "confidence": 0.5488187119813761,
+        "logOdds": 0.1958989442724415,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000002",
+    "businessName": "Musa Electricals Alaba",
+    "city": "Ojo",
+    "state": "Lagos",
+    "declaredProducts": [
+      "wall sockets",
+      "switches",
+      "2.5mm cables",
+      "circuit breakers",
+      "energy bulbs"
+    ],
+    "declaredServices": [],
+    "summary": "electrical materials shop Sells: wall sockets, switches, 2.5mm cables.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10005576",
+        "name": "Circuit Breakers",
+        "confidence": 0.8659249987364613,
+        "logOdds": 1.865398943978882,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "10005586",
+        "name": "Switches",
+        "confidence": 0.8616901083838052,
+        "logOdds": 1.829398943985213,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "78020600",
+        "name": "Electrical Distribution",
+        "confidence": 0.7242014604881614,
+        "logOdds": 0.9653989441371353,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "78020000",
+        "name": "Electrical Connection/Distribution",
+        "confidence": 0.5720937982841189,
+        "logOdds": 0.2903989442558246,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10005541",
+        "name": "Electrical Wires",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10005567",
+        "name": "Sockets/Receptacles/Outlets",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10000552",
+        "name": "Light Bulbs/Tubes/Light-Emitting Diodes",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "78000000",
+        "name": "Electrical Supplies",
+        "confidence": 0.4462457824652092,
+        "logOdds": -0.2158510556551581,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "78040400",
+        "name": "Electrical Wiring",
+        "confidence": 0.4379216953504953,
+        "logOdds": -0.2496010556492236,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "78020500",
+        "name": "Electrical Connection",
+        "confidence": 0.4379216953504953,
+        "logOdds": -0.2496010556492236,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "14010100",
+        "name": "Lamps/Light Bulbs/Lighting",
+        "confidence": 0.4379216953504953,
+        "logOdds": -0.2496010556492236,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "78040000",
+        "name": "Electrical Cabling/Wiring",
+        "confidence": 0.3495879168745476,
+        "logOdds": -0.6208510555839442,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "14010000",
+        "name": "Lighting",
+        "confidence": 0.3495879168745476,
+        "logOdds": -0.6208510555839442,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "14000000",
+        "name": "Lighting",
+        "confidence": 0.2891967213701759,
+        "logOdds": -0.8992885555349848,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000003",
+    "businessName": "Chidi Plumbing Works",
+    "city": "Enugu",
+    "state": "Enugu",
+    "declaredProducts": [
+      "PVC pipes",
+      "taps",
+      "water closets",
+      "plumbing fittings"
+    ],
+    "declaredServices": [
+      "plumbing installation",
+      "plumbing repairs"
+    ],
+    "summary": "plumbing supplies and services provider Sells: PVC pipes, taps, water closets. Services: plumbing installation, plumbing repairs.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10002602",
+        "name": "Faucets/Taps",
+        "confidence": 0.8436181174880456,
+        "logOdds": 1.685398944085703,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "79010100",
+        "name": "Sanitary Ware",
+        "confidence": 0.6964392778722425,
+        "logOdds": 0.830398944217251,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10002586",
+        "name": "Toilets",
+        "confidence": 0.5610437021933912,
+        "logOdds": 0.2453989443072573,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10004054",
+        "name": "Pipes/Tubing - Water, Gas, Central heating",
+        "confidence": 0.5610437021933912,
+        "logOdds": 0.2453989443072573,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10004024",
+        "name": "Valves/Fittings - Water and Gas",
+        "confidence": 0.5610437021933912,
+        "logOdds": 0.2453989443072573,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_plumbing_services",
+        "name": "Plumbing Services",
+        "confidence": 0.5610437021933912,
+        "logOdds": 0.2453989443072573,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_fixture_installation",
+        "name": "Fixture Installation",
+        "confidence": 0.5610437021933912,
+        "logOdds": 0.2453989443072573,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_leak_detection_and_repair",
+        "name": "Leak Detection and Repair",
+        "confidence": 0.5610437021933912,
+        "logOdds": 0.2453989443072573,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_pipe_replacement",
+        "name": "Pipe Replacement",
+        "confidence": 0.5610437021933912,
+        "logOdds": 0.2453989443072573,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_drain_cleaning",
+        "name": "Drain Cleaning",
+        "confidence": 0.5610437021933912,
+        "logOdds": 0.2453989443072573,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_preventative_maintenance",
+        "name": "Preventative Maintenance",
+        "confidence": 0.5610437021933912,
+        "logOdds": 0.2453989443072573,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "79010000",
+        "name": "Plumbing/Heating/Ventilation/Air Conditioning",
+        "confidence": 0.5471467544361758,
+        "logOdds": 0.1891489443159113,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "79010800",
+        "name": "Water/Gas Supply/Central Heating",
+        "confidence": 0.4379216953585294,
+        "logOdds": -0.249601055616584,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "79000000",
+        "name": "Plumbing/Heating/Ventilation/Air Conditioning",
+        "confidence": 0.4275660555355987,
+        "logOdds": -0.2917885556100928,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_water_heater_installation_and_repair",
+        "name": "Water Heater Installation and Repair",
+        "confidence": 0.3835278152111345,
+        "logOdds": -0.474601055581966,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_sewer_line_repair",
+        "name": "Sewer Line Repair",
+        "confidence": 0.3835278152111345,
+        "logOdds": -0.474601055581966,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000004",
+    "businessName": "Rainbow Paints",
+    "city": "Ilorin",
+    "state": "Kwara",
+    "declaredProducts": [
+      "paint",
+      "coatings"
+    ],
+    "declaredServices": [],
+    "summary": "paint and coatings shop Sells: paint, coatings.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10003874",
+        "name": "Household Paints",
+        "confidence": 0.6868425419223738,
+        "logOdds": 0.7853989443349512,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "10008116",
+        "name": "Finishing and Texture Coatings",
+        "confidence": 0.6868425419223738,
+        "logOdds": 0.7853989443349512,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "10002688",
+        "name": "Roof Coatings",
+        "confidence": 0.6591253567150231,
+        "logOdds": 0.659398944348798,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "10002466",
+        "name": "Wood Finish/Treatments/Coatings",
+        "confidence": 0.6591253567150231,
+        "logOdds": 0.659398944348798,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "10002462",
+        "name": "Special Purpose Paints",
+        "confidence": 0.6591253567150231,
+        "logOdds": 0.659398944348798,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "83010400",
+        "name": "Painting",
+        "confidence": 0.5387717431272787,
+        "logOdds": 0.155398944404187,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83010100",
+        "name": "Wall/Ceiling/Flooring Coverings",
+        "confidence": 0.5387717431272787,
+        "logOdds": 0.155398944404187,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83011700",
+        "name": "Roofing",
+        "confidence": 0.5152200325400308,
+        "logOdds": 0.060898944414572,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83010000",
+        "name": "Building Products",
+        "confidence": 0.4213824048354277,
+        "logOdds": -0.3171010555438865,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10008048",
+        "name": "Undercoats/Primers",
+        "confidence": 0.4137217025263778,
+        "logOdds": -0.3486010555404246,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83000000",
+        "name": "Building Products",
+        "confidence": 0.338166406107257,
+        "logOdds": -0.6714760555049413,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000005",
+    "businessName": "Gbenga Roofing",
+    "city": "Abeokuta",
+    "state": "Ogun",
+    "declaredProducts": [
+      "Aluminium roofing sheets",
+      "stone-coated roofing tiles",
+      "long span roofing sheets"
+    ],
+    "declaredServices": [
+      "roof installation",
+      "leak repairs"
+    ],
+    "summary": "roofing materials and installation contractor Sells: Aluminium roofing sheets, stone-coated roofing tiles, long span roofing sheets. Services: roof installation, leak repairs.",
+    "capabilities": [
+      {
+        "domain": "service",
+        "id": "svc_roof_installation_and_repair",
+        "name": "Roof Installation and Repair",
+        "confidence": 0.8436181174682118,
+        "logOdds": 1.685398943935363,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "10002683",
+        "name": "Roofing Tiles/Slates/Shingles/Shakes",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10002686",
+        "name": "Roofing Panels/Slabs",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10003182",
+        "name": "Nails/Pins (Fixings/Fasteners)",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10002665",
+        "name": "Guttering Parts/Fittings",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10002689",
+        "name": "Roof/Vent Flashing/Trim Coils",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10002688",
+        "name": "Roof Coatings",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10003208",
+        "name": "Caulking",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10003204",
+        "name": "Sealants",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10003977",
+        "name": "Roofing Accessories",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10002666",
+        "name": "Guttering/Drainage Other",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_leak_detection",
+        "name": "Leak Detection",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_roof_maintenance",
+        "name": "Roof Maintenance",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_gutter_installation",
+        "name": "Gutter Installation",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_waterproofing",
+        "name": "Waterproofing",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_roof_replacement",
+        "name": "Roof Replacement",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_ceiling_repair",
+        "name": "Ceiling Repair",
+        "confidence": 0.4713810512321008,
+        "logOdds": -0.1146010557085682,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83011700",
+        "name": "Roofing",
+        "confidence": 0.4379216953424612,
+        "logOdds": -0.2496010556818633,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83011900",
+        "name": "Fixings/Fasteners Hardware",
+        "confidence": 0.4379216953424612,
+        "logOdds": -0.2496010556818633,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83011400",
+        "name": "Guttering/Drainage",
+        "confidence": 0.4379216953424612,
+        "logOdds": -0.2496010556818633,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83012100",
+        "name": "Sealants/Fillers/Adhesives/Defect Agents",
+        "confidence": 0.4379216953424612,
+        "logOdds": -0.2496010556818633,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83010000",
+        "name": "Building Products",
+        "confidence": 0.3495879168689815,
+        "logOdds": -0.6208510556084239,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "83000000",
+        "name": "Building Products",
+        "confidence": 0.2891967213664018,
+        "logOdds": -0.8992885555533445,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000006",
+    "businessName": "PowerHouse Generators",
+    "city": "Port Harcourt",
+    "state": "Rivers",
+    "declaredProducts": [
+      "Elepaq generators",
+      "Sumec Firman generators"
+    ],
+    "declaredServices": [
+      "generator repair"
+    ],
+    "summary": "generator dealer and repair service Sells: Elepaq generators, Sumec Firman generators. Services: generator repair. Brands: Elepaq, Sumec Firman.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10005211",
+        "name": "Generators",
+        "confidence": 0.8436181174781286,
+        "logOdds": 1.685398944010533,
+        "inferred": false
+      },
+      {
+        "domain": "service",
+        "id": "svc_generator_repair",
+        "name": "Generator Repair",
+        "confidence": 0.8436181174781286,
+        "logOdds": 1.685398944010533,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "78021200",
+        "name": "Electrical Generation",
+        "confidence": 0.6964392778603236,
+        "logOdds": 0.830398944160873,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10007598",
+        "name": "Maintenance/Repair Services",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10008394",
+        "name": "Power Generator Set",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_generator_diagnostics",
+        "name": "Generator Diagnostics",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_generator_maintenance",
+        "name": "Generator Maintenance",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_electrical_repair",
+        "name": "Electrical Repair",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_parts_replacement",
+        "name": "Parts Replacement",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "78020000",
+        "name": "Electrical Connection/Distribution",
+        "confidence": 0.5471467544256989,
+        "logOdds": 0.1891489442736281,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "95120100",
+        "name": "Maintenance/Repair Services",
+        "confidence": 0.4379216953504953,
+        "logOdds": -0.2496010556492236,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "78000000",
+        "name": "Electrical Supplies",
+        "confidence": 0.4275660555278369,
+        "logOdds": -0.2917885556418054,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_fuel_system_repair",
+        "name": "Fuel System Repair",
+        "confidence": 0.3835278152045867,
+        "logOdds": -0.4746010556096603,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "95120000",
+        "name": "Maintenance/Repair and Installation Services",
+        "confidence": 0.3495879168745476,
+        "logOdds": -0.6208510555839442,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "95000000",
+        "name": "Services/Vending Machines",
+        "confidence": 0.2891967213701759,
+        "logOdds": -0.8992885555349848,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000007",
+    "businessName": "SunLite Solar Kano",
+    "city": "Kano",
+    "state": "Kano",
+    "declaredProducts": [
+      "550W mono solar panels",
+      "5kVA inverters",
+      "200Ah tubular batteries"
+    ],
+    "declaredServices": [],
+    "summary": "solar energy products dealer Sells: 550W mono solar panels, 5kVA inverters, 200Ah tubular batteries.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10008389",
+        "name": "Solar Panels",
+        "confidence": 0.9059705649068156,
+        "logOdds": 2.265398943908548,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "10008390",
+        "name": "Inverters",
+        "confidence": 0.9059705649068156,
+        "logOdds": 2.265398943908548,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "78021200",
+        "name": "Electrical Generation",
+        "confidence": 0.8551277983908581,
+        "logOdds": 1.775398943994708,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "78020000",
+        "name": "Electrical Connection/Distribution",
+        "confidence": 0.7105175437093864,
+        "logOdds": 0.8978989441490046,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "78000000",
+        "name": "Electrical Supplies",
+        "confidence": 0.5596579406330583,
+        "logOdds": 0.2397739442647266,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000008",
+    "businessName": "Computer Village Phones",
+    "city": "Ikeja",
+    "state": "Lagos",
+    "declaredProducts": [
+      "phones",
+      "chargers",
+      "earpieces"
+    ],
+    "declaredServices": [],
+    "summary": "mobile phone shop Sells: phones, chargers, earpieces.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10000548",
+        "name": "Chargers",
+        "confidence": 0.686842541898547,
+        "logOdds": 0.7853989442241744,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "10008506",
+        "name": "Mobile Phones",
+        "confidence": 0.6813969251757004,
+        "logOdds": 0.7601989442280519,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "10001181",
+        "name": "Communications Hands Free Kits/Headphones",
+        "confidence": 0.6591253566913784,
+        "logOdds": 0.6593989442435599,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "78021100",
+        "name": "Batteries/Chargers",
+        "confidence": 0.538771743106633,
+        "logOdds": 0.1553989443211043,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "66010300",
+        "name": "Mobile Communication Devices/Services",
+        "confidence": 0.5340718503836512,
+        "logOdds": 0.1364989443240119,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "66010100",
+        "name": "Communication Accessories",
+        "confidence": 0.515220032520317,
+        "logOdds": 0.06089894433564358,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "78020000",
+        "name": "Electrical Connection/Distribution",
+        "confidence": 0.4213824048202349,
+        "logOdds": -0.3171010556061984,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "66010000",
+        "name": "Communications",
+        "confidence": 0.4179301716043499,
+        "logOdds": -0.3312760556040175,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10001178",
+        "name": "Mobile Phone Cases",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10007020",
+        "name": "Mobile Phone/Smartphone Accessories",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10001110",
+        "name": "Filters/Covers (Electronic Equipment)",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "78000000",
+        "name": "Electrical Supplies",
+        "confidence": 0.3381664060967974,
+        "logOdds": -0.6714760555516752,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "66000000",
+        "name": "Communications",
+        "confidence": 0.3357911362344314,
+        "logOdds": -0.6821073055500397,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "65010100",
+        "name": "Computer/Video Game Accessories",
+        "confidence": 0.3328992803771579,
+        "logOdds": -0.6951010555480406,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "65010000",
+        "name": "Computers/Video Games",
+        "confidence": 0.2778851989469271,
+        "logOdds": -0.954976055508057,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "65000000",
+        "name": "Computing",
+        "confidence": 0.2405105810925723,
+        "logOdds": -1.149882305478069,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000009",
+    "businessName": "ByteWorks Abuja",
+    "city": "Wuse",
+    "state": "Abuja",
+    "declaredProducts": [
+      "UK-used laptops",
+      "UK-used desktops"
+    ],
+    "declaredServices": [
+      "laptop repair",
+      "screen replacement",
+      "software installation"
+    ],
+    "summary": "used computer dealer and repair service Sells: UK-used laptops, UK-used desktops. Services: laptop repair, screen replacement, software installation.",
+    "capabilities": [
+      {
+        "domain": "service",
+        "id": "svc_laptop_repair",
+        "name": "Laptop Repair",
+        "confidence": 0.8183783293193578,
+        "logOdds": 1.50539894397097,
+        "inferred": false
+      },
+      {
+        "domain": "service",
+        "id": "svc_screen_replacement",
+        "name": "Screen Replacement",
+        "confidence": 0.8183783293193578,
+        "logOdds": 1.50539894397097,
+        "inferred": false
+      },
+      {
+        "domain": "service",
+        "id": "svc_software_installation",
+        "name": "Software Installation",
+        "confidence": 0.8183783293193578,
+        "logOdds": 1.50539894397097,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "10001145",
+        "name": "Personal Computers - Portable",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10001144",
+        "name": "Personal Computers - Desktop/Internet Terminal",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_hardware_diagnostics",
+        "name": "Hardware Diagnostics",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "65010500",
+        "name": "Computers",
+        "confidence": 0.4379216953424612,
+        "logOdds": -0.2496010556818633,
+        "inferred": true
+      },
+      {
+        "domain": "service",
+        "id": "svc_virus_removal",
+        "name": "Virus Removal",
+        "confidence": 0.3835278151980387,
+        "logOdds": -0.4746010556373546,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "65010000",
+        "name": "Computers/Video Games",
+        "confidence": 0.3495879168689815,
+        "logOdds": -0.6208510556084239,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "65000000",
+        "name": "Computing",
+        "confidence": 0.2891967213664018,
+        "logOdds": -0.8992885555533445,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000010",
+    "businessName": "Coolzone Appliances",
+    "city": "Benin City",
+    "state": "Edo",
+    "declaredProducts": [
+      "fridges",
+      "deep freezers",
+      "air conditioners",
+      "washing machines",
+      "standing fans"
+    ],
+    "declaredServices": [],
+    "summary": "home appliances dealer Sells: fridges, deep freezers, air conditioners.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10003698",
+        "name": "Freezers",
+        "confidence": 0.9059705649217947,
+        "logOdds": 2.265398944084384,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "10003982",
+        "name": "Air Conditioners/Coolers - Fixed",
+        "confidence": 0.9059705649217947,
+        "logOdds": 2.265398944084384,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "72010200",
+        "name": "Refrigerating/Freezing Appliances",
+        "confidence": 0.832004260714331,
+        "logOdds": 1.599898944172149,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "79010600",
+        "name": "Air Conditioning/Cooling/Ventilation Equipment",
+        "confidence": 0.832004260714331,
+        "logOdds": 1.599898944172149,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10003694",
+        "name": "Refrigerators",
+        "confidence": 0.6983386116206358,
+        "logOdds": 0.8393989442724423,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10001959",
+        "name": "Clothes Washers",
+        "confidence": 0.6983386116206358,
+        "logOdds": 0.8393989442724423,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10005337",
+        "name": "Fans - Portable",
+        "confidence": 0.6983386116206358,
+        "logOdds": 0.8393989442724423,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "72010000",
+        "name": "Major Domestic Appliances",
+        "confidence": 0.6827143224519152,
+        "logOdds": 0.7662739442820852,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "79010000",
+        "name": "Plumbing/Heating/Ventilation/Air Conditioning",
+        "confidence": 0.6827143224519152,
+        "logOdds": 0.7662739442820852,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "72010500",
+        "name": "Major Laundry Appliances",
+        "confidence": 0.5488187120023897,
+        "logOdds": 0.1958989443573047,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "72020600",
+        "name": "Portable Air Control Appliances",
+        "confidence": 0.5488187120023897,
+        "logOdds": 0.1958989443573047,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "72000000",
+        "name": "Home Appliances",
+        "confidence": 0.5352054456439247,
+        "logOdds": 0.1410551943645375,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "79000000",
+        "name": "Plumbing/Heating/Ventilation/Air Conditioning",
+        "confidence": 0.5352054456439247,
+        "logOdds": 0.1410551943645375,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "72020000",
+        "name": "Small Domestic Appliances",
+        "confidence": 0.4288055711235464,
+        "logOdds": -0.2867260555790481,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000011",
+    "businessName": "Ladipo Auto Parts",
+    "city": "Mushin",
+    "state": "Lagos",
+    "declaredProducts": [
+      "tyres",
+      "brake pads",
+      "shock absorbers",
+      "Toyota spare parts"
+    ],
+    "declaredServices": [],
+    "summary": "spare parts / auto parts Sells: tyres, brake pads, shock absorbers. Brands: Toyota.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10002924",
+        "name": "Tyres",
+        "confidence": 0.8659249987364613,
+        "logOdds": 1.865398943978882,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "10006384",
+        "name": "Brake Pads/Lining",
+        "confidence": 0.8659249987364613,
+        "logOdds": 1.865398943978882,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "77012700",
+        "name": "Automotive Tyres/Wheels",
+        "confidence": 0.7242014604881614,
+        "logOdds": 0.9653989441371353,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "77015300",
+        "name": "Automotive Brakes",
+        "confidence": 0.7242014604881614,
+        "logOdds": 0.9653989441371353,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "77010000",
+        "name": "Automotive Accessories and Maintenance",
+        "confidence": 0.5720937982841189,
+        "logOdds": 0.2903989442558246,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10003760",
+        "name": "Safety Replacement Parts/Accessories (Automotive)",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10003022",
+        "name": "Filters - Air (Automotive)",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10003762",
+        "name": "Filters - Fluid (Automotive)",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10003011",
+        "name": "Wiper Blades",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10005232",
+        "name": "Batteries (Automotive)",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "77000000",
+        "name": "Vehicle",
+        "confidence": 0.4462457824652092,
+        "logOdds": -0.2158510556551581,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "77011300",
+        "name": "Automotive Safety",
+        "confidence": 0.4379216953504953,
+        "logOdds": -0.2496010556492236,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "77013800",
+        "name": "Automotive Filters",
+        "confidence": 0.4379216953504953,
+        "logOdds": -0.2496010556492236,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "77013600",
+        "name": "Automotive Wipers/Wiper Parts",
+        "confidence": 0.4379216953504953,
+        "logOdds": -0.2496010556492236,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "77015000",
+        "name": "Automotive Batteries",
+        "confidence": 0.4379216953504953,
+        "logOdds": -0.2496010556492236,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000012",
+    "businessName": "Baba Tunde Mechanic Workshop",
+    "city": "Ibadan",
+    "state": "Oyo",
+    "declaredProducts": [],
+    "declaredServices": [
+      "Engine repairs",
+      "Vehicle servicing",
+      "Brake work",
+      "AC repair"
+    ],
+    "summary": "auto repair service Capabilities: Engine Repair, Vehicle Servicing, AC Repair. Services: Engine repairs, Vehicle servicing, Brake work.",
+    "capabilities": [
+      {
+        "domain": "service",
+        "id": "svc_engine_repair",
+        "name": "Engine Repair",
+        "confidence": 0.8183783292664335,
+        "logOdds": 1.505398943614901,
+        "inferred": false
+      },
+      {
+        "domain": "service",
+        "id": "svc_vehicle_servicing",
+        "name": "Vehicle Servicing",
+        "confidence": 0.8183783292664335,
+        "logOdds": 1.505398943614901,
+        "inferred": false
+      },
+      {
+        "domain": "service",
+        "id": "svc_ac_repair",
+        "name": "AC Repair",
+        "confidence": 0.8183783292664335,
+        "logOdds": 1.505398943614901,
+        "inferred": false
+      },
+      {
+        "domain": "service",
+        "id": "svc_brake_repair",
+        "name": "Brake Repair",
+        "confidence": 0.5610437021183672,
+        "logOdds": 0.2453989440026205,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000013",
+    "businessName": "Amaka's Boutique",
+    "city": "Owerri",
+    "state": "Imo",
+    "declaredProducts": [
+      "women's clothing",
+      "fashion accessories"
+    ],
+    "declaredServices": [],
+    "summary": "ladies' boutique Sells: women's clothing, fashion accessories.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10001333",
+        "name": "Dresses",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10001334",
+        "name": "Skirts",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10001387",
+        "name": "Jewellery Other",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10001330",
+        "name": "Scarf/Tie/Neckwear",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10001352",
+        "name": "Shirts/Blouses/Polo Shirts/T-shirts",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10001331",
+        "name": "Clothing Adornment/Floral Accessories/Badges/Buckles",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10000379",
+        "name": "Hair - Accessories",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10001335",
+        "name": "Trousers/Shorts",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10001096",
+        "name": "Personal Bags",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10001326",
+        "name": "Belts/Braces/Cummerbunds",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10001077",
+        "name": "Shoes - General Purpose",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10001090",
+        "name": "Necklaces/Necklets",
+        "confidence": 0.4137217025115996,
+        "logOdds": -0.3486010556013519,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "67010200",
+        "name": "Full Body Wear",
+        "confidence": 0.3328992803771579,
+        "logOdds": -0.6951010555480406,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "67010300",
+        "name": "Lower Body Wear/Bottoms",
+        "confidence": 0.3328992803771579,
+        "logOdds": -0.6951010555480406,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "64010100",
+        "name": "Jewellery",
+        "confidence": 0.3328992803771579,
+        "logOdds": -0.6951010555480406,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "67010100",
+        "name": "Clothing Accessories",
+        "confidence": 0.3328992803771579,
+        "logOdds": -0.6951010555480406,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "67010800",
+        "name": "Upper Body Wear/Tops",
+        "confidence": 0.3328992803771579,
+        "logOdds": -0.6951010555480406,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "53141100",
+        "name": "Hair Care Products",
+        "confidence": 0.3328992803771579,
+        "logOdds": -0.6951010555480406,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "64010200",
+        "name": "Personal Carriers/Accessories",
+        "confidence": 0.3328992803771579,
+        "logOdds": -0.6951010555480406,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "63010300",
+        "name": "General Purpose Footwear",
+        "confidence": 0.3328992803771579,
+        "logOdds": -0.6951010555480406,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "67010000",
+        "name": "Clothing",
+        "confidence": 0.2778851989469271,
+        "logOdds": -0.954976055508057,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "64010000",
+        "name": "Personal Accessories",
+        "confidence": 0.2778851989469271,
+        "logOdds": -0.954976055508057,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "53140000",
+        "name": "Hair Products",
+        "confidence": 0.2778851989469271,
+        "logOdds": -0.954976055508057,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "63010000",
+        "name": "Footwear",
+        "confidence": 0.2778851989469271,
+        "logOdds": -0.954976055508057,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "67000000",
+        "name": "Clothing",
+        "confidence": 0.2405105810925723,
+        "logOdds": -1.149882305478069,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "64000000",
+        "name": "Personal Accessories",
+        "confidence": 0.2405105810925723,
+        "logOdds": -1.149882305478069,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "53000000",
+        "name": "Beauty/Personal Care/Hygiene",
+        "confidence": 0.2405105810925723,
+        "logOdds": -1.149882305478069,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "63000000",
+        "name": "Footwear",
+        "confidence": 0.2405105810925723,
+        "logOdds": -1.149882305478069,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000014",
+    "businessName": "Aba Made Shoes",
+    "city": "Aba",
+    "state": "Abia",
+    "declaredProducts": [
+      "leather sandals",
+      "men's loafers",
+      "school shoes"
+    ],
+    "declaredServices": [],
+    "summary": "footwear manufacturer and retailer Sells: leather sandals, men's loafers, school shoes.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10001077",
+        "name": "Shoes - General Purpose",
+        "confidence": 0.5610437021719558,
+        "logOdds": 0.2453989442202182,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "63010300",
+        "name": "General Purpose Footwear",
+        "confidence": 0.4379216953424612,
+        "logOdds": -0.2496010556818633,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "63010000",
+        "name": "Footwear",
+        "confidence": 0.3495879168689815,
+        "logOdds": -0.6208510556084239,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "63000000",
+        "name": "Footwear",
+        "confidence": 0.2891967213664018,
+        "logOdds": -0.8992885555533445,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000015",
+    "businessName": "Balogun Fabrics",
+    "city": "Balogun market",
+    "state": "Lagos",
+    "declaredProducts": [
+      "ankara",
+      "lace",
+      "aso-oke",
+      "senator materials"
+    ],
+    "declaredServices": [],
+    "summary": "fabrics shop Sells: ankara, lace, aso-oke.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10001699",
+        "name": "Arts/Crafts/Needlework Fabrics/Textiles",
+        "confidence": 0.5610437021826734,
+        "logOdds": 0.2453989442637377,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "70011400",
+        "name": "Arts/Crafts/Needlework Supplies",
+        "confidence": 0.4379216953504953,
+        "logOdds": -0.2496010556492236,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "70010000",
+        "name": "Arts/Crafts/Needlework Supplies",
+        "confidence": 0.3495879168745476,
+        "logOdds": -0.6208510555839442,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "70000000",
+        "name": "Arts/Crafts/Needlework",
+        "confidence": 0.2891967213701759,
+        "logOdds": -0.8992885555349848,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000016",
+    "businessName": "Stitches by Halima",
+    "city": "Kaduna",
+    "state": "Kaduna",
+    "declaredProducts": [
+      "native wears",
+      "kaftans",
+      "wedding outfits"
+    ],
+    "declaredServices": [],
+    "summary": "tailor and fashion design shop Sells: native wears, kaftans, wedding outfits.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10001333",
+        "name": "Dresses",
+        "confidence": 0.5610437022041089,
+        "logOdds": 0.2453989443507767,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "67010200",
+        "name": "Full Body Wear",
+        "confidence": 0.4379216953665636,
+        "logOdds": -0.2496010555839443,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "67010000",
+        "name": "Clothing",
+        "confidence": 0.3495879168856799,
+        "logOdds": -0.6208510555349847,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "67000000",
+        "name": "Clothing",
+        "confidence": 0.2891967213777241,
+        "logOdds": -0.8992885554982651,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000017",
+    "businessName": "Glow Beauty Store",
+    "city": "Uyo",
+    "state": "Akwa Ibom",
+    "declaredProducts": [
+      "body lotions",
+      "perfumes",
+      "human hair wigs",
+      "makeup kits"
+    ],
+    "declaredServices": [],
+    "summary": "beauty and cosmetics store Sells: body lotions, perfumes, human hair wigs.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10000365",
+        "name": "Fragrances",
+        "confidence": 0.561043702161238,
+        "logOdds": 0.2453989441766986,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10000343",
+        "name": "Hair - False",
+        "confidence": 0.561043702161238,
+        "logOdds": 0.2453989441766986,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10000534",
+        "name": "Cosmetic/MakeUp - Lips",
+        "confidence": 0.561043702161238,
+        "logOdds": 0.2453989441766986,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10000356",
+        "name": "Skin Care/Moisturising Products",
+        "confidence": 0.561043702161238,
+        "logOdds": 0.2453989441766986,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10000669",
+        "name": "Cosmetic/MakeUp Products Variety Packs",
+        "confidence": 0.561043702161238,
+        "logOdds": 0.2453989441766986,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "53161300",
+        "name": "Fragrances",
+        "confidence": 0.4379216953344271,
+        "logOdds": -0.2496010557145028,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "53141100",
+        "name": "Hair Care Products",
+        "confidence": 0.4379216953344271,
+        "logOdds": -0.2496010557145028,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "53161000",
+        "name": "Cosmetic/MakeUp Products",
+        "confidence": 0.4379216953344271,
+        "logOdds": -0.2496010557145028,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "53131100",
+        "name": "Skin Care",
+        "confidence": 0.4379216953344271,
+        "logOdds": -0.2496010557145028,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "53160000",
+        "name": "Cosmetics/Fragrances",
+        "confidence": 0.3495879168634153,
+        "logOdds": -0.6208510556329037,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "53140000",
+        "name": "Hair Products",
+        "confidence": 0.3495879168634153,
+        "logOdds": -0.6208510556329037,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "53130000",
+        "name": "Skin Products",
+        "confidence": 0.3495879168634153,
+        "logOdds": -0.6208510556329037,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "53000000",
+        "name": "Beauty/Personal Care/Hygiene",
+        "confidence": 0.2891967213626278,
+        "logOdds": -0.8992885555717043,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000018",
+    "businessName": "Kings Cut Barbershop",
+    "city": "Lekki",
+    "state": "Lagos",
+    "declaredProducts": [],
+    "declaredServices": [
+      "haircuts",
+      "beard grooming",
+      "hair dye"
+    ],
+    "summary": "barbing salon Capabilities: Beard Grooming, Hair Dye Service. Services: haircuts, beard grooming, hair dye.",
+    "capabilities": [
+      {
+        "domain": "service",
+        "id": "svc_beard_grooming",
+        "name": "Beard Grooming",
+        "confidence": 0.8183783293405277,
+        "logOdds": 1.505398944113398,
+        "inferred": false
+      },
+      {
+        "domain": "service",
+        "id": "svc_hair_dye_service",
+        "name": "Hair Dye Service",
+        "confidence": 0.8183783293405277,
+        "logOdds": 1.505398944113398,
+        "inferred": false
+      },
+      {
+        "domain": "service",
+        "id": "svc_haircut_service",
+        "name": "Haircut Service",
+        "confidence": 0.5610437021933912,
+        "logOdds": 0.2453989443072573,
+        "inferred": true
+      }
+    ]
+  },
+  {
+    "phone": "+2348090000019",
+    "businessName": "Onitsha Central Pharmacy",
+    "city": "Onitsha",
+    "state": "Anambra",
+    "declaredProducts": [
+      "drugs",
+      "blood pressure monitors",
+      "glucose strips",
+      "surgical gloves",
+      "face masks"
+    ],
+    "declaredServices": [],
+    "summary": "pharmacy and medical supplies store Sells: drugs, blood pressure monitors, glucose strips.",
+    "capabilities": [
+      {
+        "domain": "product",
+        "id": "10005845",
+        "name": "Pharmaceutical Drugs",
+        "confidence": 0.9059705648843469,
+        "logOdds": 2.265398943644794,
+        "inferred": false
+      },
+      {
+        "domain": "product",
+        "id": "51160100",
+        "name": "Pharmaceutical Drugs",
+        "confidence": 0.8507250329025496,
+        "logOdds": 1.74029894377175,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "51160000",
+        "name": "Pharmaceutical Drugs",
+        "confidence": 0.7050730974265713,
+        "logOdds": 0.871573943981786,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10000908",
+        "name": "First Aid Other",
+        "confidence": 0.6983386115610445,
+        "logOdds": 0.8393989439895655,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10000452",
+        "name": "Thermometers",
+        "confidence": 0.6983386115610445,
+        "logOdds": 0.8393989439895655,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10000455",
+        "name": "Home Diagnostic Monitors",
+        "confidence": 0.6983386115610445,
+        "logOdds": 0.8393989439895655,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10000856",
+        "name": "General/Multi-use Pain Relief",
+        "confidence": 0.6983386115610445,
+        "logOdds": 0.8393989439895655,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10000467",
+        "name": "Vitamins/Minerals",
+        "confidence": 0.6983386115610445,
+        "logOdds": 0.8393989439895655,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10000468",
+        "name": "Nutritional Supplements",
+        "confidence": 0.6983386115610445,
+        "logOdds": 0.8393989439895655,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "10000454",
+        "name": "Home Diagnostic Products - Accessories",
+        "confidence": 0.6983386115610445,
+        "logOdds": 0.8393989439895655,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "51000000",
+        "name": "Healthcare",
+        "confidence": 0.5547866930242026,
+        "logOdds": 0.2200301941393128,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "51101700",
+        "name": "First Aid",
+        "confidence": 0.5488187119498559,
+        "logOdds": 0.1958989441451471,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "51131600",
+        "name": "Diagnostic Tests",
+        "confidence": 0.5488187119498559,
+        "logOdds": 0.1958989441451471,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "51131500",
+        "name": "Diagnostic Monitors",
+        "confidence": 0.5488187119498559,
+        "logOdds": 0.1958989441451471,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "51102500",
+        "name": "Pain Relief Products",
+        "confidence": 0.5488187119498559,
+        "logOdds": 0.1958989441451471,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "51121600",
+        "name": "Vitamins/Minerals/Nutritional Supplements",
+        "confidence": 0.5488187119498559,
+        "logOdds": 0.1958989441451471,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "51100000",
+        "name": "Health Treatments/Aids",
+        "confidence": 0.4288055710845733,
+        "logOdds": -0.2867260557381661,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "51130000",
+        "name": "Home Diagnostics",
+        "confidence": 0.4288055710845733,
+        "logOdds": -0.2867260557381661,
+        "inferred": true
+      },
+      {
+        "domain": "product",
+        "id": "51120000",
+        "name": "Health Enhancement",
+        "confidence": 0.4288055710845733,
+        "logOdds": -0.2867260557381661,
+        "inferred": true
+      }
+    ]
+  }
+]
