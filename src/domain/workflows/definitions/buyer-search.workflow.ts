@@ -175,19 +175,13 @@ function renderNumberedVendors(
 ): { text: string; actions: Action[] } {
   const lines = vendors.map((vendor, index) => `${index + 1}. ${vendorLine(vendor)}`);
 
-  const closing =
-    vendors.length === 1
-      ? 'Reply with 1 to connect with them.'
-      : `Reply with ${vendors.map((_, index) => index + 1).join(' or ')} to connect with a supplier.`;
-
   const actions = vendors.map((vendor, index) => ({
     type: 'select',
-    // Numbered in the title too, so a tap and a typed number name the same thing.
     title: `${index + 1}. ${(vendor.businessName || 'Vendor').slice(0, 16)}`,
     payload: encodeActionPayload({ workflowId, action: 'select', value: vendor.vendorId }),
   }));
 
-  return { text: [header, '', ...lines, '', closing].join('\n'), actions };
+  return { text: [header, '', ...lines].join('\n'), actions };
 }
 
 function renderVendors(vendors: readonly RankedVendorView[], resolvedProduct: string) {
@@ -224,12 +218,7 @@ function renderVendors(vendors: readonly RankedVendorView[], resolvedProduct: st
     })
     .join('\n\n');
 
-  const closing =
-    vendors.length === 1
-      ? '\n\nReply with 1 to connect with them.'
-      : `\n\nReply with ${vendors.map((_, index) => index + 1).join(' or ')} to connect with a supplier.`;
-
-  const text = `${header}${cardList}${vendors.length > 0 ? closing : ''}`;
+  const text = `${header}${cardList}`;
 
   // The same vendors as structured data, for channels that can render a card. The text stays
   // authoritative — WhatsApp has nothing else — and a client that ignores this loses nothing.
@@ -358,35 +347,20 @@ const resolveDemand = {
       rating: vendor.rating ?? null,
     }));
 
-    const fannedOutBeyondImmediate = distribution.fannedOut.filter(
-      (fanned) => !vendorList.some((renderedVendor) => renderedVendor.vendorId === fanned.vendorId),
-    );
-
-    const waiting =
-      fannedOutBeyondImmediate.length > 0
-        ? `I have also asked ${fannedOutBeyondImmediate.length} other supplier${fannedOutBeyondImmediate.length === 1 ? '' : 's'} — I will send them over as they reply.`
-        : null;
-
-    const messages = waiting !== null ? [rendered.text, waiting] : [rendered.text];
-
     return {
-      // Straight to waiting: the search stays open while responses arrive (§9).
-      transitionTo: STATE_AWAIT_RESPONSES,
+      transitionTo: STATE_COMPLETE,
       response: {
         text: rendered.text,
-        // Selectable from the first list too, not only after a vendor replies. The WhatsApp
-        // adapter numbers these in the message body, which is what makes "reply with 2" work
-        // without printing the vendors twice in one message.
-        actions: presented.map((vendor, index) => ({
+        actions: presented.map((vendor) => ({
           type: 'select',
-          title: `${index + 1}. ${(vendor.businessName || 'Vendor').slice(0, 16)}`,
+          title: `Chat ${(vendor.businessName || 'Vendor').slice(0, 16)}`,
           payload: encodeActionPayload({
             workflowId: context.instance.id,
             action: 'select',
             value: vendor.vendorId,
           }),
         })),
-        metadata: { messages, ...rendered.metadata },
+        metadata: { messages: [rendered.text], ...rendered.metadata },
       },
       dataPatch: {
         query,
@@ -396,9 +370,10 @@ const resolveDemand = {
         presentedVendorIds: presented.map((vendor) => vendor.vendorId),
         presentedVendors: presented,
       },
-      summary: `Buyer search: "${query}". Delivered ${distribution.immediate.length} vendor(s), awaiting ${distribution.fannedOut.length} more.`,
+      summary: `Buyer search: "${query}". Delivered ${distribution.immediate.length} vendor(s).`,
       semanticFingerprint: fingerprintFor(trigger, query),
       importantEntities: { request_id: distribution.requestId },
+      status: 'completed',
     };
   },
 };
@@ -431,40 +406,10 @@ const presentImmediate = {
   },
 };
 
-/**
- * The vendor a reply names, or null when it names none.
- *
- * Accepts the position the customer was shown ("2") or the shop's name, and nothing else. A
- * loose match here would connect a buyer to the wrong shop and record `vendor.selected` for
- * them — the strongest signal the Evidence Service accepts, and expensive to unlearn.
- */
-function pickVendor(text: string, presented: readonly RevealedVendorView[]): RevealedVendorView | null {
-  const trimmed = text.trim();
-  if (trimmed.length === 0 || presented.length === 0) return null;
-
-  const digits = trimmed.match(/^(\d{1,2})[.)]?$/);
-  if (digits !== null) {
-    const index = Number.parseInt(digits[1], 10) - 1;
-    return presented[index] ?? null;
-  }
-
-  // The title offered alongside the number is "2. MiraGlams Beau", so a tapped option arrives
-  // with the position attached. Strip it before comparing names.
-  const withoutPosition = trimmed.replace(/^\d{1,2}[.)]\s*/, '').toLowerCase();
-  if (withoutPosition.length < 3) return null;
-
-  return (
-    presented.find((vendor) => {
-      const name = (vendor.businessName || '').toLowerCase();
-      return name.length >= 3 && (name.startsWith(withoutPosition) || withoutPosition.startsWith(name));
-    }) ?? null
-  );
-}
-
 const awaitResponses = {
   name: STATE_AWAIT_RESPONSES,
   allowedTransitions: [STATE_PRESENT_RESPONDERS, STATE_AWAIT_RESPONSES, STATE_COMPLETE],
-  waitsForInput: true,
+  waitsForInput: false,
 
   async execute(context: WorkflowExecutionContext): Promise<StateExecutionResult> {
     const services = servicesOf(context);
@@ -475,10 +420,6 @@ const awaitResponses = {
     if (trigger.interactivePayload !== null && data.requestId !== null) {
       const [, , action, chosen] = trigger.interactivePayload.split('|');
 
-      // The action is checked, not just the position. Reading the fourth segment of whatever
-      // arrives would let any other button's payload be recorded as a vendor selection — and
-      // `vendor.selected` is the strongest signal the Evidence Service accepts, so a wrong one
-      // is expensive to unlearn.
       if (action === 'select' && chosen !== undefined && chosen.length > 0) {
         await services.distribution.recordSelection({ requestId: data.requestId, vendorId: chosen });
 
@@ -493,51 +434,7 @@ const awaitResponses = {
       }
     }
 
-    if (data.requestId === null) {
-      return { transitionTo: STATE_COMPLETE, status: 'completed' };
-    }
-
-    // A typed choice. Two shapes reach here: a bare number, and — when the presented list was
-    // offered as tappable options — the option's own title, because ingestion resolves a digit
-    // against what was last offered before the turn ever gets this far. Both name the same
-    // vendor, and refusing either would make the instruction we just gave the customer a lie.
-    const picked = pickVendor(trigger.text, data.presentedVendors);
-
-    if (picked !== null) {
-      await services.distribution.recordSelection({
-        requestId: data.requestId,
-        vendorId: picked.vendorId,
-      });
-
-      return {
-        transitionTo: STATE_COMPLETE,
-        response: {
-          text: `Good choice — I have let ${picked.businessName || 'them'} know you are interested. Did they have what you needed?`,
-        },
-        summary: `${context.instance.summary} Customer selected ${picked.businessName}.`,
-        status: 'completed',
-      };
-    }
-
-    // Otherwise the customer said something while waiting: show anyone who has replied since.
-    const revealed = await services.distribution.revealedVendors(data.requestId);
-    const fresh = revealed.filter((entry) => !data.presentedVendorIds.includes(entry.vendorId));
-
-    if (fresh.length === 0) {
-      return {
-        response: { text: 'Still waiting on the other suppliers — I will send them the moment they reply.' },
-      };
-    }
-
-    return {
-      transitionTo: STATE_PRESENT_RESPONDERS,
-      dataPatch: {
-        presentedVendorIds: [...data.presentedVendorIds, ...fresh.map((entry) => entry.vendorId)],
-        // Appended, never re-sorted: the numbers already shown to the customer must keep
-        // pointing at the same shops.
-        presentedVendors: [...data.presentedVendors, ...fresh],
-      },
-    };
+    return { transitionTo: STATE_COMPLETE, status: 'completed' };
   },
 };
 

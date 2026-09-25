@@ -60,12 +60,25 @@ export class TaxonomyCandidateRetrievalAdapter implements GpcCandidateRetrievalP
     if (applicable.length === 0) return { candidates: [], gpcVersion };
 
     // One embedding per object, built like the index text (title, title, lineage-ish context, definition).
-    const vectors = await this.embeddings.embedBatch(applicable.map(embeddingTextFor));
+    let vectors: readonly (readonly number[] | undefined)[] = [];
+    try {
+      if (!this.embeddings.isConfigured || this.embeddings.isConfigured()) {
+        vectors = await this.embeddings.embedBatch(applicable.map(embeddingTextFor));
+      }
+    } catch (err) {
+      this.logger.stageFailed({
+        component: COMPONENT,
+        stage: STAGE,
+        input: { count: applicable.length },
+        action: 'EMBEDDING_FAILED_FALLING_BACK_TO_LEXICAL',
+        error: err instanceof Error ? err.message : String(err),
+      });
+      vectors = [];
+    }
     const candidates: GpcCandidate[] = [];
 
     for (const [index, query] of applicable.entries()) {
       const embedding = vectors[index];
-      if (embedding === undefined) continue;
       const fused = new Map<string, { node: TaxonomyNode; score: number; sources: Set<RetrievalSource> }>();
       const absorb = (matches: readonly TaxonomyMatch[], source: RetrievalSource, weight: number) => {
         matches.forEach((match, rank) => {
@@ -89,7 +102,7 @@ export class TaxonomyCandidateRetrievalAdapter implements GpcCandidateRetrievalP
           minSimilarity: MIN_SIMILARITY,
           levels: HIERARCHY_LEVELS,
         }),
-        'VECTOR',
+        embedding !== undefined ? 'VECTOR' : 'LEXICAL',
         1,
       );
       // Arm 2: aliases and Enrichment taxonomy vocabulary, lexically anchored.

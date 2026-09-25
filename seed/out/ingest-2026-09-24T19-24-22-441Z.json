@@ -1,0 +1,132 @@
+{
+  "base": "http://localhost:4000",
+  "startedAt": "2026-09-24T19:24:22.442Z",
+  "results": [
+    {
+      "id": "v05",
+      "channel": "web",
+      "businessName": "Gbenga Roofing",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v05"
+    },
+    {
+      "id": "v17",
+      "channel": "web",
+      "businessName": "Glow Beauty Store",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v17"
+    },
+    {
+      "id": "v19",
+      "channel": "web",
+      "businessName": "Onitsha Central Pharmacy",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v19"
+    },
+    {
+      "id": "v20",
+      "channel": "web",
+      "businessName": "Mile 12 Foodstuff",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v20"
+    },
+    {
+      "id": "v21",
+      "channel": "web",
+      "businessName": "Mama Nkechi Provisions",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v21"
+    },
+    {
+      "id": "v22",
+      "channel": "web",
+      "businessName": "Iceberg Frozen Foods",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v22"
+    },
+    {
+      "id": "v23",
+      "channel": "web",
+      "businessName": "Aqua Fresh Table Water",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v23"
+    },
+    {
+      "id": "v24",
+      "channel": "web",
+      "businessName": "Green Harvest Agro",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v24"
+    },
+    {
+      "id": "v25",
+      "channel": "web",
+      "businessName": "Oga Carpenter Furniture",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v25"
+    },
+    {
+      "id": "v26",
+      "channel": "web",
+      "businessName": "Scholars Bookshop",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v26"
+    },
+    {
+      "id": "v27",
+      "channel": "web",
+      "businessName": "Little Ones Baby Store",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v27"
+    },
+    {
+      "id": "v28",
+      "channel": "web",
+      "businessName": "Sparkle Cleaning Supplies",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v28"
+    },
+    {
+      "id": "v29",
+      "channel": "web",
+      "businessName": "Royal Events Rentals",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v29"
+    },
+    {
+      "id": "v30",
+      "channel": "web",
+      "businessName": "SafeGuard PPE Warri",
+      "turns": [],
+      "conversationId": null,
+      "completed": false,
+      "error": "Timed out waiting for a reply for v30"
+    }
+  ]
+}

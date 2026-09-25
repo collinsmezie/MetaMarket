@@ -103,6 +103,10 @@ export class AppConfigService {
     };
   }
 
+  get llmPrimaryProvider(): 'gemini' | 'openai' | 'anthropic' {
+    return this.get('LLM_PRIMARY_PROVIDER');
+  }
+
   get embeddingDimension() {
     return this.get('EMBEDDING_DIMENSION');
   }

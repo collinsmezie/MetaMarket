@@ -209,15 +209,6 @@ export class PrismaTaxonomyRepository implements TaxonomyRepositoryPort {
    * calibrated confidence — the fusion decides ordering, not meaning.
    */
   async search(options: TaxonomySearchOptions): Promise<readonly TaxonomyMatch[]> {
-    if (options.embedding.length !== this.embeddingDimension) {
-      throw new Error(
-        `Query embedding has ${options.embedding.length} dimensions but the taxonomy is indexed at ${this.embeddingDimension}.`,
-      );
-    }
-
-    const literal = `[${options.embedding.join(',')}]`;
-    const maxDistance = 1 - options.minSimilarity;
-
     // Conditions are composed with Prisma.sql so values stay parameterised.
     const levelFilter =
       options.levels !== undefined && options.levels.length > 0
@@ -236,6 +227,70 @@ export class PrismaTaxonomyRepository implements TaxonomyRepositoryPort {
     // Each arm retrieves deeper than the final limit so a result ranked modestly by one
     // signal can still be promoted by the other.
     const candidateDepth = Math.max(options.limit * 6, 40);
+
+    // Lexical fallback when embedding provider is unavailable or credits are exhausted
+    if (options.embedding === undefined) {
+      if (lexicalQuery.length === 0) return [];
+
+      const rows = await this.prisma.$queryRaw<(TaxonomyRow & { fused: number })[]>`
+        WITH lexical AS (
+          SELECT code,
+                 ROW_NUMBER() OVER (
+                   ORDER BY ts_rank(search_vector, websearch_to_tsquery('english', ${lexicalQuery})) DESC
+                 ) AS rank
+          FROM taxonomy_nodes
+          WHERE active = true
+            AND search_vector @@ websearch_to_tsquery('english', ${lexicalQuery})
+            ${levelFilter}
+            ${segmentFilter}
+          LIMIT ${candidateDepth}
+        ),
+        exact AS (
+          SELECT code
+          FROM (
+            SELECT code,
+                   lower(trim(unnest(regexp_split_to_array(stripped, '/')))) AS head
+            FROM (
+              SELECT code, trim(regexp_replace(title, '\\s*\\([^)]*\\)', '', 'g')) AS stripped
+              FROM taxonomy_nodes
+              WHERE active = true
+                ${levelFilter}
+                ${segmentFilter}
+            ) s
+            WHERE stripped ~ '^[^[:space:]]+(/[^[:space:]]+)*$'
+          ) heads
+          WHERE head IN (lower(${lexicalQuery}), lower(${lexicalQuery}) || 's', lower(${lexicalQuery}) || 'es')
+        ),
+        fused AS (
+          SELECT COALESCE(l.code, e.code) AS code,
+                 COALESCE(1.0 / (60 + l.rank), 0)
+                   + CASE WHEN e.code IS NOT NULL THEN 0.05 ELSE 0 END AS fused
+          FROM lexical l
+          FULL OUTER JOIN exact e ON e.code = l.code
+        )
+        SELECT t.code, t.level, t.title, t.definition, t.definition_excludes, t.active,
+               t.parent_code, t.segment_code, t.family_code, t.class_code, t.brick_code,
+               f.fused
+        FROM fused f
+        JOIN taxonomy_nodes t ON t.code = f.code
+        ORDER BY f.fused DESC
+        LIMIT ${options.limit}
+      `;
+
+      return rows.map((row, index) => ({
+        node: this.toDomain(row),
+        similarity: Math.max(0.5, 0.95 - index * 0.02),
+      }));
+    }
+
+    if (options.embedding.length !== this.embeddingDimension) {
+      throw new Error(
+        `Query embedding has ${options.embedding.length} dimensions but the taxonomy is indexed at ${this.embeddingDimension}.`,
+      );
+    }
+
+    const literal = `[${options.embedding.join(',')}]`;
+    const maxDistance = 1 - options.minSimilarity;
 
     const rows = await this.prisma.$queryRaw<(TaxonomyRow & { distance: number; fused: number })[]>`
       WITH dense AS (

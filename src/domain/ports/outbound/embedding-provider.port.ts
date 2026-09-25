@@ -12,6 +12,9 @@ export interface EmbeddingProviderPort {
   readonly model: string;
   readonly dimension: number;
 
+  /** Whether the embedding provider is configured and available. */
+  isConfigured?(): boolean;
+
   /** Embeds a single text. Returns a vector of exactly {@link dimension} floats. */
   embed(text: string): Promise<readonly number[]>;
 

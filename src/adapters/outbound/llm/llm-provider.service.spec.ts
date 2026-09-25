@@ -67,8 +67,9 @@ function buildService(providers: {
   openai: FakeProvider;
   gemini: FakeProvider;
   anthropic: FakeProvider;
-}): LlmProviderService {
+}, primaryProvider: LlmProviderName = 'openai'): LlmProviderService {
   const config = {
+    llmPrimaryProvider: primaryProvider,
     llmResilience: {
       maxAttempts: 3,
       // Kept tiny so retry paths do not slow the suite; behaviour is unchanged.
@@ -76,7 +77,7 @@ function buildService(providers: {
       circuitBreakerThreshold: 2,
       circuitBreakerResetMs: 10_000,
     },
-  } as AppConfigService;
+  } as unknown as AppConfigService;
 
   return new LlmProviderService(
     config,
@@ -105,6 +106,20 @@ describe('LlmProviderService', () => {
     expect(result.data).toEqual({ intent: 'buyer_product_search' });
     expect(result.failedProviders).toEqual([]);
     expect(gemini.calls).toBe(0);
+    expect(anthropic.calls).toBe(0);
+  });
+
+  it('uses Gemini first when configured as primary provider', async () => {
+    const openai = new FakeProvider('openai', () => succeedsWith('wrong'));
+    const gemini = new FakeProvider('gemini', () => succeedsWith('buyer_product_search'));
+    const anthropic = new FakeProvider('anthropic', () => succeedsWith('wrong'));
+
+    const result = await buildService({ openai, gemini, anthropic }, 'gemini').complete(request, validate);
+
+    expect(result.provider).toBe('gemini');
+    expect(result.data).toEqual({ intent: 'buyer_product_search' });
+    expect(result.failedProviders).toEqual([]);
+    expect(openai.calls).toBe(0);
     expect(anthropic.calls).toBe(0);
   });
 

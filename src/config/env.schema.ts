@@ -53,6 +53,7 @@ export const envSchema = z
     // determinism. Independent of OPENAI_MODEL so the legacy path can differ during migration.
     /** P5/P6 response naturalisation for multi-result turns (MCOS §34A.10); single results compose deterministically. */
     ORCHESTRATOR_NATURALIZE_RESPONSES: booleanFromString(true),
+    LLM_PRIMARY_PROVIDER: z.enum(['gemini', 'openai', 'anthropic']).default('gemini'),
     LLM_SPECIALIST_MODEL: z.string().default('gpt-4o-2024-11-20'),
     /** WRS search provider (final decision lock Q5): Tavily is the initial adapter; `none` disables retrieval honestly. */
     WRS_SEARCH_PROVIDER: z.enum(['tavily', 'none']).default('tavily'),

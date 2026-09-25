@@ -46,7 +46,7 @@ export interface TaxonomyNodeInput extends TaxonomyNode {
 }
 
 export interface TaxonomySearchOptions {
-  readonly embedding: readonly number[];
+  readonly embedding?: readonly number[];
   /**
    * The user's words, for the lexical half of hybrid retrieval.
    *

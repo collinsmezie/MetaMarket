@@ -155,16 +155,17 @@ export class CapabilityResolver {
     options?: { archetype?: string; statement?: string },
   ): Promise<readonly { code: string; title: string; definition: string }[]> {
     try {
-      // Contextualized Query Embedding: Embed the term alongside the merchant's trade archetype
-      // or statement context. This forces semantic vector similarity to search within the
-      // merchant's trade domain, suppressing polysemous cross-domain collisions at retrieval time.
-      const queryText = options?.archetype
-        ? `${options.archetype}: ${term}`
-        : options?.statement
-          ? `${options.statement} (term: ${term})`
-          : term;
-
-      const embedding = await this.embeddings.embed(queryText);
+      let embedding: readonly number[] | undefined;
+      try {
+        const queryText = options?.archetype
+          ? `${options.archetype}: ${term}`
+          : options?.statement
+            ? `${options.statement} (term: ${term})`
+            : term;
+        embedding = await this.embeddings.embed(queryText);
+      } catch {
+        // OpenAI embedding failure or credit exhaustion; proceed with lexical search
+      }
 
       const matches = await this.taxonomy.search({
         embedding,

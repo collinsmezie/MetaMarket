@@ -52,7 +52,12 @@ async function main(): Promise<void> {
     console.log(`Searching ${embedded.toLocaleString()} embedded GPC nodes\n`);
 
     for (const query of queries) {
-      const vector = await embeddings.embed(query);
+      let vector: readonly number[] | undefined;
+      try {
+        vector = await embeddings.embed(query);
+      } catch (e) {
+        console.warn(`Embedding failed (${(e as Error).message}), falling back to lexical search\n`);
+      }
       const matches = await taxonomy.search({
         embedding: vector,
         // Passing the raw text enables the lexical arm of hybrid retrieval.

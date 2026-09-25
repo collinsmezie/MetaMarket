@@ -1,3 +1,5 @@
+import { setDefaultResultOrder } from 'node:dns';
+import { setDefaultAutoSelectFamily } from 'node:net';
 import { Injectable } from '@nestjs/common';
 import { GoogleGenerativeAI, type GenerativeModel } from '@google/generative-ai';
 import { AppConfigService } from '../../../config/app-config.service';
@@ -7,6 +9,14 @@ import type {
   StructuredRequest,
 } from '../../../domain/ports/outbound/llm-provider.port';
 import { LlmProviderError } from '../../../domain/ports/outbound/llm-provider.port';
+
+// Enforce IPv4 resolution to prevent Node.js IPv6 routing timeouts to Google endpoints
+try {
+  setDefaultResultOrder('ipv4first');
+  setDefaultAutoSelectFamily(false);
+} catch {
+  // Ignore in environments where network APIs differ
+}
 
 /**
  * First fallback provider (Execution.md §2.4).
@@ -58,7 +68,7 @@ export class GeminiLlmAdapter implements LlmProviderPort {
             : {}),
           generationConfig: {
             temperature: request.temperature ?? 0,
-            maxOutputTokens: request.maxOutputTokens,
+            maxOutputTokens: request.maxOutputTokens !== undefined ? Math.max(request.maxOutputTokens, 4096) : 4096,
             responseMimeType: 'application/json',
             // Cast: the SDK's Schema type is narrower than JSON Schema, and the conversion
             // below produces only the subset it accepts.
@@ -105,15 +115,16 @@ export class GeminiLlmAdapter implements LlmProviderPort {
 /**
  * Converts JSON Schema to the subset Gemini accepts.
  *
- * Gemini rejects `additionalProperties`, `$schema`, `const` and several composite keywords
+ * Gemini rejects `additionalProperties`, `$schema`, `$id`, `const` and several composite keywords
  * that OpenAI strict mode requires, so passing the schema through unchanged makes every
  * fallback call fail with a 400 — which would defeat the point of having a fallback.
+ * References ($ref) are dereferenced and inlined so that $defs / definitions can be stripped cleanly.
  */
 export function toGeminiSchema(schema: Readonly<Record<string, unknown>>): Record<string, unknown> {
   const unsupported = new Set([
     '$schema',
+    '$id',
     'additionalProperties',
-    'const',
     'default',
     'definitions',
     '$defs',
@@ -124,14 +135,58 @@ export function toGeminiSchema(schema: Readonly<Record<string, unknown>>): Recor
     'unevaluatedProperties',
   ]);
 
-  const convert = (node: unknown): unknown => {
-    if (Array.isArray(node)) return node.map(convert);
+  function resolveRef(root: Record<string, unknown>, ref: string): Record<string, unknown> | null {
+    if (!ref.startsWith('#/')) return null;
+    let node: unknown = root;
+    for (const segment of ref.slice(2).split('/')) {
+      if (node === null || typeof node !== 'object') return null;
+      node = (node as Record<string, unknown>)[segment.replace(/~1/g, '/').replace(/~0/g, '~')];
+    }
+    return node !== null && typeof node === 'object' ? (node as Record<string, unknown>) : null;
+  }
+
+  const convert = (node: unknown, seenRefs = new Set<string>()): unknown => {
+    if (Array.isArray(node)) return node.map((entry) => convert(entry, seenRefs));
     if (node === null || typeof node !== 'object') return node;
+
+    const record = node as Record<string, unknown>;
+
+    // Dereference $ref before definitions are stripped
+    if (typeof record.$ref === 'string') {
+      const ref = record.$ref;
+      if (seenRefs.has(ref)) {
+        return { type: 'object' };
+      }
+      const target = resolveRef(schema as Record<string, unknown>, ref);
+      if (target !== null) {
+        const nextSeen = new Set(seenRefs);
+        nextSeen.add(ref);
+        return convert(target, nextSeen);
+      }
+    }
+
+    // Simplify anyOf: [T, { type: 'null' }] into T with nullable: true
+    if (Array.isArray(record.anyOf)) {
+      const nonNull = record.anyOf.filter(
+        (entry) => !(entry !== null && typeof entry === 'object' && (entry as Record<string, unknown>).type === 'null'),
+      );
+      if (nonNull.length === 1 && nonNull.length < record.anyOf.length) {
+        const convertedInner = convert(nonNull[0], seenRefs);
+        if (convertedInner !== null && typeof convertedInner === 'object') {
+          return { ...(convertedInner as Record<string, unknown>), nullable: true };
+        }
+      }
+    }
 
     const result: Record<string, unknown> = {};
 
-    for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
-      if (unsupported.has(key)) continue;
+    // Translate JSON Schema `const: X` into Gemini-compatible `enum: [X]`
+    if ('const' in record) {
+      result.enum = [record.const];
+    }
+
+    for (const [key, value] of Object.entries(record)) {
+      if (unsupported.has(key) || key === 'const') continue;
 
       // Gemini expects `nullable: true` rather than a ["string","null"] type union.
       if (key === 'type' && Array.isArray(value)) {
@@ -141,7 +196,12 @@ export function toGeminiSchema(schema: Readonly<Record<string, unknown>>): Recor
         continue;
       }
 
-      result[key] = convert(value);
+      result[key] = convert(value, seenRefs);
+    }
+
+    // Gemini requires a type on every node; if enum was specified without an explicit type, infer string
+    if (result.enum !== undefined && result.type === undefined) {
+      result.type = 'string';
     }
 
     return result;

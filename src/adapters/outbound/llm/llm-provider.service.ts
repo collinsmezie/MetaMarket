@@ -25,12 +25,8 @@ import { OpenAiLlmAdapter } from './openai-llm.adapter';
 
 const COMPONENT = 'MCOS';
 const STAGE = 'LlmProviderService';
-
-/**
- * Fallback order (Execution.md §1): OpenAI primary, then Gemini, then Anthropic.
- * Ordered by capability and cost rather than alphabetically.
- */
-const PROVIDER_ORDER: readonly LlmProviderName[] = ['openai', 'gemini', 'anthropic'];
+/** Default fallback order: Gemini primary, then OpenAI, then Anthropic. */
+const DEFAULT_PROVIDER_ORDER: readonly LlmProviderName[] = ['gemini', 'openai', 'anthropic'];
 
 /** Base delay for exponential backoff; attempt N waits BASE · 2^(N-1) plus jitter. */
 const BACKOFF_BASE_MS = 250;
@@ -61,13 +57,19 @@ export class LlmProviderService implements LlmService {
     @Inject(TRACE_RECORDER) private readonly traces: TraceRecorderPort,
   ) {
     const byName = new Map<LlmProviderName, LlmProviderPort>([
-      ['openai', openai],
       ['gemini', gemini],
+      ['openai', openai],
       ['anthropic', anthropic],
     ]);
 
+    const primary = config.llmPrimaryProvider ?? 'gemini';
+    const providerOrder: readonly LlmProviderName[] = [
+      primary,
+      ...DEFAULT_PROVIDER_ORDER.filter((name) => name !== primary),
+    ];
+
     // Unconfigured providers are excluded rather than left to fail on every call.
-    this.providers = PROVIDER_ORDER.map((name) => byName.get(name)).filter(
+    this.providers = providerOrder.map((name) => byName.get(name)).filter(
       (provider): provider is LlmProviderPort => provider !== undefined && provider.isConfigured(),
     );
 
