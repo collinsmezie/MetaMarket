@@ -299,17 +299,9 @@ export class ConversationOrchestrator implements TurnOrchestratorPort {
       component: COMPONENT,
       stage: `${STAGE}:Heartbeat`,
       input: { conversationId: conversation.id, turnId: input.turnId },
-      action: `Turn passed ${HEARTBEAT_MS / 1000}s; sending an interim update`,
+      action: `Turn passed ${HEARTBEAT_MS / 1000}s; refreshing typing indicator`,
       output: { heartbeatSent: true },
     });
-    await this.delivery.send(
-      conversation,
-      {
-        text: "I'm still working on your request! Thank you for your patience—I'll have your results ready in a moment.",
-        metadata: { heartbeat: '25s_threshold_update' },
-      },
-      null,
-    );
     await this.indicateTyping(conversation, input);
   }
 }

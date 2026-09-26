@@ -91,7 +91,7 @@ describe('CapabilityMatchingService Business Card Archetype Formatting', () => {
 
     expect(ranked).toHaveLength(1);
     expect(ranked[0].description).toBe(
-      'Mobinco specializes in books, stationery, educational materials, and related supplies.',
+      'Mobinco can provide books, stationery, educational materials, and related supplies.',
     );
   });
 });

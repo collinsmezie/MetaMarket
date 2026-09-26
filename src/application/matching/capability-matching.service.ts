@@ -5,9 +5,8 @@ import type {
   RankedVendor,
   RankingComponents,
   ResolvedDemand,
-  SemanticExpansion,
 } from '../../domain/models/demand';
-import { combineRanking, needsClarification, proximityScore } from '../../domain/models/demand';
+import { combineRanking, proximityScore } from '../../domain/models/demand';
 import {
   evaluateGraphMatch,
   type GraphMatchResult,
@@ -29,20 +28,6 @@ import { DemandUnderstandingService } from './demand-understanding.service';
 import { MatchingService } from '../../matching/application/matching.service';
 
 const COMPONENT = 'CME';
-
-/** Candidates pulled per capability before ranking. Broad on purpose (CME §11). */
-const CANDIDATES_PER_CAPABILITY = 40;
-
-/**
- * Belief floor for a vendor to be considered a candidate at all.
- *
- * Low, because retrieval should be inclusive and ranking should discriminate — excluding a
- * plausible vendor here means they can never be surfaced, however good their evidence.
- */
-const MIN_CANDIDATE_CONFIDENCE = 0.15;
-
-/** Ranked vendors returned by default. */
-const DEFAULT_RESULT_LIMIT = 10;
 
 export interface MatchRequest {
   readonly query: string;
@@ -72,23 +57,17 @@ export type MatchResult =
 
 /**
  * The Capability Matching Engine (CME TDR §5).
- *
- * Demand Understanding → Ambiguity Manager → Semantic Expansion → Canonical Resolution →
- * Capability→GPC Mapping → Candidate Retrieval → Evidence Lookup → Ranking.
- *
- * It returns ranked candidates and nothing else: the CME "does not generate conversational
- * responses", and it never decides whether a conversation is a search — that is the
- * Conversation OS's job (CME §19).
+ * Delegates matching to the graph-native Phase 11 MatchingService.
  */
 @Injectable()
 export class CapabilityMatchingService {
   constructor(
-    @Inject(VENDOR_REPOSITORY) private readonly vendors: VendorRepositoryPort,
-    @Inject(TAXONOMY_REPOSITORY) private readonly taxonomy: TaxonomyRepositoryPort,
+    @Optional() @Inject(VENDOR_REPOSITORY) _vendors: VendorRepositoryPort | undefined,
+    @Optional() @Inject(TAXONOMY_REPOSITORY) private readonly taxonomy: TaxonomyRepositoryPort | undefined,
     @Inject(STAGE_LOGGER) private readonly logger: StageLoggerPort,
-    private readonly understanding: DemandUnderstandingService,
-    private readonly resolver: CapabilityResolver,
-    private readonly evidence: EvidenceQueryService,
+    @Optional() _understanding?: DemandUnderstandingService,
+    @Optional() _resolver?: CapabilityResolver,
+    @Optional() private readonly evidence?: EvidenceQueryService,
     @Optional() private readonly newMatching?: MatchingService,
   ) {}
 
@@ -165,218 +144,94 @@ export class CapabilityMatchingService {
             vendors,
           };
         }
+
+        // When the Phase 11 graph-native matching finds no verified suppliers, return clean
+        // no_capability immediately. Do NOT fall back to legacy CDE taxonomy hallucination.
+        this.logger.stage({
+          component: COMPONENT,
+          stage: 'MkgMatchingDelegation',
+          input: { query: request.query, gpcCode: request.gpcCode },
+          action: 'No verified suppliers found in MKG; returning clean no_capability without legacy fallback',
+          output: { outcome: 'no_capability' },
+          durationMs: Date.now() - startedAt,
+        });
+
+        return {
+          outcome: 'no_capability',
+          demand: {
+            rawQuery: request.query,
+            mode: 'item',
+            products: (mkgResult.resolved?.demand.products ? [...mkgResult.resolved.demand.products] : [request.conceptLabel || request.query]),
+            services: [],
+            businessTypes: [],
+            quantities: [],
+            modifiers: [],
+            constraints: [],
+            brands: [],
+            location: request.customerCity || '',
+            ambiguityType: 'none',
+            ambiguityScore: 0,
+            ambiguityOptions: [],
+          },
+        };
       } catch (err) {
         this.logger.stageFailed({
           component: COMPONENT,
           stage: 'MkgMatchingDelegation',
           input: { query: request.query },
-          action: 'Error delegating to Phase 11 MatchingService; falling back to legacy pipeline',
+          action: 'Error delegating to Phase 11 MatchingService; returning clean no_capability',
           error: err as Error,
         });
+
+        return {
+          outcome: 'no_capability',
+          demand: {
+            rawQuery: request.query,
+            mode: 'item',
+            products: [request.conceptLabel || request.query],
+            services: [],
+            businessTypes: [],
+            quantities: [],
+            modifiers: [],
+            constraints: [],
+            brands: [],
+            location: request.customerCity || '',
+            ambiguityType: 'none',
+            ambiguityScore: 0,
+            ambiguityOptions: [],
+          },
+        };
       }
     }
 
-    // ── Stage 1: Demand Understanding ────────────────────────────────────────────────
-    const demand = await this.understanding.understand({
-      query: request.query,
-      history: request.history ?? [],
-    });
-
-    // ── Stage 2: Ambiguity Manager ───────────────────────────────────────────────────
-    // Retrieval is deliberately skipped when clarifying, so the customer is never shown a
-    // vendor list assembled from the wrong reading of their words (CME Test 2).
-    if (needsClarification(demand)) {
-      const question = this.buildClarificationQuestion(demand);
-
-      this.logger.stage({
-        component: COMPONENT,
-        stage: 'AmbiguityManager',
-        input: { query: request.query, ambiguityType: demand.ambiguityType },
-        action: 'Ambiguity would materially change the vendor set; requesting clarification before retrieval',
-        output: { question, options: demand.ambiguityOptions },
-        durationMs: Date.now() - startedAt,
-      });
-
-      return {
-        outcome: 'clarification_needed',
-        demand,
-        question,
-        options: demand.ambiguityOptions,
-      };
-    }
-
-    // ── Stage 3: Semantic Expansion ──────────────────────────────────────────────────
-    const expansion = await this.understanding.expand(demand);
-
-    // ── Stages 4-5: Canonical resolution and Capability→GPC mapping ──────────────────
-    const resolved = await this.resolveCapabilities(demand, expansion);
-
-    if (resolved.primaryCapabilities.length === 0 && resolved.expandedCapabilities.length === 0) {
-      this.logger.stageFailed({
-        component: COMPONENT,
-        stage: 'CanonicalCapabilityResolution',
-        input: { query: request.query },
-        action: 'Nothing in the request resolved to a canonical capability; cannot retrieve vendors',
-        error: new Error('No canonical capability resolved'),
-      });
-
-      return { outcome: 'no_capability', demand };
-    }
-
-    // ── Stage 6: Candidate Vendor Retrieval ──────────────────────────────────────────
-    const candidates = await this.retrieveCandidates(resolved);
-
-    if (candidates.size === 0) {
-      this.logger.stage({
-        component: COMPONENT,
-        stage: 'CandidateVendorRetrieval',
-        input: { capabilities: resolved.primaryCapabilities.map((c) => c.id) },
-        action: 'No vendor in the marketplace has these capabilities yet',
-        output: { candidates: 0 },
-      });
-
-      return { outcome: 'ranked', resolved, vendors: [] };
-    }
-
-    // ── Stages 7-8: Evidence Lookup and Ranking ──────────────────────────────────────
-    const ranked = await this.rank({
-      resolved,
-      candidates: [...candidates.values()],
-      customerCity: request.customerCity ?? null,
-      limit: request.limit ?? DEFAULT_RESULT_LIMIT,
-    });
-
-    this.logger.stage({
+    this.logger.stageFailed({
       component: COMPONENT,
-      stage: 'RankingEngine',
-      input: {
-        query: request.query,
-        primaryCapabilities: resolved.primaryCapabilities.map((c) => c.name),
-        candidates: candidates.size,
-      },
-      action: 'Ranked candidate vendors on capability match, expansion, evidence and proximity',
-      output: {
-        vendors: ranked.map((vendor) => ({
-          name: vendor.businessName,
-          score: Number(vendor.score.toFixed(3)),
-          capability: Number(vendor.components.capabilityMatch.toFixed(2)),
-          evidence: Number(vendor.components.evidenceScore.toFixed(2)),
-        })),
-      },
-      durationMs: Date.now() - startedAt,
+      stage: 'MatchingDelegation',
+      input: { query: request.query },
+      action: 'No modern MatchingService available; returning clean no_capability',
+      error: new Error('MatchingService unavailable'),
     });
-
-    return { outcome: 'ranked', resolved, vendors: ranked };
-  }
-
-  /**
-   * Resolves the demand to canonical capability identifiers.
-   *
-   * Primary capabilities come from what the customer actually named; expanded ones come from the
-   * reasoning graphs. They are kept apart because they must not be scored alike — a vendor
-   * matching what was asked for should always outrank one matching only what it implies.
-   */
-  private async resolveCapabilities(
-    demand: DemandObject,
-    expansion: SemanticExpansion,
-  ): Promise<ResolvedDemand> {
-    const primaryTerms = [...demand.products, ...demand.services, ...demand.businessTypes];
-
-    const expandedTerms = [
-      ...expansion.inferredProducts,
-      ...expansion.capabilities.map((entry) => entry.name),
-      ...expansion.inventoryAffinities.map((entry) => entry.name),
-    ];
-
-    const [primary, expanded] = await Promise.all([
-      this.resolver.resolveProducts(primaryTerms),
-      this.resolver.resolveProducts(expandedTerms),
-    ]);
-
-    const primaryIds = new Set(primary.map((entry) => entry.capability.id));
 
     return {
-      demand,
-      expansion,
-      primaryCapabilities: primary.map((entry) => entry.capability),
-      // A capability reached both ways is primary; listing it twice would double-count it.
-      expandedCapabilities: expanded
-        .map((entry) => entry.capability)
-        .filter((capability) => !primaryIds.has(capability.id)),
+      outcome: 'no_capability',
+      demand: {
+        rawQuery: request.query,
+        mode: 'item',
+        products: [request.conceptLabel || request.query],
+        services: [],
+        businessTypes: [],
+        quantities: [],
+        modifiers: [],
+        constraints: [],
+        brands: [],
+        location: request.customerCity || '',
+        ambiguityType: 'none',
+        ambiguityScore: 0,
+        ambiguityOptions: [],
+      },
     };
   }
 
-  /**
-   * Retrieves a broad candidate set (CME §11: "This stage intentionally retrieves a broad
-   * candidate set. No ranking occurs here.").
-   */
-  /**
-   * Retrieves a broad candidate set (CME §11: "This stage intentionally retrieves a broad
-   * candidate set. No ranking occurs here.").
-   *
-   * Extends retrieval across exact brick codes and ancestor taxonomy nodes (family/segment)
-   * to ensure DAEM Layer 2 Archetype Expansion candidates enter the scoring pool.
-   */
-  private async retrieveCandidates(resolved: ResolvedDemand): Promise<Map<string, VendorProfile>> {
-    const primaryCaps = resolved.primaryCapabilities;
-    const expandedCaps = resolved.expandedCapabilities;
-
-    const targetCapabilityIds = new Set<string>();
-    for (const cap of primaryCaps) {
-      targetCapabilityIds.add(cap.id);
-      try {
-        const node = await this.taxonomy.findByCode(cap.id);
-        if (node?.familyCode) targetCapabilityIds.add(node.familyCode);
-        if (node?.segmentCode) targetCapabilityIds.add(node.segmentCode);
-      } catch {
-        // Taxonomy lookup fallback: retain primary capability id.
-      }
-    }
-
-    for (const cap of expandedCaps) {
-      targetCapabilityIds.add(cap.id);
-    }
-
-    const capIdsArray = Array.from(targetCapabilityIds);
-
-    const batches = await Promise.all(
-      capIdsArray.map((capabilityId) =>
-        this.vendors.findByCapability({
-          capabilityId,
-          minConfidence: MIN_CANDIDATE_CONFIDENCE,
-          limit: CANDIDATES_PER_CAPABILITY,
-        }),
-      ),
-    );
-
-    const candidates = new Map<string, VendorProfile>();
-
-    for (const batch of batches) {
-      for (const profile of batch) {
-        // Only vendors who finished onboarding are searchable.
-        if (profile.vendor.status !== 'active') continue;
-        candidates.set(profile.vendor.id, profile);
-      }
-    }
-
-    this.logger.stage({
-      component: COMPONENT,
-      stage: 'CandidateVendorRetrieval',
-      action:
-        'Retrieved candidate vendor profiles matching primary, expanded, and archetype segment capabilities',
-      input: { primaryCapabilities: primaryCaps.map((c) => c.name), queriedCapabilityIds: capIdsArray },
-      output: {
-        candidateCount: candidates.size,
-        candidates: Array.from(candidates.values()).map((p) => ({
-          vendorId: p.vendor.id,
-          businessName: p.vendor.businessName,
-          declaredProducts: p.dna.declaredProducts,
-        })),
-      },
-    });
-
-    return candidates;
-  }
 
   /**
    * Scores and orders the candidates, attaching an explanation to each
@@ -387,7 +242,7 @@ export class CapabilityMatchingService {
    * signals are fed into the ranking components alongside the existing capability and evidence
    * scores.
    */
-  private async rank(params: {
+  async rank(params: {
     resolved: ResolvedDemand;
     candidates: readonly VendorProfile[];
     customerCity: string | null;
@@ -399,11 +254,13 @@ export class CapabilityMatchingService {
     // customer actually asked for.
     const evidenceSubject = resolved.primaryCapabilities[0] ?? resolved.expandedCapabilities[0];
 
-    const evidenceScores = await this.evidence.getEvidenceScores({
-      vendorIds: candidates.map((profile) => profile.vendor.id),
-      subjectType: 'capability',
-      subject: evidenceSubject.id,
-    });
+    const evidenceScores = this.evidence && evidenceSubject
+      ? await this.evidence.getEvidenceScores({
+          vendorIds: candidates.map((profile) => profile.vendor.id),
+          subjectType: 'capability',
+          subject: evidenceSubject.id,
+        })
+      : new Map();
 
     // ── HKGM Layer 3→2→1: Resolve the target Segment for graph matching ─────────────
     // The graph match evaluates whether a vendor's archetype covers the target Segment.
@@ -483,12 +340,12 @@ export class CapabilityMatchingService {
         const shortPrefix = new RegExp(`^(?:${businessName}|${shortName})\\s+`, 'i');
 
         if (specPrefix.test(cleaned)) {
-          cleaned = `${shortName} specializes in ${cleaned.replace(specPrefix, '')}`;
+          cleaned = `${shortName} can provide ${cleaned.replace(specPrefix, '')}`;
         } else if (shortPrefix.test(cleaned)) {
-          cleaned = `${shortName} specializes in ${cleaned.replace(shortPrefix, '')}`;
+          cleaned = `${shortName} can provide ${cleaned.replace(shortPrefix, '')}`;
         } else {
           cleaned = cleaned.replace(/^(?:specializes\s+in|sells|capabilities|services):\s*/i, '').trim();
-          cleaned = `${shortName} specializes in ${cleaned}`;
+          cleaned = `${shortName} can provide ${cleaned}`;
         }
 
         if (!cleaned.endsWith('.')) {
@@ -541,7 +398,7 @@ export class CapabilityMatchingService {
    */
   private async resolveSegment(brickCode: string): Promise<string | null> {
     try {
-      const node = await this.taxonomy.findByCode(brickCode);
+      const node = this.taxonomy ? await this.taxonomy.findByCode(brickCode) : null;
       return node?.segmentCode ?? null;
     } catch (error) {
       this.logger.stageFailed({
@@ -685,14 +542,5 @@ export class CapabilityMatchingService {
     }
 
     return reasons;
-  }
-
-  private buildClarificationQuestion(demand: DemandObject): string {
-    const subject = demand.products[0] ?? demand.rawQuery;
-
-    return [
-      `Which type of ${subject.toLowerCase()} are you looking for?`,
-      ...demand.ambiguityOptions.map((option) => `• ${option}`),
-    ].join('\n');
   }
 }

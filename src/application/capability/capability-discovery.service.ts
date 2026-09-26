@@ -138,7 +138,9 @@ export class CapabilityDiscoveryService {
       };
     });
 
-    const signals = await this.withHierarchyPropagation(directSignals);
+    // Phase 10: Preserve only verified direct capabilities (TDR Defect #13).
+    // Eliminates automatic injection of parent classes and sibling noise with decaying log-odds.
+    const signals = directSignals;
 
     const evidence: EvidenceObject = {
       id: this.ids.uuid(),

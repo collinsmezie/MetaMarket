@@ -150,40 +150,7 @@ export class MkgCandidateRetrievalAdapter {
       }
     }
 
-    // 4. Path C: Lexical Fallback if candidate map is still empty
-    if (candidateMap.size === 0 && demand.query) {
-      const qWords = demand.query
-        .toLowerCase()
-        .split(/\s+/)
-        .filter((w) => w.length > 2);
-
-      if (qWords.length > 0) {
-        const matchedVendors = await this.prisma.vendor.findMany({
-          where: {
-            OR: [
-              ...qWords.map((w) => ({ businessName: { contains: w, mode: 'insensitive' as const } })),
-              ...qWords.map((w) => ({ declaredProducts: { has: w } })),
-            ],
-          },
-          take: 10,
-        });
-
-        for (const v of matchedVendors) {
-          candidateMap.set(v.id, {
-            vendorId: v.id,
-            businessName: v.businessName || v.contactPhone || 'Vendor',
-            matchedConcept: matchedConceptLabel,
-            derivation: 'TAXONOMY_BACKBONE',
-            rawBelief: 0.7,
-            pathDepth: 1,
-            reasons: [`Matches product or business profile for ${demand.query}`],
-            finalScore: 0,
-          });
-        }
-      }
-    }
-
-    // 5. Hydrate Vendor Details from Database
+    // 4. Hydrate Vendor Details from Database
     const vendorIds = Array.from(candidateMap.keys());
     if (vendorIds.length > 0) {
       const vendorRows = await this.prisma.vendor.findMany({

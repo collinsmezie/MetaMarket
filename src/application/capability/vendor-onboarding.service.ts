@@ -1,5 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import type { Vendor } from '../../domain/models/vendor';
+import { CapabilityProjectionService } from '../../mkg/application/capability-projection.service';
 import {
   ConversationEvents,
   EVENT_PUBLISHER,
@@ -35,6 +36,7 @@ export class VendorOnboardingService {
     @Inject(STAGE_LOGGER) private readonly logger: StageLoggerPort,
     @Inject(CLOCK) private readonly clock: ClockPort,
     @Inject(ID_GENERATOR) private readonly ids: IdGeneratorPort,
+    @Optional() private readonly projection?: CapabilityProjectionService,
   ) {}
 
   /**
@@ -140,6 +142,28 @@ export class VendorOnboardingService {
         })),
       },
     });
+
+    // ── Phase 10: Capability Projection into MKG ────────────────────────────────────
+    if (this.projection) {
+      try {
+        await this.projection.projectVendor(params.vendorId);
+        this.logger.stage({
+          component: COMPONENT,
+          stage: 'MkgCapabilityProjection',
+          input: { vendorId: params.vendorId },
+          action: 'Projected vendor and verified capabilities into MKG',
+          output: { projected: true },
+        });
+      } catch (error) {
+        this.logger.stageFailed({
+          component: COMPONENT,
+          stage: 'MkgCapabilityProjection',
+          input: { vendorId: params.vendorId },
+          action: 'Failed to project vendor into MKG during finalization',
+          error: error as Error,
+        });
+      }
+    }
 
     this.logger.stage({
       component: COMPONENT,
